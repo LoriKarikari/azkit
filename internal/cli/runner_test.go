@@ -89,6 +89,8 @@ func TestRunner_helpDoesNotBuildListService(t *testing.T) {
 	runner := cli.NewRunner(cli.Services{List: func() (*app.ListService, error) {
 		called = true
 		return nil, assert.AnError
+	}, Activate: func() (*app.ActivationService, error) {
+		return nil, assert.AnError
 	}}, &stdout, &stderr)
 
 	code := runner.Run(context.Background(), []string{"--help"})
@@ -119,6 +121,8 @@ func newRunner(stdout *bytes.Buffer, stderr *bytes.Buffer, err error) *cli.Runne
 	}
 	return cli.NewRunner(cli.Services{List: func() (*app.ListService, error) {
 		return app.NewListService(store), nil
+	}, Activate: func() (*app.ActivationService, error) {
+		return nil, assert.AnError
 	}}, stdout, stderr)
 }
 
