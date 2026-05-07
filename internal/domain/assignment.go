@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 type ScopeType string
 
 const (
@@ -9,12 +11,12 @@ const (
 )
 
 type EligibleAssignment struct {
-	ID          string
-	Role        string
-	ScopeType   ScopeType
-	ScopeID     string
-	ScopeName   string
-	MaxDuration string
+	ID            string
+	Role          string
+	ScopeType     ScopeType
+	ScopeID       string
+	ScopeName     string
+	EligibleUntil time.Time
 }
 
 type ActiveAssignment struct {
