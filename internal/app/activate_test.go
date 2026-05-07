@@ -28,7 +28,7 @@ func TestActivation_succeeds(t *testing.T) {
 	svc := app.NewActivationService(store, act)
 
 	got, err := svc.Activate(context.Background(), domain.ActivationRequest{
-		ScopeID: "/sub/abc", Role: "Contributor", Reason: "Deploy", Duration: dur,
+		ScopeID: "/sub/abc", Role: "Contributor", Reason: " Deploy ", Duration: dur,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -39,12 +39,35 @@ func TestActivation_succeeds(t *testing.T) {
 	if act.calledPrincipalID != "user-1" {
 		t.Fatalf("want principalID user-1, got %s", act.calledPrincipalID)
 	}
+	if act.calledReason != "Deploy" {
+		t.Fatalf("want trimmed reason Deploy, got %q", act.calledReason)
+	}
+}
+
+func TestActivation_missingScope(t *testing.T) {
+	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &testActivator{})
+	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+		Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
+	})
+	if !errors.Is(err, app.ErrMissingScope) {
+		t.Fatalf("want missing scope error, got %v", err)
+	}
+}
+
+func TestActivation_missingRole(t *testing.T) {
+	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &testActivator{})
+	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+		ScopeID: "/sub/abc", Reason: "Deploy", Duration: 2 * time.Hour,
+	})
+	if !errors.Is(err, app.ErrMissingRole) {
+		t.Fatalf("want missing role error, got %v", err)
+	}
 }
 
 func TestActivation_missingReason(t *testing.T) {
 	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &testActivator{})
 	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
-		ScopeID: "/sub/abc", Role: "Contributor", Duration: 2 * time.Hour,
+		ScopeID: "/sub/abc", Role: "Contributor", Reason: "   ", Duration: 2 * time.Hour,
 	})
 	if !errors.Is(err, app.ErrMissingReason) {
 		t.Fatalf("want missing reason error, got %v", err)
@@ -78,16 +101,21 @@ func TestActivation_invalidDuration(t *testing.T) {
 	if !errors.As(err, &appErr) {
 		t.Fatalf("want app error, got %T", err)
 	}
+	if appErr.Code != app.CodeInvalidDuration {
+		t.Fatalf("want invalid duration, got %s", appErr.Code)
+	}
 }
 
 type testActivator struct {
 	result            *domain.ActivationResult
 	err               error
 	calledPrincipalID string
+	calledReason      string
 }
 
 func (a *testActivator) Activate(_ context.Context, principalID, roleDefID, scope, reason string, duration time.Duration) (*domain.ActivationResult, error) {
 	a.calledPrincipalID = principalID
+	a.calledReason = reason
 	if a.err != nil {
 		return nil, a.err
 	}
