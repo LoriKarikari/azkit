@@ -22,10 +22,12 @@ type EligibleAssignment struct {
 }
 
 type ActivationRequest struct {
-	ScopeID  string
-	Role     string
-	Reason   string
-	Duration time.Duration
+	ScopeID       string
+	Subscription  string
+	ResourceGroup string
+	Role          string
+	Reason        string
+	Duration      time.Duration
 }
 
 type ActivationTarget struct {
