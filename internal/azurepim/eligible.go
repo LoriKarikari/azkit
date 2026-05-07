@@ -36,7 +36,11 @@ func NewEligibleAssignments() (*EligibleAssignments, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newEligibleAssignments(azureSubscriptions{cred: cred}, azureEligibilitySchedules{cred: cred}), nil
+	return NewEligibleAssignmentsFromCred(cred), nil
+}
+
+func NewEligibleAssignmentsFromCred(cred azcore.TokenCredential) *EligibleAssignments {
+	return newEligibleAssignments(azureSubscriptions{cred: cred}, azureEligibilitySchedules{cred: cred})
 }
 
 func newEligibleAssignments(subscriptions subscriptionSource, schedules eligibilityScheduleSource) *EligibleAssignments {
@@ -128,14 +132,22 @@ func toDomain(s *armauthorization.RoleEligibilitySchedule) domain.EligibleAssign
 	if s.Properties == nil {
 		return a
 	}
+	if s.Properties.PrincipalID != nil {
+		a.PrincipalID = *s.Properties.PrincipalID
+	}
 	if s.Properties.EndDateTime != nil {
 		a.EligibleUntil = *s.Properties.EndDateTime
 	}
 	if s.Properties.ExpandedProperties == nil {
 		return a
 	}
-	if s.Properties.ExpandedProperties.RoleDefinition != nil && s.Properties.ExpandedProperties.RoleDefinition.DisplayName != nil {
-		a.Role = *s.Properties.ExpandedProperties.RoleDefinition.DisplayName
+	if s.Properties.ExpandedProperties.RoleDefinition != nil {
+		if s.Properties.ExpandedProperties.RoleDefinition.DisplayName != nil {
+			a.Role = *s.Properties.ExpandedProperties.RoleDefinition.DisplayName
+		}
+		if s.Properties.ExpandedProperties.RoleDefinition.ID != nil {
+			a.RoleDefID = *s.Properties.ExpandedProperties.RoleDefinition.ID
+		}
 	}
 	if s.Properties.ExpandedProperties.Scope == nil {
 		return a
