@@ -10,11 +10,13 @@ import (
 )
 
 type ActivateCmd struct {
-	Scope    string        `required:"" help:"Azure resource scope ID"`
-	Role     string        `required:"" help:"Role display name or definition ID"`
-	Reason   string        `required:"" help:"Justification for the activation"`
-	Duration time.Duration `default:"2h" help:"How long the role stays active"`
-	JSON     bool          `help:"Output as JSON"`
+	Scope         string        `help:"Azure resource scope ID (exact)"`
+	Subscription  string        `help:"Subscription ID or exact name"`
+	ResourceGroup string        `help:"Resource group name (requires --subscription)"`
+	Role          string        `required:"" help:"Role display name or definition ID"`
+	Reason        string        `required:"" help:"Justification for the activation"`
+	Duration      time.Duration `default:"2h" help:"How long the role stays active"`
+	JSON          bool          `help:"Output as JSON"`
 }
 
 func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Streams) error {
@@ -23,10 +25,12 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		return err
 	}
 	result, err := act.Activate(ctx, domain.ActivationRequest{
-		ScopeID:  c.Scope,
-		Role:     c.Role,
-		Reason:   c.Reason,
-		Duration: c.Duration,
+		ScopeID:       c.Scope,
+		Subscription:  c.Subscription,
+		ResourceGroup: c.ResourceGroup,
+		Role:          c.Role,
+		Reason:        c.Reason,
+		Duration:      c.Duration,
 	})
 	if err != nil {
 		return err

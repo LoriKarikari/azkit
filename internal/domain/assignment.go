@@ -11,21 +11,25 @@ const (
 )
 
 type EligibleAssignment struct {
-	ID            string
-	PrincipalID   string
-	Role          string
-	RoleDefID     string
-	ScopeType     ScopeType
-	ScopeID       string
-	ScopeName     string
-	EligibleUntil time.Time
+	ID               string
+	PrincipalID      string
+	Role             string
+	RoleDefID        string
+	ScopeType        ScopeType
+	ScopeID          string
+	ScopeName        string
+	SubscriptionID   string
+	SubscriptionName string
+	EligibleUntil    time.Time
 }
 
 type ActivationRequest struct {
-	ScopeID  string
-	Role     string
-	Reason   string
-	Duration time.Duration
+	ScopeID       string
+	Subscription  string
+	ResourceGroup string
+	Role          string
+	Reason        string
+	Duration      time.Duration
 }
 
 type ActivationTarget struct {
