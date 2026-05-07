@@ -71,16 +71,10 @@ func RenderStatusHuman(as []domain.ActiveAssignment, verbose bool) string {
 }
 
 func statusSymbol(s domain.ActiveAssignmentStatus) string {
-	switch s {
-	case domain.ActiveAssignmentGranted, domain.ActiveAssignmentProvisioned:
+	if s == domain.ActiveAssignmentActive {
 		return "Active"
-	case domain.ActiveAssignmentRequested:
-		return "Requested"
-	case domain.ActiveAssignmentRevoked:
-		return "Revoked"
-	default:
-		return string(s)
 	}
+	return string(s)
 }
 
 func expiresStatus(end time.Time) string {

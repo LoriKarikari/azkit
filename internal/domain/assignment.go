@@ -13,10 +13,7 @@ const (
 type ActiveAssignmentStatus string
 
 const (
-	ActiveAssignmentRequested   ActiveAssignmentStatus = "requested"
-	ActiveAssignmentGranted     ActiveAssignmentStatus = "granted"
-	ActiveAssignmentProvisioned ActiveAssignmentStatus = "provisioned"
-	ActiveAssignmentRevoked     ActiveAssignmentStatus = "revoked"
+	ActiveAssignmentActive ActiveAssignmentStatus = "active"
 )
 
 type EligibleAssignment struct {
