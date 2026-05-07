@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"log/slog"
 
 	"github.com/alecthomas/kong"
 
@@ -13,6 +14,7 @@ import (
 type Streams struct {
 	Stdout io.Writer
 	Stderr io.Writer
+	Log    *slog.Logger
 }
 
 type Services struct {
@@ -24,6 +26,7 @@ type Services struct {
 type Runner struct {
 	services Services
 	streams  *Streams
+	log      *slog.Logger
 }
 
 func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
@@ -31,6 +34,17 @@ func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
 		services: services,
 		streams:  &Streams{Stdout: stdout, Stderr: stderr},
 	}
+}
+
+func (r *Runner) Log() *slog.Logger {
+	return r.log
+}
+
+type CLI struct {
+	Verbose  bool        `short:"v" help:"Enable debug logging to stderr"`
+	List     ListCmd     `cmd:"" help:"List eligible PIM role assignments"`
+	Status   StatusCmd   `cmd:"" help:"List active PIM role assignments"`
+	Activate ActivateCmd `cmd:"" help:"Activate an eligible PIM role assignment"`
 }
 
 type kongExit int
@@ -64,6 +78,14 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 	if err != nil {
 		return r.handleParseError(err)
 	}
+
+	level := slog.LevelWarn
+	if model.Verbose {
+		level = slog.LevelDebug
+	}
+	r.log = slog.New(slog.NewTextHandler(r.streams.Stderr, &slog.HandlerOptions{Level: level}))
+	r.streams.Log = r.log
+
 	if err := parsed.Run(); err != nil {
 		_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(model, parsed)))
 		return 1

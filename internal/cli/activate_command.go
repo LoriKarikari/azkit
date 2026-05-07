@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"time"
 
 	"github.com/LoriKarikari/pimctl/internal/domain"
@@ -61,6 +62,8 @@ func (c *ActivateCmd) waitForActive(ctx context.Context, services Services, resu
 	defer cancel()
 
 	_, _ = io.WriteString(streams.Stderr, fmt.Sprintf("Waiting for %s on %s...\n", result.Role, result.ScopeName))
+
+	streams.Log.Debug("waiting for activation to propagate", slog.String("role", result.Role), slog.String("scope", result.ScopeID))
 
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()

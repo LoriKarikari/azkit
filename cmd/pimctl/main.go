@@ -13,9 +13,9 @@ import (
 
 func main() {
 	runner := cli.NewRunner(cli.Services{
-		List:     listService,
-		Status:   statusService,
-		Activate: activateService,
+		List:     func() (*app.ListService, error) { return listService() },
+		Status:   func() (*app.StatusService, error) { return statusService() },
+		Activate: func() (*app.ActivationService, error) { return activateService() },
 	}, os.Stdout, os.Stderr)
 	os.Exit(runner.Run(context.Background(), os.Args[1:]))
 }
