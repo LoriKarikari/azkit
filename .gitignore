@@ -20,4 +20,4 @@ coverage.html
 .scratch/
 
 # Local binaries
-pimctl
+/pimctl
