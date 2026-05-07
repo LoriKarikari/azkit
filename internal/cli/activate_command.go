@@ -35,6 +35,12 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 	if err != nil {
 		return err
 	}
+
+	confirmed := c.waitForActive(ctx, services, result, streams)
+	if confirmed != nil {
+		result = confirmed
+	}
+
 	if c.JSON {
 		_, err = io.WriteString(streams.Stdout, renderActivationJSON(result))
 	} else {
@@ -42,4 +48,47 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		_, err = io.WriteString(streams.Stdout, renderActivationHuman(result))
 	}
 	return err
+}
+
+func (c *ActivateCmd) waitForActive(ctx context.Context, services Services, result *domain.ActivationResult, streams *Streams) *domain.ActivationResult {
+	statusSvc, err := services.Status()
+	if err != nil {
+		return nil
+	}
+
+	const defaultWaitTimeout = 60 * time.Second
+	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
+	defer cancel()
+
+	_, _ = io.WriteString(streams.Stderr, fmt.Sprintf("Waiting for %s on %s...\n", result.Role, result.ScopeName))
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-deadline.Done():
+			_, _ = io.WriteString(streams.Stderr, "Timeout waiting for activation.\n")
+			return nil
+		case <-ticker.C:
+			as, err := statusSvc.Status(ctx)
+			if err != nil {
+				continue
+			}
+			for _, a := range as {
+				if a.Role == result.Role && a.ScopeID == result.ScopeID && a.Status == domain.ActiveAssignmentActive {
+					_, _ = io.WriteString(streams.Stderr, fmt.Sprintf("✓ %s is active on %s\n", result.Role, result.ScopeName))
+					return &domain.ActivationResult{
+						Role:      a.Role,
+						ScopeID:   a.ScopeID,
+						ScopeName: a.ScopeName,
+						Duration:  result.Duration,
+						StartedAt: a.StartTime,
+						ExpiresAt: a.EndTime,
+						Reason:    result.Reason,
+					}
+				}
+			}
+		}
+	}
 }
