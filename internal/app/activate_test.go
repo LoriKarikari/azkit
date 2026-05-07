@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -117,7 +118,11 @@ func TestActivation_byResourceGroupWithSubscriptionName(t *testing.T) {
 }
 
 func TestActivation_unknownSubscription(t *testing.T) {
-	store := &inmemory.EligibleAssignments{}
+	store := &inmemory.EligibleAssignments{
+		Assignments: []domain.EligibleAssignment{
+			{ScopeID: "/subscriptions/abc", ScopeType: domain.ScopeSubscription, ScopeName: "Production Platform", SubscriptionID: "abc", SubscriptionName: "Production Platform"},
+		},
+	}
 	svc := app.NewActivationService(store, &testActivator{})
 
 	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
@@ -126,6 +131,29 @@ func TestActivation_unknownSubscription(t *testing.T) {
 	var appErr *app.Error
 	if !errors.As(err, &appErr) || appErr.Code != app.CodeUnknownSubscription {
 		t.Fatalf("want unknown subscription, got %v", err)
+	}
+	if !strings.Contains(appErr.Message, "Production Platform") {
+		t.Fatalf("want subscription suggestion, got %q", appErr.Message)
+	}
+}
+
+func TestActivation_unknownResourceGroup(t *testing.T) {
+	store := &inmemory.EligibleAssignments{
+		Assignments: []domain.EligibleAssignment{
+			{ScopeID: "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/prod-rg", ScopeType: domain.ScopeResourceGroup, ScopeName: "prod-rg"},
+		},
+	}
+	svc := app.NewActivationService(store, &testActivator{})
+
+	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+		Subscription: "00000000-0000-0000-0000-000000000000", ResourceGroup: "missing-rg", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
+	})
+	var appErr *app.Error
+	if !errors.As(err, &appErr) || appErr.Code != app.CodeUnknownResourceGroup {
+		t.Fatalf("want unknown resource group, got %v", err)
+	}
+	if !strings.Contains(appErr.Message, "prod-rg") {
+		t.Fatalf("want resource group suggestion, got %q", appErr.Message)
 	}
 }
 

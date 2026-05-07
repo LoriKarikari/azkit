@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/LoriKarikari/pimctl/internal/domain"
@@ -79,7 +80,7 @@ func resolveByID(id string, eligible []domain.EligibleAssignment) (string, error
 	}
 	return "", &Error{
 		Code:    CodeUnknownSubscription,
-		Message: fmt.Sprintf("Subscription %s not found among your eligible assignments.", id),
+		Message: fmt.Sprintf("Subscription %s not found among your eligible assignments.%s", id, selectorSuggestions(subscriptionSuggestions(eligible))),
 	}
 }
 
@@ -110,14 +111,15 @@ func resolveByName(name string, eligible []domain.EligibleAssignment) (string, e
 	if len(seen) == 0 {
 		return "", &Error{
 			Code:    CodeUnknownSubscription,
-			Message: fmt.Sprintf("Subscription %q not found among your eligible assignments.", name),
+			Message: fmt.Sprintf("Subscription %q not found among your eligible assignments.%s", name, selectorSuggestions(subscriptionSuggestions(eligible))),
 		}
 	}
 	if len(seen) > 1 {
 		var matches []string
-		for _, displayName := range seen {
-			matches = append(matches, displayName)
+		for id, displayName := range seen {
+			matches = append(matches, fmt.Sprintf("%s (%s)", displayName, id))
 		}
+		sort.Strings(matches)
 		return "", &Error{
 			Code:    CodeAmbiguousSubscription,
 			Message: fmt.Sprintf("Subscription name %q is ambiguous. Matches: %s. Use the subscription ID instead.", name, strings.Join(matches, ", ")),
@@ -154,6 +156,53 @@ func resolveResourceGroup(subscriptionID, name string, eligible []domain.Eligibl
 	}
 	return "", &Error{
 		Code:    CodeUnknownResourceGroup,
-		Message: fmt.Sprintf("Resource group %q not found in subscription.", name),
+		Message: fmt.Sprintf("Resource group %q not found in subscription.%s", name, selectorSuggestions(resourceGroupSuggestions(subscriptionID, eligible))),
 	}
+}
+
+func selectorSuggestions(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return " Try one of: " + strings.Join(values, ", ") + "."
+}
+
+func subscriptionSuggestions(eligible []domain.EligibleAssignment) []string {
+	seen := map[string]bool{}
+	for _, a := range eligible {
+		name := a.SubscriptionName
+		if name == "" && a.ScopeType == domain.ScopeSubscription {
+			name = a.ScopeName
+		}
+		if name == "" {
+			name = a.SubscriptionID
+		}
+		if name == "" {
+			name = subscriptionIDFromScope(a.ScopeID)
+		}
+		if name != "" {
+			seen[name] = true
+		}
+	}
+	return sortedKeys(seen)
+}
+
+func resourceGroupSuggestions(subscriptionID string, eligible []domain.EligibleAssignment) []string {
+	prefix := fmt.Sprintf("/subscriptions/%s/resourceGroups/", subscriptionID)
+	seen := map[string]bool{}
+	for _, a := range eligible {
+		if a.ScopeType == domain.ScopeResourceGroup && strings.HasPrefix(a.ScopeID, prefix) && a.ScopeName != "" {
+			seen[a.ScopeName] = true
+		}
+	}
+	return sortedKeys(seen)
+}
+
+func sortedKeys(seen map[string]bool) []string {
+	values := make([]string, 0, len(seen))
+	for value := range seen {
+		values = append(values, value)
+	}
+	sort.Strings(values)
+	return values
 }
