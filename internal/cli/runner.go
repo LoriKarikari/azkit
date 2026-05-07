@@ -17,6 +17,7 @@ type Streams struct {
 
 type Services struct {
 	List     func() (*app.ListService, error)
+	Status   func() (*app.StatusService, error)
 	Activate func() (*app.ActivationService, error)
 }
 
@@ -87,6 +88,8 @@ func wantsJSON(model CLI, parsed *kong.Context) bool {
 	switch parsed.Command() {
 	case "list":
 		return model.List.JSON
+	case "status":
+		return model.Status.JSON
 	case "activate":
 		return model.Activate.JSON
 	}

@@ -10,6 +10,15 @@ const (
 	ScopeManagementGroup ScopeType = "management_group"
 )
 
+type ActiveAssignmentStatus string
+
+const (
+	ActiveAssignmentRequested   ActiveAssignmentStatus = "requested"
+	ActiveAssignmentGranted     ActiveAssignmentStatus = "granted"
+	ActiveAssignmentProvisioned ActiveAssignmentStatus = "provisioned"
+	ActiveAssignmentRevoked     ActiveAssignmentStatus = "revoked"
+)
+
 type EligibleAssignment struct {
 	ID               string
 	PrincipalID      string
@@ -21,6 +30,21 @@ type EligibleAssignment struct {
 	SubscriptionID   string
 	SubscriptionName string
 	EligibleUntil    time.Time
+}
+
+type ActiveAssignment struct {
+	ID               string
+	PrincipalID      string
+	Role             string
+	RoleDefID        string
+	ScopeType        ScopeType
+	ScopeID          string
+	ScopeName        string
+	SubscriptionID   string
+	SubscriptionName string
+	StartTime        time.Time
+	EndTime          time.Time
+	Status           ActiveAssignmentStatus
 }
 
 type ActivationRequest struct {
