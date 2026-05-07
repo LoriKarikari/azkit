@@ -121,10 +121,7 @@ func (a azureEligibilitySchedules) ListForSubscription(ctx context.Context, subs
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
 		if err != nil {
-			if strings.Contains(err.Error(), "AuthorizationFailed") || strings.Contains(err.Error(), "403") {
-				return nil, app.PermissionDenied(err)
-			}
-			return nil, app.AzureAPIError(err)
+			return nil, azurePIMOperationError(err)
 		}
 		for _, sched := range page.Value {
 			assignments = append(assignments, toDomain(sched))
