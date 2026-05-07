@@ -121,7 +121,7 @@ func toDomain(s *armauthorization.RoleEligibilitySchedule) domain.EligibleAssign
 			}
 		}
 		if s.Properties.EndDateTime != nil {
-			a.MaxDuration = "8h"
+			a.EligibleUntil = *s.Properties.EndDateTime
 		}
 	}
 	return a

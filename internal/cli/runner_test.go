@@ -5,6 +5,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -65,15 +66,23 @@ func newRunner(stdout *bytes.Buffer, stderr *bytes.Buffer, err error) *cli.Runne
 	store := &inmemory.EligibleAssignments{
 		Assignments: []domain.EligibleAssignment{
 			{
-				ID:          "a1",
-				Role:        "Contributor",
-				ScopeType:   domain.ScopeSubscription,
-				ScopeID:     "/subscriptions/abc",
-				ScopeName:   "sub-prod",
-				MaxDuration: "8h",
+				ID:            "a1",
+				Role:          "Contributor",
+				ScopeType:     domain.ScopeSubscription,
+				ScopeID:       "/subscriptions/abc",
+				ScopeName:     "sub-prod",
+				EligibleUntil: runnerTime("2026-05-07T20:00:00Z"),
 			},
 		},
 		Err: err,
 	}
 	return cli.NewRunner(app.NewListService(store), stdout, stderr)
+}
+
+func runnerTime(value string) time.Time {
+	t, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }
