@@ -82,12 +82,49 @@ func TestRunner_listErrorJSON(t *testing.T) {
 	}
 }
 
+func TestRunner_statusHuman(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	if code := runner.Run(context.Background(), []string{"status"}); code != 0 {
+		t.Fatalf("want exit 0, got %d", code)
+	}
+
+	got := stdout.String()
+	if !strings.Contains(got, "Contributor") || !strings.Contains(got, "Active") {
+		t.Fatalf("missing status output:\n%s", got)
+	}
+	if stderr.String() != "" {
+		t.Fatalf("want empty stderr, got: %q", stderr.String())
+	}
+}
+
+func TestRunner_statusErrorJSON(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
+
+	code := runner.Run(context.Background(), []string{"status", "--json"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("want empty stdout, got: %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `"code": "authentication_failed"`) {
+		t.Fatalf("missing JSON error code:\n%s", stderr.String())
+	}
+}
+
 func TestRunner_helpDoesNotBuildListService(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	called := false
 	runner := cli.NewRunner(cli.Services{List: func() (*app.ListService, error) {
 		called = true
+		return nil, assert.AnError
+	}, Status: func() (*app.StatusService, error) {
 		return nil, assert.AnError
 	}, Activate: func() (*app.ActivationService, error) {
 		return nil, assert.AnError
@@ -106,7 +143,7 @@ func TestRunner_helpDoesNotBuildListService(t *testing.T) {
 }
 
 func newRunner(stdout *bytes.Buffer, stderr *bytes.Buffer, err error) *cli.Runner {
-	store := &inmemory.EligibleAssignments{
+	eligibleStore := &inmemory.EligibleAssignments{
 		Assignments: []domain.EligibleAssignment{
 			{
 				ID:            "a1",
@@ -119,11 +156,39 @@ func newRunner(stdout *bytes.Buffer, stderr *bytes.Buffer, err error) *cli.Runne
 		},
 		Err: err,
 	}
+	activeStore := &testActiveAssignments{
+		Assignments: []domain.ActiveAssignment{
+			{
+				ID:        "s1",
+				Role:      "Contributor",
+				ScopeType: domain.ScopeSubscription,
+				ScopeID:   "/subscriptions/abc",
+				ScopeName: "sub-prod",
+				EndTime:   runnerTime("2026-05-07T20:00:00Z"),
+				Status:    domain.ActiveAssignmentActive,
+			},
+		},
+		Err: err,
+	}
 	return cli.NewRunner(cli.Services{List: func() (*app.ListService, error) {
-		return app.NewListService(store), nil
+		return app.NewListService(eligibleStore), nil
+	}, Status: func() (*app.StatusService, error) {
+		return app.NewStatusService(activeStore), nil
 	}, Activate: func() (*app.ActivationService, error) {
 		return nil, assert.AnError
 	}}, stdout, stderr)
+}
+
+func (s *testActiveAssignments) ListActive(_ context.Context) ([]domain.ActiveAssignment, error) {
+	if s.Err != nil {
+		return nil, s.Err
+	}
+	return s.Assignments, nil
+}
+
+type testActiveAssignments struct {
+	Assignments []domain.ActiveAssignment
+	Err         error
 }
 
 func runnerTime(value string) time.Time {
