@@ -13,6 +13,7 @@ import (
 type statusEntryJSON struct {
 	Role         string `json:"role"`
 	ScopeType    string `json:"scope_type"`
+	ScopeID      string `json:"scope_id"`
 	ScopeName    string `json:"scope_name"`
 	Status       string `json:"status"`
 	StartedAt    string `json:"started_at"`
@@ -29,6 +30,7 @@ func RenderStatusJSON(as []domain.ActiveAssignment) string {
 		out[i] = statusEntryJSON{
 			Role:         a.Role,
 			ScopeType:    string(a.ScopeType),
+			ScopeID:      a.ScopeID,
 			ScopeName:    a.ScopeName,
 			Status:       string(a.Status),
 			StartedAt:    jsonTime(a.StartTime),
@@ -48,13 +50,13 @@ func RenderStatusHuman(as []domain.ActiveAssignment, verbose bool) string {
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 
 	if verbose {
-		fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tSTATUS\tSTARTED\tEXPIRES\tASSIGNMENT ID")
+		fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tSTATUS\tSTARTED\tEXPIRES\tASSIGNMENT ID\tSCOPE ID")
 		for _, a := range as {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 				a.Role, a.ScopeType, a.ScopeName,
 				a.Status,
 				humanTime(a.StartTime), humanTime(a.EndTime),
-				a.ID)
+				a.ID, a.ScopeID)
 		}
 	} else {
 		fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tSTATUS\tEXPIRES")
