@@ -1,0 +1,23 @@
+# Go
+/bin/
+/dist/
+*.test
+*.out
+coverage.txt
+coverage.html
+
+# Local env
+.env
+.env.*
+!.env.example
+
+# Editor/OS
+.DS_Store
+.idea/
+.vscode/
+
+# Agent scratch
+.scratch/
+
+# Local binaries
+pimctl
