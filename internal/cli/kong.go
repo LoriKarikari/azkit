@@ -3,11 +3,14 @@ package cli
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
+	"time"
 
 	"github.com/alecthomas/kong"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
+	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
 type Streams struct {
@@ -16,7 +19,8 @@ type Streams struct {
 }
 
 type Services struct {
-	List func() (*app.ListService, error)
+	List     func() (*app.ListService, error)
+	Activate func() (*app.ActivationService, error)
 }
 
 type Runner struct {
@@ -83,7 +87,13 @@ func (r *Runner) handleParseError(err error) int {
 }
 
 func wantsJSON(model CLI, parsed *kong.Context) bool {
-	return parsed.Command() == "list" && model.List.JSON
+	switch parsed.Command() {
+	case "list":
+		return model.List.JSON
+	case "activate":
+		return model.Activate.JSON
+	}
+	return false
 }
 
 type ListCmd struct {
@@ -110,5 +120,37 @@ func (c *ListCmd) Run(ctx context.Context, services Services, streams *Streams) 
 }
 
 type CLI struct {
-	List ListCmd `cmd:"" help:"List eligible PIM role assignments"`
+	List     ListCmd     `cmd:"" help:"List eligible PIM role assignments"`
+	Activate ActivateCmd `cmd:"" help:"Activate an eligible PIM role assignment"`
+}
+
+type ActivateCmd struct {
+	Scope    string        `required:"" help:"Azure resource scope ID"`
+	Role     string        `required:"" help:"Role display name or definition ID"`
+	Reason   string        `required:"" help:"Justification for the activation"`
+	Duration time.Duration `default:"2h" help:"How long the role stays active"`
+	JSON     bool          `help:"Output as JSON"`
+}
+
+func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Streams) error {
+	act, err := services.Activate()
+	if err != nil {
+		return err
+	}
+	result, err := act.Activate(ctx, domain.ActivationRequest{
+		ScopeID:  c.Scope,
+		Role:     c.Role,
+		Reason:   c.Reason,
+		Duration: c.Duration,
+	})
+	if err != nil {
+		return err
+	}
+	if c.JSON {
+		_, err = io.WriteString(streams.Stdout, renderActivationJSON(result))
+	} else {
+		_, _ = io.WriteString(streams.Stderr, fmt.Sprintf("Activating %s on %s for %s\n", result.Role, result.ScopeName, result.Duration))
+		_, err = io.WriteString(streams.Stdout, renderActivationHuman(result))
+	}
+	return err
 }
