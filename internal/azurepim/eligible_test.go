@@ -1,11 +1,86 @@
 package azurepim
 
 import (
+	"context"
+	"errors"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
+
+	"github.com/LoriKarikari/pimctl/internal/app"
+	"github.com/LoriKarikari/pimctl/internal/domain"
 )
+
+func TestEligibleAssignments_listsAcrossSubscriptions(t *testing.T) {
+	adapter := newEligibleAssignments(
+		fakeSubscriptions{subs: []subscription{{ID: "sub-a"}, {ID: "sub-b"}}},
+		fakeSchedules{assignments: map[string][]domain.EligibleAssignment{
+			"sub-a": {{ID: "a1", Role: "Contributor"}},
+			"sub-b": {{ID: "a2", Role: "Reader"}},
+		}},
+	)
+
+	got, err := adapter.ListEligible(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("want 2 assignments, got %d", len(got))
+	}
+	if got[0].ID != "a1" || got[1].ID != "a2" {
+		t.Fatalf("unexpected assignments: %+v", got)
+	}
+}
+
+func TestEligibleAssignments_wrapsSubscriptionError(t *testing.T) {
+	adapter := newEligibleAssignments(
+		fakeSubscriptions{err: errors.New("token failed")},
+		fakeSchedules{},
+	)
+
+	_, err := adapter.ListEligible(context.Background())
+	var appErr *app.Error
+	if !errors.As(err, &appErr) {
+		t.Fatalf("want app error, got %T", err)
+	}
+	if appErr.Code != app.CodeAuthFailed {
+		t.Fatalf("want %s, got %s", app.CodeAuthFailed, appErr.Code)
+	}
+}
+
+func TestEligibleAssignments_returnsScheduleError(t *testing.T) {
+	want := app.PermissionDenied(errors.New("denied"))
+	adapter := newEligibleAssignments(
+		fakeSubscriptions{subs: []subscription{{ID: "sub-a"}}},
+		fakeSchedules{err: want},
+	)
+
+	_, err := adapter.ListEligible(context.Background())
+	if !errors.Is(err, want) {
+		t.Fatalf("want schedule error, got %v", err)
+	}
+}
+
+func TestEligibleAssignments_skipsBlankSubscriptionID(t *testing.T) {
+	schedules := fakeSchedules{assignments: map[string][]domain.EligibleAssignment{
+		"sub-a": {{ID: "a1"}},
+	}}
+	adapter := newEligibleAssignments(
+		fakeSubscriptions{subs: []subscription{{ID: ""}, {ID: "sub-a"}}},
+		schedules,
+	)
+
+	got, err := adapter.ListEligible(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 1 || got[0].ID != "a1" {
+		t.Fatalf("unexpected assignments: %+v", got)
+	}
+}
 
 func TestToDomain_mapsFields(t *testing.T) {
 	displayName := "Contributor"
@@ -14,10 +89,12 @@ func TestToDomain_mapsFields(t *testing.T) {
 	scopeID := "/subscriptions/abc"
 	scopeType := "subscription"
 	schedID := "/subscriptions/abc/providers/Microsoft.Authorization/roleEligibilitySchedules/sched1"
+	end := time.Date(2026, 5, 7, 20, 0, 0, 0, time.UTC)
 
 	sched := &armauthorization.RoleEligibilitySchedule{
 		ID: &schedID,
 		Properties: &armauthorization.RoleEligibilityScheduleProperties{
+			EndDateTime: &end,
 			ExpandedProperties: &armauthorization.ExpandedProperties{
 				RoleDefinition: &armauthorization.ExpandedPropertiesRoleDefinition{
 					DisplayName: &displayName,
@@ -48,6 +125,9 @@ func TestToDomain_mapsFields(t *testing.T) {
 	}
 	if a.ScopeID != "/subscriptions/abc" {
 		t.Fatalf("want ScopeID /subscriptions/abc, got %q", a.ScopeID)
+	}
+	if !a.EligibleUntil.Equal(end) {
+		t.Fatalf("want EligibleUntil %s, got %s", end, a.EligibleUntil)
 	}
 }
 
@@ -86,21 +166,36 @@ func TestListForSubscription_liveIntegration(t *testing.T) {
 		t.Skip("set PIMCTL_LIVE_SUBSCRIPTION to a subscription ID")
 	}
 
-	t.Log("building credential...")
-	adapter, err := NewEligibleAssignments()
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
-		t.Fatalf("NewEligibleAssignments: %v", err)
+		t.Fatalf("NewDefaultAzureCredential: %v", err)
 	}
 
-	scope := os.Getenv("PIMCTL_LIVE_SUBSCRIPTION")
-	t.Logf("listing eligible assignments for subscription %s...", scope)
-
-	as, err := adapter.listForSubscription(t.Context(), scope)
+	source := azureEligibilitySchedules{cred: cred}
+	as, err := source.ListForSubscription(t.Context(), os.Getenv("PIMCTL_LIVE_SUBSCRIPTION"))
 	if err != nil {
-		t.Fatalf("listForSubscription: %v", err)
+		t.Fatalf("ListForSubscription: %v", err)
 	}
 	t.Logf("got %d assignments", len(as))
-	for _, a := range as {
-		t.Logf("  %s %s %s %s", a.ID, a.Role, a.ScopeType, a.ScopeName)
+}
+
+type fakeSubscriptions struct {
+	subs []subscription
+	err  error
+}
+
+func (f fakeSubscriptions) ListSubscriptions(context.Context) ([]subscription, error) {
+	return f.subs, f.err
+}
+
+type fakeSchedules struct {
+	assignments map[string][]domain.EligibleAssignment
+	err         error
+}
+
+func (f fakeSchedules) ListForSubscription(_ context.Context, subscriptionID string) ([]domain.EligibleAssignment, error) {
+	if f.err != nil {
+		return nil, f.err
 	}
+	return f.assignments[subscriptionID], nil
 }

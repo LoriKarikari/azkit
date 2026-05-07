@@ -15,7 +15,20 @@ import (
 )
 
 type EligibleAssignments struct {
-	cred azcore.TokenCredential
+	subscriptions subscriptionSource
+	schedules     eligibilityScheduleSource
+}
+
+type subscription struct {
+	ID string
+}
+
+type subscriptionSource interface {
+	ListSubscriptions(context.Context) ([]subscription, error)
+}
+
+type eligibilityScheduleSource interface {
+	ListForSubscription(context.Context, string) ([]domain.EligibleAssignment, error)
 }
 
 func NewEligibleAssignments() (*EligibleAssignments, error) {
@@ -23,19 +36,25 @@ func NewEligibleAssignments() (*EligibleAssignments, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &EligibleAssignments{cred: cred}, nil
+	return newEligibleAssignments(azureSubscriptions{cred: cred}, azureEligibilitySchedules{cred: cred}), nil
+}
+
+func newEligibleAssignments(subscriptions subscriptionSource, schedules eligibilityScheduleSource) *EligibleAssignments {
+	return &EligibleAssignments{subscriptions: subscriptions, schedules: schedules}
 }
 
 func (a *EligibleAssignments) ListEligible(ctx context.Context) ([]domain.EligibleAssignment, error) {
-	subs, err := a.subscriptions(ctx)
+	subs, err := a.subscriptions.ListSubscriptions(ctx)
 	if err != nil {
 		return nil, app.AuthFailed(err)
 	}
 
 	var all []domain.EligibleAssignment
 	for _, sub := range subs {
-		scope := *sub.SubscriptionID
-		as, err := a.listForSubscription(ctx, scope)
+		if sub.ID == "" {
+			continue
+		}
+		as, err := a.schedules.ListForSubscription(ctx, sub.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -44,24 +63,36 @@ func (a *EligibleAssignments) ListEligible(ctx context.Context) ([]domain.Eligib
 	return all, nil
 }
 
-func (a *EligibleAssignments) subscriptions(ctx context.Context) ([]*armsubscriptions.Subscription, error) {
+type azureSubscriptions struct {
+	cred azcore.TokenCredential
+}
+
+func (a azureSubscriptions) ListSubscriptions(ctx context.Context) ([]subscription, error) {
 	client, err := armsubscriptions.NewClient(a.cred, nil)
 	if err != nil {
 		return nil, err
 	}
 	pager := client.NewListPager(nil)
-	var subs []*armsubscriptions.Subscription
+	var subs []subscription
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
 		if err != nil {
 			return nil, err
 		}
-		subs = append(subs, page.Value...)
+		for _, sub := range page.Value {
+			if sub.SubscriptionID != nil {
+				subs = append(subs, subscription{ID: *sub.SubscriptionID})
+			}
+		}
 	}
 	return subs, nil
 }
 
-func (a *EligibleAssignments) listForSubscription(ctx context.Context, subscriptionID string) ([]domain.EligibleAssignment, error) {
+type azureEligibilitySchedules struct {
+	cred azcore.TokenCredential
+}
+
+func (a azureEligibilitySchedules) ListForSubscription(ctx context.Context, subscriptionID string) ([]domain.EligibleAssignment, error) {
 	client, err := armauthorization.NewRoleEligibilitySchedulesClient(a.cred, nil)
 	if err != nil {
 		return nil, app.AuthFailed(err)
@@ -90,39 +121,37 @@ func (a *EligibleAssignments) listForSubscription(ctx context.Context, subscript
 }
 
 func toDomain(s *armauthorization.RoleEligibilitySchedule) domain.EligibleAssignment {
-	a := domain.EligibleAssignment{
-		ScopeType: domain.ScopeSubscription,
-	}
+	a := domain.EligibleAssignment{ScopeType: domain.ScopeSubscription}
 	if s.ID != nil {
 		a.ID = *s.ID
 	}
-	if s.Properties != nil {
-		if s.Properties.ExpandedProperties != nil {
-			if s.Properties.ExpandedProperties.RoleDefinition != nil {
-				if s.Properties.ExpandedProperties.RoleDefinition.DisplayName != nil {
-					a.Role = *s.Properties.ExpandedProperties.RoleDefinition.DisplayName
-				}
-			}
-			if s.Properties.ExpandedProperties.Scope != nil {
-				if s.Properties.ExpandedProperties.Scope.DisplayName != nil {
-					a.ScopeName = *s.Properties.ExpandedProperties.Scope.DisplayName
-				}
-				if s.Properties.ExpandedProperties.Scope.ID != nil {
-					a.ScopeID = *s.Properties.ExpandedProperties.Scope.ID
-				}
-
-				typeStr := ""
-				if s.Properties.ExpandedProperties.Scope.Type != nil {
-					typeStr = *s.Properties.ExpandedProperties.Scope.Type
-				}
-				if strings.Contains(typeStr, "resourceGroup") || strings.Contains(typeStr, "resourceGroups") {
-					a.ScopeType = domain.ScopeResourceGroup
-				}
-			}
-		}
-		if s.Properties.EndDateTime != nil {
-			a.EligibleUntil = *s.Properties.EndDateTime
-		}
+	if s.Properties == nil {
+		return a
+	}
+	if s.Properties.EndDateTime != nil {
+		a.EligibleUntil = *s.Properties.EndDateTime
+	}
+	if s.Properties.ExpandedProperties == nil {
+		return a
+	}
+	if s.Properties.ExpandedProperties.RoleDefinition != nil && s.Properties.ExpandedProperties.RoleDefinition.DisplayName != nil {
+		a.Role = *s.Properties.ExpandedProperties.RoleDefinition.DisplayName
+	}
+	if s.Properties.ExpandedProperties.Scope == nil {
+		return a
+	}
+	if s.Properties.ExpandedProperties.Scope.DisplayName != nil {
+		a.ScopeName = *s.Properties.ExpandedProperties.Scope.DisplayName
+	}
+	if s.Properties.ExpandedProperties.Scope.ID != nil {
+		a.ScopeID = *s.Properties.ExpandedProperties.Scope.ID
+	}
+	typeStr := ""
+	if s.Properties.ExpandedProperties.Scope.Type != nil {
+		typeStr = *s.Properties.ExpandedProperties.Scope.Type
+	}
+	if strings.Contains(typeStr, "resourceGroup") || strings.Contains(typeStr, "resourceGroups") {
+		a.ScopeType = domain.ScopeResourceGroup
 	}
 	return a
 }
