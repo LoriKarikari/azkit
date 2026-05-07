@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"io"
 	"os"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
@@ -11,12 +10,14 @@ import (
 )
 
 func main() {
+	runner := cli.NewRunner(cli.Services{List: listService}, os.Stdout, os.Stderr)
+	os.Exit(runner.Run(context.Background(), os.Args[1:]))
+}
+
+func listService() (*app.ListService, error) {
 	store, err := azurepim.NewEligibleAssignments()
 	if err != nil {
-		_, _ = io.WriteString(os.Stderr, cli.RenderError(app.AuthFailed(err), false))
-		os.Exit(1)
+		return nil, app.AuthFailed(err)
 	}
-	svc := app.NewListService(store)
-	runner := cli.NewRunner(svc, os.Stdout, os.Stderr)
-	os.Exit(runner.Run(context.Background(), os.Args[1:]))
+	return app.NewListService(store), nil
 }

@@ -82,6 +82,27 @@ func TestRunner_listErrorJSON(t *testing.T) {
 	}
 }
 
+func TestRunner_helpDoesNotBuildListService(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	called := false
+	runner := cli.NewRunner(cli.Services{List: func() (*app.ListService, error) {
+		called = true
+		return nil, assert.AnError
+	}}, &stdout, &stderr)
+
+	code := runner.Run(context.Background(), []string{"--help"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d", code)
+	}
+	if called {
+		t.Fatal("list service should not be built for help")
+	}
+	if !strings.Contains(stdout.String(), "Usage:") {
+		t.Fatalf("missing help output:\n%s", stdout.String())
+	}
+}
+
 func newRunner(stdout *bytes.Buffer, stderr *bytes.Buffer, err error) *cli.Runner {
 	store := &inmemory.EligibleAssignments{
 		Assignments: []domain.EligibleAssignment{
@@ -96,7 +117,9 @@ func newRunner(stdout *bytes.Buffer, stderr *bytes.Buffer, err error) *cli.Runne
 		},
 		Err: err,
 	}
-	return cli.NewRunner(app.NewListService(store), stdout, stderr)
+	return cli.NewRunner(cli.Services{List: func() (*app.ListService, error) {
+		return app.NewListService(store), nil
+	}}, stdout, stderr)
 }
 
 func runnerTime(value string) time.Time {
