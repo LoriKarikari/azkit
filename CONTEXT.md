@@ -28,6 +28,10 @@ _Avoid_: Resource group scope, target group
 A configured permission to activate an Azure resource role when needed.
 _Avoid_: Available role, inactive role
 
+**Eligibility expiry**:
+The time when an eligible assignment stops being available for activation.
+_Avoid_: Max duration, activation duration
+
 **Activation**:
 A time-bound elevation from eligible assignment to active Azure resource role assignment.
 _Avoid_: Login, assume role
