@@ -115,7 +115,7 @@ func resolveSubscription(input string, eligible []domain.EligibleAssignment) (st
 func resolveByID(id string, eligible []domain.EligibleAssignment) (string, error) {
 	prefix := "/subscriptions/" + id
 	for _, a := range eligible {
-		if strings.HasPrefix(a.ScopeID, prefix) {
+		if a.SubscriptionID == id || strings.HasPrefix(a.ScopeID, prefix) {
 			return id, nil
 		}
 	}
@@ -131,12 +131,21 @@ func resolveByName(name string, eligible []domain.EligibleAssignment) (string, e
 
 	seen := map[string]string{}
 	for _, a := range eligible {
-		if a.ScopeType == domain.ScopeSubscription && strings.ToLower(a.ScopeName) == lower {
-			id := strings.TrimPrefix(a.ScopeID, "/subscriptions/")
-			if idx := strings.Index(id, "/"); idx != -1 {
-				id = id[:idx]
+		if strings.ToLower(a.SubscriptionName) == lower {
+			id := a.SubscriptionID
+			if id == "" {
+				id = subscriptionIDFromScope(a.ScopeID)
 			}
-			seen[id] = a.ScopeName
+			if id != "" {
+				seen[id] = a.SubscriptionName
+			}
+			continue
+		}
+		if a.ScopeType == domain.ScopeSubscription && strings.ToLower(a.ScopeName) == lower {
+			id := subscriptionIDFromScope(a.ScopeID)
+			if id != "" {
+				seen[id] = a.ScopeName
+			}
 		}
 	}
 
@@ -160,6 +169,17 @@ func resolveByName(name string, eligible []domain.EligibleAssignment) (string, e
 		return id, nil
 	}
 	return "", nil
+}
+
+func subscriptionIDFromScope(scopeID string) string {
+	id := strings.TrimPrefix(scopeID, "/subscriptions/")
+	if id == scopeID {
+		return ""
+	}
+	if idx := strings.Index(id, "/"); idx != -1 {
+		id = id[:idx]
+	}
+	return id
 }
 
 func resolveResourceGroup(subscriptionID, name string, eligible []domain.EligibleAssignment) (string, error) {

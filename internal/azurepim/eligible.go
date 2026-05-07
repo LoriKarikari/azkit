@@ -20,7 +20,8 @@ type EligibleAssignments struct {
 }
 
 type subscription struct {
-	ID string
+	ID   string
+	Name string
 }
 
 type subscriptionSource interface {
@@ -62,6 +63,10 @@ func (a *EligibleAssignments) ListEligible(ctx context.Context) ([]domain.Eligib
 		if err != nil {
 			return nil, err
 		}
+		for i := range as {
+			as[i].SubscriptionID = sub.ID
+			as[i].SubscriptionName = sub.Name
+		}
 		all = append(all, as...)
 	}
 	return all, nil
@@ -85,7 +90,11 @@ func (a azureSubscriptions) ListSubscriptions(ctx context.Context) ([]subscripti
 		}
 		for _, sub := range page.Value {
 			if sub.SubscriptionID != nil {
-				subs = append(subs, subscription{ID: *sub.SubscriptionID})
+				s := subscription{ID: *sub.SubscriptionID}
+				if sub.DisplayName != nil {
+					s.Name = *sub.DisplayName
+				}
+				subs = append(subs, s)
 			}
 		}
 	}

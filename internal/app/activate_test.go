@@ -94,6 +94,28 @@ func TestActivation_byResourceGroup(t *testing.T) {
 	}
 }
 
+func TestActivation_byResourceGroupWithSubscriptionName(t *testing.T) {
+	store := &inmemory.EligibleAssignments{
+		Assignments: []domain.EligibleAssignment{
+			{ID: "sched-1", Role: "Contributor", RoleDefID: "/roleDefs/111", PrincipalID: "user-1",
+				ScopeID: "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/prod-rg", ScopeType: domain.ScopeResourceGroup, ScopeName: "prod-rg",
+				SubscriptionID: "00000000-0000-0000-0000-000000000000", SubscriptionName: "Production Platform"},
+		},
+	}
+	act := &testActivator{result: okResult(t, 2*time.Hour)}
+	svc := app.NewActivationService(store, act)
+
+	got, err := svc.Activate(context.Background(), domain.ActivationRequest{
+		Subscription: "production platform", ResourceGroup: "prod-rg", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.Role != "Contributor" {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+}
+
 func TestActivation_unknownSubscription(t *testing.T) {
 	store := &inmemory.EligibleAssignments{}
 	svc := app.NewActivationService(store, &testActivator{})
