@@ -64,6 +64,29 @@ func TestEligibleAssignments_returnsScheduleError(t *testing.T) {
 	}
 }
 
+func TestEligibleAssignments_failsWholeListWhenSubscriptionScheduleFails(t *testing.T) {
+	want := app.AzureAPIError(errors.New("sub-b failed"))
+	adapter := newEligibleAssignments(
+		fakeSubscriptions{subs: []subscription{{ID: "sub-a"}, {ID: "sub-b"}}},
+		fakeSchedules{
+			assignments: map[string][]domain.EligibleAssignment{
+				"sub-a": {{ID: "a1"}},
+			},
+			errors: map[string]error{
+				"sub-b": want,
+			},
+		},
+	)
+
+	got, err := adapter.ListEligible(context.Background())
+	if !errors.Is(err, want) {
+		t.Fatalf("want schedule error, got %v", err)
+	}
+	if got != nil {
+		t.Fatalf("want no partial assignments, got %+v", got)
+	}
+}
+
 func TestEligibleAssignments_skipsBlankSubscriptionID(t *testing.T) {
 	schedules := fakeSchedules{assignments: map[string][]domain.EligibleAssignment{
 		"sub-a": {{ID: "a1"}},
@@ -190,12 +213,16 @@ func (f fakeSubscriptions) ListSubscriptions(context.Context) ([]subscription, e
 
 type fakeSchedules struct {
 	assignments map[string][]domain.EligibleAssignment
+	errors      map[string]error
 	err         error
 }
 
 func (f fakeSchedules) ListForSubscription(_ context.Context, subscriptionID string) ([]domain.EligibleAssignment, error) {
 	if f.err != nil {
 		return nil, f.err
+	}
+	if err := f.errors[subscriptionID]; err != nil {
+		return nil, err
 	}
 	return f.assignments[subscriptionID], nil
 }
