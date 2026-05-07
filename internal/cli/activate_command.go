@@ -16,7 +16,6 @@ type ActivateCmd struct {
 	Role          string        `required:"" help:"Role display name or definition ID"`
 	Reason        string        `required:"" help:"Justification for the activation"`
 	Duration      time.Duration `default:"2h" help:"How long the role stays active"`
-	WaitTimeout   time.Duration `default:"60s" help:"How long to wait for activation to propagate"`
 	JSON          bool          `help:"Output as JSON"`
 }
 
@@ -57,11 +56,8 @@ func (c *ActivateCmd) waitForActive(ctx context.Context, services Services, resu
 		return nil
 	}
 
-	timeout := c.WaitTimeout
-	if timeout <= 0 {
-		timeout = 60 * time.Second
-	}
-	deadline, cancel := context.WithTimeout(ctx, timeout)
+	const defaultWaitTimeout = 60 * time.Second
+	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
 	defer cancel()
 
 	_, _ = io.WriteString(streams.Stderr, "Waiting for activation to propagate...")
