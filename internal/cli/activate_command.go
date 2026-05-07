@@ -60,25 +60,27 @@ func (c *ActivateCmd) waitForActive(ctx context.Context, services Services, resu
 	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
 	defer cancel()
 
-	_, _ = io.WriteString(streams.Stderr, "Waiting for activation to propagate...")
+	spinner := newSpinner(streams.Stderr)
+	label := fmt.Sprintf("Waiting for %s on %s", result.Role, result.ScopeName)
+	start := time.Now()
 
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-deadline.Done():
-			_, _ = io.WriteString(streams.Stderr, " timeout.\n")
+			spinner.done(fmt.Sprintf("Timeout waiting for %s on %s", result.Role, result.ScopeName))
 			return nil
 		case <-ticker.C:
+			spinner.tick(label, time.Since(start))
 			as, err := statusSvc.Status(ctx)
 			if err != nil {
-				_, _ = io.WriteString(streams.Stderr, ".")
 				continue
 			}
 			for _, a := range as {
 				if a.Role == result.Role && a.ScopeID == result.ScopeID && a.Status == domain.ActiveAssignmentActive {
-					_, _ = io.WriteString(streams.Stderr, " done.\n")
+					spinner.done(fmt.Sprintf("✓ %s is active on %s", result.Role, result.ScopeName))
 					return &domain.ActivationResult{
 						Role:      a.Role,
 						ScopeID:   a.ScopeID,
@@ -90,7 +92,6 @@ func (c *ActivateCmd) waitForActive(ctx context.Context, services Services, resu
 					}
 				}
 			}
-			_, _ = io.WriteString(streams.Stderr, ".")
 		}
 	}
 }
