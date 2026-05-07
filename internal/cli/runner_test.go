@@ -20,8 +20,8 @@ func TestRunner_listHuman(t *testing.T) {
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, nil)
 
-	if err := runner.Run(context.Background(), []string{"list"}); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	if code := runner.Run(context.Background(), []string{"list"}); code != 0 {
+		t.Fatalf("want exit 0, got %d", code)
 	}
 
 	got := stdout.String()
@@ -38,8 +38,8 @@ func TestRunner_listJSON(t *testing.T) {
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, nil)
 
-	if err := runner.Run(context.Background(), []string{"list", "--json"}); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	if code := runner.Run(context.Background(), []string{"list", "--json"}); code != 0 {
+		t.Fatalf("want exit 0, got %d", code)
 	}
 
 	got := stdout.String()
@@ -48,17 +48,37 @@ func TestRunner_listJSON(t *testing.T) {
 	}
 }
 
-func TestRunner_listError(t *testing.T) {
+func TestRunner_listErrorHuman(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	runner := newRunner(&stdout, &stderr, assert.AnError)
+	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
 
-	err := runner.Run(context.Background(), []string{"list"})
-	if err == nil {
-		t.Fatal("want error, got nil")
+	code := runner.Run(context.Background(), []string{"list"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
 	}
 	if stdout.String() != "" {
 		t.Fatalf("want empty stdout, got: %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "Error: Could not authenticate with Azure.") {
+		t.Fatalf("missing human error:\n%s", stderr.String())
+	}
+}
+
+func TestRunner_listErrorJSON(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
+
+	code := runner.Run(context.Background(), []string{"list", "--json"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("want empty stdout, got: %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `"code": "authentication_failed"`) {
+		t.Fatalf("missing JSON error code:\n%s", stderr.String())
 	}
 }
 

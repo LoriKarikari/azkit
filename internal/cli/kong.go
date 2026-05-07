@@ -26,7 +26,7 @@ func NewRunner(service *app.ListService, stdout io.Writer, stderr io.Writer) *Ru
 	}
 }
 
-func (r *Runner) Run(ctx context.Context, args []string) error {
+func (r *Runner) Run(ctx context.Context, args []string) int {
 	model := CLI{}
 	parser, err := kong.New(
 		&model,
@@ -37,13 +37,23 @@ func (r *Runner) Run(ctx context.Context, args []string) error {
 		kong.Bind(r.streams),
 	)
 	if err != nil {
-		return err
+		_, _ = io.WriteString(r.streams.Stderr, RenderError(err, false))
+		return 1
 	}
 	parsed, err := parser.Parse(args)
 	if err != nil {
-		return err
+		_, _ = io.WriteString(r.streams.Stderr, err.Error()+"\n")
+		return 1
 	}
-	return parsed.Run()
+	if err := parsed.Run(); err != nil {
+		_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(model, parsed)))
+		return 1
+	}
+	return 0
+}
+
+func wantsJSON(model CLI, parsed *kong.Context) bool {
+	return parsed.Command() == "list" && model.List.JSON
 }
 
 type ListCmd struct {
