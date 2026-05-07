@@ -5,12 +5,38 @@ import (
 	"encoding/json"
 	"fmt"
 	"text/tabwriter"
+	"time"
 
 	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
+type activationJSON struct {
+	Role      string          `json:"role"`
+	Scope     activationScope `json:"scope"`
+	Duration  string          `json:"duration"`
+	StartedAt string          `json:"started_at"`
+	ExpiresAt string          `json:"expires_at"`
+	Reason    string          `json:"reason"`
+}
+
+type activationScope struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 func renderActivationJSON(result *domain.ActivationResult) string {
-	b, _ := json.MarshalIndent(result, "", "  ")
+	out := activationJSON{
+		Role: result.Role,
+		Scope: activationScope{
+			ID:   result.ScopeID,
+			Name: result.ScopeName,
+		},
+		Duration:  result.Duration.String(),
+		StartedAt: renderTime(result.StartedAt),
+		ExpiresAt: renderTime(result.ExpiresAt),
+		Reason:    result.Reason,
+	}
+	b, _ := json.MarshalIndent(out, "", "  ")
 	return string(b) + "\n"
 }
 
@@ -23,4 +49,11 @@ func renderActivationHuman(result *domain.ActivationResult) string {
 	fmt.Fprintf(w, "Reason:\t%s\n", result.Reason)
 	w.Flush()
 	return buf.String()
+}
+
+func renderTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.UTC().Format(time.RFC3339)
 }
