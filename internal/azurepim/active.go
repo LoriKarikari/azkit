@@ -3,7 +3,6 @@ package azurepim
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -107,33 +106,12 @@ func activeInstanceToDomain(s *armauthorization.RoleAssignmentScheduleInstance, 
 	if s.Properties.EndDateTime != nil {
 		a.EndTime = *s.Properties.EndDateTime
 	}
-	if s.Properties.ExpandedProperties == nil {
-		return a, true
-	}
-	if s.Properties.ExpandedProperties.RoleDefinition != nil {
-		if s.Properties.ExpandedProperties.RoleDefinition.DisplayName != nil {
-			a.Role = *s.Properties.ExpandedProperties.RoleDefinition.DisplayName
-		}
-		if s.Properties.ExpandedProperties.RoleDefinition.ID != nil {
-			a.RoleDefID = *s.Properties.ExpandedProperties.RoleDefinition.ID
-		}
-	}
-	if s.Properties.ExpandedProperties.Scope == nil {
-		return a, true
-	}
-	if s.Properties.ExpandedProperties.Scope.DisplayName != nil {
-		a.ScopeName = *s.Properties.ExpandedProperties.Scope.DisplayName
-	}
-	if s.Properties.ExpandedProperties.Scope.ID != nil {
-		a.ScopeID = *s.Properties.ExpandedProperties.Scope.ID
-	}
-	typeStr := ""
-	if s.Properties.ExpandedProperties.Scope.Type != nil {
-		typeStr = *s.Properties.ExpandedProperties.Scope.Type
-	}
-	if strings.Contains(typeStr, "resourceGroup") || strings.Contains(typeStr, "resourceGroups") {
-		a.ScopeType = domain.ScopeResourceGroup
-	}
+	mapping := assignmentFromExpanded(s.Properties.ExpandedProperties)
+	a.Role = mapping.Role
+	a.RoleDefID = mapping.RoleDefID
+	a.ScopeID = mapping.ScopeID
+	a.ScopeName = mapping.ScopeName
+	a.ScopeType = mapping.ScopeType
 	return a, true
 }
 
