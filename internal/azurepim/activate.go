@@ -14,33 +14,36 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
+type roleAssignmentRequests interface {
+	Create(context.Context, string, string, armauthorization.RoleAssignmentScheduleRequest) (armauthorization.RoleAssignmentScheduleRequestsClientCreateResponse, error)
+}
+
 type ActivationStore struct {
-	cred azcore.TokenCredential
+	requests       roleAssignmentRequests
+	now            func() time.Time
+	newRequestName func() string
 }
 
 func NewActivationStore(cred azcore.TokenCredential) *ActivationStore {
-	return &ActivationStore{cred: cred}
+	return newActivationStore(azureRoleAssignmentRequests{cred: cred}, time.Now, uuid.NewString)
+}
+
+func newActivationStore(requests roleAssignmentRequests, now func() time.Time, newRequestName func() string) *ActivationStore {
+	return &ActivationStore{requests: requests, now: now, newRequestName: newRequestName}
 }
 
 func (a *ActivationStore) Activate(ctx context.Context, principalID, roleDefID, scope, reason string, duration time.Duration) (*domain.ActivationResult, error) {
-	client, err := armauthorization.NewRoleAssignmentScheduleRequestsClient(a.cred, nil)
-	if err != nil {
-		return nil, app.AuthFailed(err)
-	}
-
-	reqName := uuid.NewString()
 	reqType := armauthorization.RequestTypeSelfActivate
-	now := time.Now().UTC()
+	now := a.now().UTC()
 	expType := armauthorization.TypeAfterDuration
 	isoDur := durationToISO8601(duration)
 
 	parameters := armauthorization.RoleAssignmentScheduleRequest{
 		Properties: &armauthorization.RoleAssignmentScheduleRequestProperties{
-			PrincipalID:                     &principalID,
-			RoleDefinitionID:                &roleDefID,
-			RequestType:                     &reqType,
-			Justification:                   &reason,
-			LinkedRoleEligibilityScheduleID: nil,
+			PrincipalID:      &principalID,
+			RoleDefinitionID: &roleDefID,
+			RequestType:      &reqType,
+			Justification:    &reason,
 			ScheduleInfo: &armauthorization.RoleAssignmentScheduleRequestPropertiesScheduleInfo{
 				StartDateTime: &now,
 				Expiration: &armauthorization.RoleAssignmentScheduleRequestPropertiesScheduleInfoExpiration{
@@ -51,7 +54,7 @@ func (a *ActivationStore) Activate(ctx context.Context, principalID, roleDefID, 
 		},
 	}
 
-	resp, err := client.Create(ctx, scope, reqName, parameters, nil)
+	resp, err := a.requests.Create(ctx, scope, a.newRequestName(), parameters)
 	if err != nil {
 		if strings.Contains(err.Error(), "AuthorizationFailed") || strings.Contains(err.Error(), "403") {
 			return nil, app.PermissionDenied(err)
@@ -79,6 +82,18 @@ func (a *ActivationStore) Activate(ctx context.Context, principalID, roleDefID, 
 		}
 	}
 	return result, nil
+}
+
+type azureRoleAssignmentRequests struct {
+	cred azcore.TokenCredential
+}
+
+func (a azureRoleAssignmentRequests) Create(ctx context.Context, scope string, requestName string, parameters armauthorization.RoleAssignmentScheduleRequest) (armauthorization.RoleAssignmentScheduleRequestsClientCreateResponse, error) {
+	client, err := armauthorization.NewRoleAssignmentScheduleRequestsClient(a.cred, nil)
+	if err != nil {
+		return armauthorization.RoleAssignmentScheduleRequestsClientCreateResponse{}, app.AuthFailed(err)
+	}
+	return client.Create(ctx, scope, requestName, parameters, nil)
 }
 
 func durationToISO8601(d time.Duration) string {
