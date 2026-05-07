@@ -16,7 +16,7 @@ import (
 
 func TestEligibleAssignments_listsAcrossSubscriptions(t *testing.T) {
 	adapter := newEligibleAssignments(
-		fakeSubscriptions{subs: []subscription{{ID: "sub-a"}, {ID: "sub-b"}}},
+		fakeSubscriptions{subs: []subscription{{ID: "sub-a", Name: "Sub A"}, {ID: "sub-b", Name: "Sub B"}}},
 		fakeSchedules{assignments: map[string][]domain.EligibleAssignment{
 			"sub-a": {{ID: "a1", Role: "Contributor"}},
 			"sub-b": {{ID: "a2", Role: "Reader"}},
@@ -32,6 +32,9 @@ func TestEligibleAssignments_listsAcrossSubscriptions(t *testing.T) {
 	}
 	if got[0].ID != "a1" || got[1].ID != "a2" {
 		t.Fatalf("unexpected assignments: %+v", got)
+	}
+	if got[0].SubscriptionName != "Sub A" || got[1].SubscriptionName != "Sub B" {
+		t.Fatalf("unexpected subscription names: %+v", got)
 	}
 }
 

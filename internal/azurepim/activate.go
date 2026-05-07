@@ -3,7 +3,6 @@ package azurepim
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -58,10 +57,7 @@ func (a *ActivationStore) Activate(ctx context.Context, target domain.Activation
 
 	resp, err := a.requests.Create(ctx, target.Assignment.ScopeID, a.newRequestName(), parameters)
 	if err != nil {
-		if strings.Contains(err.Error(), "AuthorizationFailed") || strings.Contains(err.Error(), "403") {
-			return nil, app.PermissionDenied(err)
-		}
-		return nil, app.AzureAPIError(err)
+		return nil, azurePIMOperationError(err)
 	}
 
 	result := &domain.ActivationResult{
