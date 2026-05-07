@@ -113,9 +113,9 @@ type testActivator struct {
 	calledReason      string
 }
 
-func (a *testActivator) Activate(_ context.Context, principalID, roleDefID, scope, reason string, duration time.Duration) (*domain.ActivationResult, error) {
-	a.calledPrincipalID = principalID
-	a.calledReason = reason
+func (a *testActivator) Activate(_ context.Context, target domain.ActivationTarget) (*domain.ActivationResult, error) {
+	a.calledPrincipalID = target.Assignment.PrincipalID
+	a.calledReason = target.Reason
 	if a.err != nil {
 		return nil, a.err
 	}

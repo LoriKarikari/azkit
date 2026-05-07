@@ -28,6 +28,12 @@ type ActivationRequest struct {
 	Duration time.Duration
 }
 
+type ActivationTarget struct {
+	Assignment EligibleAssignment
+	Reason     string
+	Duration   time.Duration
+}
+
 type ActivationResult struct {
 	Role      string
 	ScopeID   string

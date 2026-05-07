@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/LoriKarikari/pimctl/internal/domain"
 )
@@ -38,7 +37,7 @@ var ErrMissingReason = &Error{
 }
 
 type ActivationStore interface {
-	Activate(ctx context.Context, principalID, roleDefID, scope, reason string, duration time.Duration) (*domain.ActivationResult, error)
+	Activate(context.Context, domain.ActivationTarget) (*domain.ActivationResult, error)
 }
 
 type ActivationService struct {
@@ -73,7 +72,11 @@ func (s *ActivationService) Activate(ctx context.Context, req domain.ActivationR
 		return nil, ErrEligibleNotFound
 	}
 
-	return s.activator.Activate(ctx, match.PrincipalID, match.RoleDefID, match.ScopeID, req.Reason, req.Duration)
+	return s.activator.Activate(ctx, domain.ActivationTarget{
+		Assignment: *match,
+		Reason:     req.Reason,
+		Duration:   req.Duration,
+	})
 }
 
 func validateActivation(req domain.ActivationRequest) error {

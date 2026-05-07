@@ -32,18 +32,20 @@ func newActivationStore(requests roleAssignmentRequests, now func() time.Time, n
 	return &ActivationStore{requests: requests, now: now, newRequestName: newRequestName}
 }
 
-func (a *ActivationStore) Activate(ctx context.Context, principalID, roleDefID, scope, reason string, duration time.Duration) (*domain.ActivationResult, error) {
+func (a *ActivationStore) Activate(ctx context.Context, target domain.ActivationTarget) (*domain.ActivationResult, error) {
 	reqType := armauthorization.RequestTypeSelfActivate
 	now := a.now().UTC()
 	expType := armauthorization.TypeAfterDuration
-	isoDur := durationToISO8601(duration)
+	isoDur := durationToISO8601(target.Duration)
+	linkedScheduleID := target.Assignment.ID
 
 	parameters := armauthorization.RoleAssignmentScheduleRequest{
 		Properties: &armauthorization.RoleAssignmentScheduleRequestProperties{
-			PrincipalID:      &principalID,
-			RoleDefinitionID: &roleDefID,
-			RequestType:      &reqType,
-			Justification:    &reason,
+			PrincipalID:                     &target.Assignment.PrincipalID,
+			RoleDefinitionID:                &target.Assignment.RoleDefID,
+			RequestType:                     &reqType,
+			Justification:                   &target.Reason,
+			LinkedRoleEligibilityScheduleID: &linkedScheduleID,
 			ScheduleInfo: &armauthorization.RoleAssignmentScheduleRequestPropertiesScheduleInfo{
 				StartDateTime: &now,
 				Expiration: &armauthorization.RoleAssignmentScheduleRequestPropertiesScheduleInfoExpiration{
@@ -54,7 +56,7 @@ func (a *ActivationStore) Activate(ctx context.Context, principalID, roleDefID, 
 		},
 	}
 
-	resp, err := a.requests.Create(ctx, scope, a.newRequestName(), parameters)
+	resp, err := a.requests.Create(ctx, target.Assignment.ScopeID, a.newRequestName(), parameters)
 	if err != nil {
 		if strings.Contains(err.Error(), "AuthorizationFailed") || strings.Contains(err.Error(), "403") {
 			return nil, app.PermissionDenied(err)
@@ -63,13 +65,13 @@ func (a *ActivationStore) Activate(ctx context.Context, principalID, roleDefID, 
 	}
 
 	result := &domain.ActivationResult{
-		Role:      "",
-		ScopeID:   scope,
-		ScopeName: "",
-		Duration:  duration,
+		Role:      target.Assignment.Role,
+		ScopeID:   target.Assignment.ScopeID,
+		ScopeName: target.Assignment.ScopeName,
+		Duration:  target.Duration,
 		StartedAt: now,
-		ExpiresAt: now.Add(duration),
-		Reason:    reason,
+		ExpiresAt: now.Add(target.Duration),
+		Reason:    target.Reason,
 	}
 	if resp.Properties != nil {
 		if resp.Properties.ExpandedProperties != nil {
