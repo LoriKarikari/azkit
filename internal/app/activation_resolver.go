@@ -88,7 +88,7 @@ func resolveByName(name string, eligible []domain.EligibleAssignment) (string, e
 	name = strings.TrimSpace(name)
 	lower := strings.ToLower(name)
 
-	seen := map[string]string{}
+	seen := make(map[string]string, len(eligible))
 	for _, a := range eligible {
 		if strings.ToLower(a.SubscriptionName) == lower {
 			id := a.SubscriptionID
@@ -115,7 +115,7 @@ func resolveByName(name string, eligible []domain.EligibleAssignment) (string, e
 		}
 	}
 	if len(seen) > 1 {
-		var matches []string
+		matches := make([]string, 0, len(seen))
 		for id, displayName := range seen {
 			matches = append(matches, fmt.Sprintf("%s (%s)", displayName, id))
 		}
@@ -168,7 +168,7 @@ func selectorSuggestions(values []string) string {
 }
 
 func subscriptionSuggestions(eligible []domain.EligibleAssignment) []string {
-	seen := map[string]bool{}
+	seen := make(map[string]struct{}, len(eligible))
 	for _, a := range eligible {
 		name := a.SubscriptionName
 		if name == "" && a.ScopeType == domain.ScopeSubscription {
@@ -181,7 +181,7 @@ func subscriptionSuggestions(eligible []domain.EligibleAssignment) []string {
 			name = subscriptionIDFromScope(a.ScopeID)
 		}
 		if name != "" {
-			seen[name] = true
+			seen[name] = struct{}{}
 		}
 	}
 	return sortedKeys(seen)
@@ -189,16 +189,16 @@ func subscriptionSuggestions(eligible []domain.EligibleAssignment) []string {
 
 func resourceGroupSuggestions(subscriptionID string, eligible []domain.EligibleAssignment) []string {
 	prefix := fmt.Sprintf("/subscriptions/%s/resourceGroups/", subscriptionID)
-	seen := map[string]bool{}
+	seen := make(map[string]struct{}, len(eligible))
 	for _, a := range eligible {
 		if a.ScopeType == domain.ScopeResourceGroup && strings.HasPrefix(a.ScopeID, prefix) && a.ScopeName != "" {
-			seen[a.ScopeName] = true
+			seen[a.ScopeName] = struct{}{}
 		}
 	}
 	return sortedKeys(seen)
 }
 
-func sortedKeys(seen map[string]bool) []string {
+func sortedKeys(seen map[string]struct{}) []string {
 	values := make([]string, 0, len(seen))
 	for value := range seen {
 		values = append(values, value)

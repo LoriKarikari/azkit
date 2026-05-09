@@ -27,9 +27,10 @@ func TestActiveAssignments_listsCurrentActiveInstancesAcrossSubscriptions(t *tes
 			},
 		}},
 		func() time.Time { return now },
+		nil,
 	)
 
-	got, err := adapter.ListActive(context.Background())
+	got, err := adapter.ListActive(t.Context())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -52,9 +53,10 @@ func TestActiveAssignments_returnsInstanceError(t *testing.T) {
 		fakeSubscriptions{subs: []subscription{{ID: "sub-a"}}},
 		fakeActiveInstances{err: app.PermissionDenied(errors.New("denied"))},
 		func() time.Time { return activeTime("2026-05-07T18:00:00Z") },
+		nil,
 	)
 
-	_, err := adapter.ListActive(context.Background())
+	_, err := adapter.ListActive(t.Context())
 	if err == nil {
 		t.Fatalf("want error, got nil")
 	}

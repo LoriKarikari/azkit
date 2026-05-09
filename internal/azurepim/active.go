@@ -3,6 +3,7 @@ package azurepim
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -16,18 +17,37 @@ type ActiveAssignments struct {
 	subscriptions subscriptionSource
 	instances     activeInstanceSource
 	now           func() time.Time
+	log           *slog.Logger
 }
 
 type activeInstanceSource interface {
-	ListForScope(context.Context, string) ([]*armauthorization.RoleAssignmentScheduleInstance, error)
+	ListForScope(
+		context.Context,
+		string,
+	) ([]*armauthorization.RoleAssignmentScheduleInstance, error)
 }
 
-func NewActiveAssignments(cred azcore.TokenCredential) *ActiveAssignments {
-	return newActiveAssignments(azureSubscriptions{cred: cred}, azureActiveInstances{cred: cred}, time.Now)
+func NewActiveAssignments(cred azcore.TokenCredential, log *slog.Logger) *ActiveAssignments {
+	return newActiveAssignments(
+		azureSubscriptions{cred: cred},
+		azureActiveInstances{cred: cred},
+		time.Now,
+		log,
+	)
 }
 
-func newActiveAssignments(subscriptions subscriptionSource, instances activeInstanceSource, now func() time.Time) *ActiveAssignments {
-	return &ActiveAssignments{subscriptions: subscriptions, instances: instances, now: now}
+func newActiveAssignments(
+	subscriptions subscriptionSource,
+	instances activeInstanceSource,
+	now func() time.Time,
+	log *slog.Logger,
+) *ActiveAssignments {
+	return &ActiveAssignments{
+		subscriptions: subscriptions,
+		instances:     instances,
+		now:           now,
+		log:           logger(log),
+	}
 }
 
 func (a *ActiveAssignments) ListActive(ctx context.Context) ([]domain.ActiveAssignment, error) {
@@ -36,16 +56,29 @@ func (a *ActiveAssignments) ListActive(ctx context.Context) ([]domain.ActiveAssi
 		return nil, app.AuthFailed(err)
 	}
 
-	var all []domain.ActiveAssignment
+	a.log.Debug("listed subscriptions", slog.Int("count", len(subs)))
+
+	all := []domain.ActiveAssignment{}
 	for _, sub := range subs {
 		if sub.ID == "" {
 			continue
 		}
 		scope := fmt.Sprintf("/subscriptions/%s", sub.ID)
+		a.log.Debug("listing active assignment instances", slog.String("scope", scope))
 		instances, err := a.instances.ListForScope(ctx, scope)
 		if err != nil {
+			a.log.Debug(
+				"active assignment instance listing failed",
+				slog.String("scope", scope),
+				slog.Any("error", err),
+			)
 			return nil, err
 		}
+		a.log.Debug(
+			"listed active assignment instances",
+			slog.String("scope", scope),
+			slog.Int("count", len(instances)),
+		)
 		for _, instance := range instances {
 			assignment, ok := activeInstanceToDomain(instance, a.now().UTC())
 			if !ok {
@@ -63,7 +96,10 @@ type azureActiveInstances struct {
 	cred azcore.TokenCredential
 }
 
-func (a azureActiveInstances) ListForScope(ctx context.Context, scope string) ([]*armauthorization.RoleAssignmentScheduleInstance, error) {
+func (a azureActiveInstances) ListForScope(
+	ctx context.Context,
+	scope string,
+) ([]*armauthorization.RoleAssignmentScheduleInstance, error) {
 	client, err := armauthorization.NewRoleAssignmentScheduleInstancesClient(a.cred, nil)
 	if err != nil {
 		return nil, app.AuthFailed(err)
@@ -74,7 +110,7 @@ func (a azureActiveInstances) ListForScope(ctx context.Context, scope string) ([
 		Filter: &filter,
 	})
 
-	var instances []*armauthorization.RoleAssignmentScheduleInstance
+	instances := []*armauthorization.RoleAssignmentScheduleInstance{}
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
 		if err != nil {
@@ -85,12 +121,18 @@ func (a azureActiveInstances) ListForScope(ctx context.Context, scope string) ([
 	return instances, nil
 }
 
-func activeInstanceToDomain(s *armauthorization.RoleAssignmentScheduleInstance, now time.Time) (domain.ActiveAssignment, bool) {
+func activeInstanceToDomain(
+	s *armauthorization.RoleAssignmentScheduleInstance,
+	now time.Time,
+) (domain.ActiveAssignment, bool) {
 	if !currentActiveInstance(s, now) {
 		return domain.ActiveAssignment{}, false
 	}
 
-	a := domain.ActiveAssignment{ScopeType: domain.ScopeSubscription, Status: domain.ActiveAssignmentActive}
+	a := domain.ActiveAssignment{
+		ScopeType: domain.ScopeSubscription,
+		Status:    domain.ActiveAssignmentActive,
+	}
 	if s.ID != nil {
 		a.ID = *s.ID
 	}

@@ -1,7 +1,6 @@
 package app_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +18,7 @@ func TestListService_populated(t *testing.T) {
 		},
 	}
 	svc := app.NewListService(store)
-	got, err := svc.List(context.Background())
+	got, err := svc.List(t.Context())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -36,7 +35,7 @@ func TestListService_empty(t *testing.T) {
 		Assignments: []domain.EligibleAssignment{},
 	}
 	svc := app.NewListService(store)
-	got, err := svc.List(context.Background())
+	got, err := svc.List(t.Context())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -48,7 +47,7 @@ func TestListService_empty(t *testing.T) {
 func TestListService_adapterError(t *testing.T) {
 	store := &inmemory.EligibleAssignments{Err: assert.AnError}
 	svc := app.NewListService(store)
-	_, err := svc.List(context.Background())
+	_, err := svc.List(t.Context())
 	if err == nil {
 		t.Fatal("want error, got nil")
 	}
