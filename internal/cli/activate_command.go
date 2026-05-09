@@ -16,7 +16,7 @@ type ActivateCmd struct {
 	ResourceGroup string        `help:"Resource group name (requires --subscription)"`
 	Role          string        `required:"" help:"Role display name or definition ID"`
 	Reason        string        `required:"" help:"Justification for the activation"`
-	Duration      time.Duration `default:"2h" help:"How long the role stays active"`
+	Duration      time.Duration `help:"How long the role stays active (default from config)"`
 	JSON          bool          `help:"Output as JSON"`
 }
 
@@ -25,13 +25,26 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 	if err != nil {
 		return err
 	}
+	duration := c.Duration
+	subscription := c.Subscription
+	if streams.Config != nil {
+		if duration == 0 {
+			duration = streams.Config.DefaultDuration
+		}
+		if subscription == "" && c.Scope == "" {
+			subscription = streams.Config.SubscriptionID
+		}
+	}
+	if duration == 0 {
+		duration = 2 * time.Hour
+	}
 	result, err := act.Activate(ctx, domain.ActivationRequest{
 		ScopeID:       c.Scope,
-		Subscription:  c.Subscription,
+		Subscription:  subscription,
 		ResourceGroup: c.ResourceGroup,
 		Role:          c.Role,
 		Reason:        c.Reason,
-		Duration:      c.Duration,
+		Duration:      duration,
 	})
 	if err != nil {
 		return err
@@ -74,7 +87,8 @@ func (c *ActivateCmd) waitForActive(
 	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
 	defer cancel()
 
-	_, _ = io.WriteString(streams.Stderr, fmt.Sprintf("Waiting for %s on %s...\n", result.Role, result.ScopeName))
+	waitingMessage := fmt.Sprintf("Waiting for %s on %s...\n", result.Role, result.ScopeName)
+	_, _ = io.WriteString(streams.Stderr, waitingMessage)
 
 	streams.Log.Debug(
 		"waiting for activation to propagate",
@@ -96,8 +110,10 @@ func (c *ActivateCmd) waitForActive(
 				continue
 			}
 			for _, a := range as {
-				if a.Role == result.Role && a.ScopeID == result.ScopeID && a.Status == domain.ActiveAssignmentActive {
-					_, _ = io.WriteString(streams.Stderr, fmt.Sprintf("✓ %s is active on %s\n", result.Role, result.ScopeName))
+				isMatchingAssignment := a.Role == result.Role && a.ScopeID == result.ScopeID
+				if isMatchingAssignment && a.Status == domain.ActiveAssignmentActive {
+					activeMessage := fmt.Sprintf("✓ %s is active on %s\n", result.Role, result.ScopeName)
+					_, _ = io.WriteString(streams.Stderr, activeMessage)
 					return &domain.ActivationResult{
 						Role:      a.Role,
 						ScopeID:   a.ScopeID,

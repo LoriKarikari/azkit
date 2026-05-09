@@ -9,12 +9,14 @@ import (
 	"github.com/alecthomas/kong"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
+	"github.com/LoriKarikari/pimctl/internal/config"
 )
 
 type Streams struct {
 	Stdout io.Writer
 	Stderr io.Writer
 	Log    *slog.Logger
+	Config *config.Config
 }
 
 type Services struct {
@@ -41,10 +43,11 @@ func (r *Runner) Log() *slog.Logger {
 }
 
 type CLI struct {
-	Verbose  bool        `short:"v" help:"Enable debug logging to stderr"`
-	List     ListCmd     `cmd:"" help:"List eligible PIM role assignments"`
-	Status   StatusCmd   `cmd:"" help:"List active PIM role assignments"`
-	Activate ActivateCmd `cmd:"" help:"Activate an eligible PIM role assignment"`
+	Verbose    bool        `short:"v" help:"Enable debug logging to stderr"`
+	ConfigPath string      `name:"config" help:"Path to config file"`
+	List       ListCmd     `cmd:"" help:"List eligible PIM role assignments"`
+	Status     StatusCmd   `cmd:"" help:"List active PIM role assignments"`
+	Activate   ActivateCmd `cmd:"" help:"Activate an eligible PIM role assignment"`
 }
 
 type kongExit int
@@ -85,6 +88,13 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 	}
 	r.log = slog.New(slog.NewTextHandler(r.streams.Stderr, &slog.HandlerOptions{Level: level}))
 	r.streams.Log = r.log
+
+	cfg, err := config.Load(model.ConfigPath)
+	if err != nil {
+		_, _ = io.WriteString(r.streams.Stderr, err.Error()+"\n")
+		return 1
+	}
+	r.streams.Config = cfg
 
 	if err := parsed.Run(); err != nil {
 		_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(model, parsed)))
