@@ -21,7 +21,7 @@ func TestRunner_listHuman(t *testing.T) {
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, nil)
 
-	if code := runner.Run(context.Background(), []string{"list"}); code != 0 {
+	if code := runner.Run(t.Context(), []string{"list"}); code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}
 
@@ -39,7 +39,7 @@ func TestRunner_listJSON(t *testing.T) {
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, nil)
 
-	if code := runner.Run(context.Background(), []string{"list", "--json"}); code != 0 {
+	if code := runner.Run(t.Context(), []string{"list", "--json"}); code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}
 
@@ -54,7 +54,7 @@ func TestRunner_listErrorHuman(t *testing.T) {
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
 
-	code := runner.Run(context.Background(), []string{"list"})
+	code := runner.Run(t.Context(), []string{"list"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -71,7 +71,7 @@ func TestRunner_listErrorJSON(t *testing.T) {
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
 
-	code := runner.Run(context.Background(), []string{"list", "--json"})
+	code := runner.Run(t.Context(), []string{"list", "--json"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -88,7 +88,7 @@ func TestRunner_statusHuman(t *testing.T) {
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, nil)
 
-	if code := runner.Run(context.Background(), []string{"status"}); code != 0 {
+	if code := runner.Run(t.Context(), []string{"status"}); code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}
 
@@ -106,7 +106,7 @@ func TestRunner_statusErrorJSON(t *testing.T) {
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
 
-	code := runner.Run(context.Background(), []string{"status", "--json"})
+	code := runner.Run(t.Context(), []string{"status", "--json"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -131,7 +131,7 @@ func TestRunner_helpDoesNotBuildListService(t *testing.T) {
 		return nil, assert.AnError
 	}}, &stdout, &stderr)
 
-	code := runner.Run(context.Background(), []string{"--help"})
+	code := runner.Run(t.Context(), []string{"--help"})
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}

@@ -24,7 +24,7 @@ func TestEligibleAssignments_listsAcrossSubscriptions(t *testing.T) {
 		nil,
 	)
 
-	got, err := adapter.ListEligible(context.Background())
+	got, err := adapter.ListEligible(t.Context())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestEligibleAssignments_wrapsSubscriptionError(t *testing.T) {
 		nil,
 	)
 
-	_, err := adapter.ListEligible(context.Background())
+	_, err := adapter.ListEligible(t.Context())
 	var appErr *app.Error
 	if !errors.As(err, &appErr) {
 		t.Fatalf("want app error, got %T", err)
@@ -64,7 +64,7 @@ func TestEligibleAssignments_returnsScheduleError(t *testing.T) {
 		nil,
 	)
 
-	_, err := adapter.ListEligible(context.Background())
+	_, err := adapter.ListEligible(t.Context())
 	if !errors.Is(err, want) {
 		t.Fatalf("want schedule error, got %v", err)
 	}
@@ -85,7 +85,7 @@ func TestEligibleAssignments_failsWholeListWhenSubscriptionScheduleFails(t *test
 		nil,
 	)
 
-	got, err := adapter.ListEligible(context.Background())
+	got, err := adapter.ListEligible(t.Context())
 	if !errors.Is(err, want) {
 		t.Fatalf("want schedule error, got %v", err)
 	}
@@ -104,7 +104,7 @@ func TestEligibleAssignments_skipsBlankSubscriptionID(t *testing.T) {
 		nil,
 	)
 
-	got, err := adapter.ListEligible(context.Background())
+	got, err := adapter.ListEligible(t.Context())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
