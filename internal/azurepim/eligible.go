@@ -69,7 +69,7 @@ func (a *EligibleAssignments) ListEligible(ctx context.Context) ([]domain.Eligib
 
 	a.log.Debug("listed subscriptions", slog.Int("count", len(subs)))
 
-	var all []domain.EligibleAssignment
+	all := []domain.EligibleAssignment{}
 	for _, sub := range subs {
 		if sub.ID == "" {
 			continue
@@ -108,7 +108,7 @@ func (a azureSubscriptions) ListSubscriptions(ctx context.Context) ([]subscripti
 		return nil, err
 	}
 	pager := client.NewListPager(nil)
-	var subs []subscription
+	subs := []subscription{}
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
 		if err != nil {
@@ -146,7 +146,7 @@ func (a azureEligibilitySchedules) ListForSubscription(
 		Filter: &filter,
 	})
 
-	var assignments []domain.EligibleAssignment
+	assignments := []domain.EligibleAssignment{}
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
 		if err != nil {

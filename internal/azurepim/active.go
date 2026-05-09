@@ -58,7 +58,7 @@ func (a *ActiveAssignments) ListActive(ctx context.Context) ([]domain.ActiveAssi
 
 	a.log.Debug("listed subscriptions", slog.Int("count", len(subs)))
 
-	var all []domain.ActiveAssignment
+	all := []domain.ActiveAssignment{}
 	for _, sub := range subs {
 		if sub.ID == "" {
 			continue
@@ -110,7 +110,7 @@ func (a azureActiveInstances) ListForScope(
 		Filter: &filter,
 	})
 
-	var instances []*armauthorization.RoleAssignmentScheduleInstance
+	instances := []*armauthorization.RoleAssignmentScheduleInstance{}
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
 		if err != nil {
