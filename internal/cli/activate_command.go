@@ -105,7 +105,7 @@ func (c *ActivateCmd) waitForActive(
 			_, _ = io.WriteString(streams.Stderr, "Timeout waiting for activation.\n")
 			return nil
 		case <-ticker.C:
-			as, err := statusSvc.Status(ctx)
+			as, err := statusSvc.Status(deadline)
 			if err != nil {
 				continue
 			}
