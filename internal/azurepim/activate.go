@@ -3,6 +3,7 @@ package azurepim
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -21,14 +22,15 @@ type ActivationStore struct {
 	requests       roleAssignmentRequests
 	now            func() time.Time
 	newRequestName func() string
+	log            *slog.Logger
 }
 
-func NewActivationStore(cred azcore.TokenCredential) *ActivationStore {
-	return newActivationStore(azureRoleAssignmentRequests{cred: cred}, time.Now, uuid.NewString)
+func NewActivationStore(cred azcore.TokenCredential, log *slog.Logger) *ActivationStore {
+	return newActivationStore(azureRoleAssignmentRequests{cred: cred}, time.Now, uuid.NewString, log)
 }
 
-func newActivationStore(requests roleAssignmentRequests, now func() time.Time, newRequestName func() string) *ActivationStore {
-	return &ActivationStore{requests: requests, now: now, newRequestName: newRequestName}
+func newActivationStore(requests roleAssignmentRequests, now func() time.Time, newRequestName func() string, log *slog.Logger) *ActivationStore {
+	return &ActivationStore{requests: requests, now: now, newRequestName: newRequestName, log: logger(log)}
 }
 
 func (a *ActivationStore) Activate(ctx context.Context, target domain.ActivationTarget) (*domain.ActivationResult, error) {
@@ -55,10 +57,14 @@ func (a *ActivationStore) Activate(ctx context.Context, target domain.Activation
 		},
 	}
 
-	resp, err := a.requests.Create(ctx, target.Assignment.ScopeID, a.newRequestName(), parameters)
+	requestName := a.newRequestName()
+	a.log.Debug("creating activation request", slog.String("request_name", requestName), slog.String("scope", target.Assignment.ScopeID), slog.String("role", target.Assignment.Role))
+	resp, err := a.requests.Create(ctx, target.Assignment.ScopeID, requestName, parameters)
 	if err != nil {
+		a.log.Debug("activation request failed", slog.String("request_name", requestName), slog.String("scope", target.Assignment.ScopeID), slog.Any("error", err))
 		return nil, azurePIMOperationError(err)
 	}
+	a.log.Debug("activation request created", slog.String("request_name", requestName), slog.String("scope", target.Assignment.ScopeID))
 
 	result := &domain.ActivationResult{
 		Role:      target.Assignment.Role,

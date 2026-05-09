@@ -18,9 +18,9 @@ type Streams struct {
 }
 
 type Services struct {
-	List     func() (*app.ListService, error)
-	Status   func() (*app.StatusService, error)
-	Activate func() (*app.ActivationService, error)
+	List     func(*slog.Logger) (*app.ListService, error)
+	Status   func(*slog.Logger) (*app.StatusService, error)
+	Activate func(*slog.Logger) (*app.ActivationService, error)
 }
 
 type Runner struct {

@@ -6,12 +6,12 @@ import (
 )
 
 type StatusCmd struct {
-	JSON    bool `help:"Output as JSON"`
+	JSON     bool `help:"Output as JSON"`
 	Extended bool `help:"Show more details"`
 }
 
 func (c *StatusCmd) Run(ctx context.Context, services Services, streams *Streams) error {
-	service, err := services.Status()
+	service, err := services.Status(streams.Log)
 	if err != nil {
 		return err
 	}

@@ -21,6 +21,7 @@ func TestEligibleAssignments_listsAcrossSubscriptions(t *testing.T) {
 			"sub-a": {{ID: "a1", Role: "Contributor"}},
 			"sub-b": {{ID: "a2", Role: "Reader"}},
 		}},
+		nil,
 	)
 
 	got, err := adapter.ListEligible(context.Background())
@@ -42,6 +43,7 @@ func TestEligibleAssignments_wrapsSubscriptionError(t *testing.T) {
 	adapter := newEligibleAssignments(
 		fakeSubscriptions{err: errors.New("token failed")},
 		fakeSchedules{},
+		nil,
 	)
 
 	_, err := adapter.ListEligible(context.Background())
@@ -59,6 +61,7 @@ func TestEligibleAssignments_returnsScheduleError(t *testing.T) {
 	adapter := newEligibleAssignments(
 		fakeSubscriptions{subs: []subscription{{ID: "sub-a"}}},
 		fakeSchedules{err: want},
+		nil,
 	)
 
 	_, err := adapter.ListEligible(context.Background())
@@ -79,6 +82,7 @@ func TestEligibleAssignments_failsWholeListWhenSubscriptionScheduleFails(t *test
 				"sub-b": want,
 			},
 		},
+		nil,
 	)
 
 	got, err := adapter.ListEligible(context.Background())
@@ -97,6 +101,7 @@ func TestEligibleAssignments_skipsBlankSubscriptionID(t *testing.T) {
 	adapter := newEligibleAssignments(
 		fakeSubscriptions{subs: []subscription{{ID: ""}, {ID: "sub-a"}}},
 		schedules,
+		nil,
 	)
 
 	got, err := adapter.ListEligible(context.Background())

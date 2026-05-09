@@ -7,12 +7,12 @@ import (
 )
 
 type ListCmd struct {
-	JSON    bool `help:"Output as JSON"`
+	JSON     bool `help:"Output as JSON"`
 	Extended bool `help:"Show resource IDs and assignment IDs"`
 }
 
 func (c *ListCmd) Run(ctx context.Context, services Services, streams *Streams) error {
-	service, err := services.List()
+	service, err := services.List(streams.Log)
 	if err != nil {
 		return err
 	}

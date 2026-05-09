@@ -3,6 +3,7 @@ package azurepim
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -16,18 +17,19 @@ type ActiveAssignments struct {
 	subscriptions subscriptionSource
 	instances     activeInstanceSource
 	now           func() time.Time
+	log           *slog.Logger
 }
 
 type activeInstanceSource interface {
 	ListForScope(context.Context, string) ([]*armauthorization.RoleAssignmentScheduleInstance, error)
 }
 
-func NewActiveAssignments(cred azcore.TokenCredential) *ActiveAssignments {
-	return newActiveAssignments(azureSubscriptions{cred: cred}, azureActiveInstances{cred: cred}, time.Now)
+func NewActiveAssignments(cred azcore.TokenCredential, log *slog.Logger) *ActiveAssignments {
+	return newActiveAssignments(azureSubscriptions{cred: cred}, azureActiveInstances{cred: cred}, time.Now, log)
 }
 
-func newActiveAssignments(subscriptions subscriptionSource, instances activeInstanceSource, now func() time.Time) *ActiveAssignments {
-	return &ActiveAssignments{subscriptions: subscriptions, instances: instances, now: now}
+func newActiveAssignments(subscriptions subscriptionSource, instances activeInstanceSource, now func() time.Time, log *slog.Logger) *ActiveAssignments {
+	return &ActiveAssignments{subscriptions: subscriptions, instances: instances, now: now, log: logger(log)}
 }
 
 func (a *ActiveAssignments) ListActive(ctx context.Context) ([]domain.ActiveAssignment, error) {
@@ -36,16 +38,21 @@ func (a *ActiveAssignments) ListActive(ctx context.Context) ([]domain.ActiveAssi
 		return nil, app.AuthFailed(err)
 	}
 
+	a.log.Debug("listed subscriptions", slog.Int("count", len(subs)))
+
 	var all []domain.ActiveAssignment
 	for _, sub := range subs {
 		if sub.ID == "" {
 			continue
 		}
 		scope := fmt.Sprintf("/subscriptions/%s", sub.ID)
+		a.log.Debug("listing active assignment instances", slog.String("scope", scope))
 		instances, err := a.instances.ListForScope(ctx, scope)
 		if err != nil {
+			a.log.Debug("active assignment instance listing failed", slog.String("scope", scope), slog.Any("error", err))
 			return nil, err
 		}
+		a.log.Debug("listed active assignment instances", slog.String("scope", scope), slog.Int("count", len(instances)))
 		for _, instance := range instances {
 			assignment, ok := activeInstanceToDomain(instance, a.now().UTC())
 			if !ok {

@@ -3,6 +3,7 @@ package azurepim
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -16,6 +17,7 @@ import (
 type EligibleAssignments struct {
 	subscriptions subscriptionSource
 	schedules     eligibilityScheduleSource
+	log           *slog.Logger
 }
 
 type subscription struct {
@@ -36,15 +38,15 @@ func NewEligibleAssignments() (*EligibleAssignments, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewEligibleAssignmentsFromCred(cred), nil
+	return NewEligibleAssignmentsFromCred(cred, nil), nil
 }
 
-func NewEligibleAssignmentsFromCred(cred azcore.TokenCredential) *EligibleAssignments {
-	return newEligibleAssignments(azureSubscriptions{cred: cred}, azureEligibilitySchedules{cred: cred})
+func NewEligibleAssignmentsFromCred(cred azcore.TokenCredential, log *slog.Logger) *EligibleAssignments {
+	return newEligibleAssignments(azureSubscriptions{cred: cred}, azureEligibilitySchedules{cred: cred}, log)
 }
 
-func newEligibleAssignments(subscriptions subscriptionSource, schedules eligibilityScheduleSource) *EligibleAssignments {
-	return &EligibleAssignments{subscriptions: subscriptions, schedules: schedules}
+func newEligibleAssignments(subscriptions subscriptionSource, schedules eligibilityScheduleSource, log *slog.Logger) *EligibleAssignments {
+	return &EligibleAssignments{subscriptions: subscriptions, schedules: schedules, log: logger(log)}
 }
 
 func (a *EligibleAssignments) ListEligible(ctx context.Context) ([]domain.EligibleAssignment, error) {
@@ -53,15 +55,20 @@ func (a *EligibleAssignments) ListEligible(ctx context.Context) ([]domain.Eligib
 		return nil, app.AuthFailed(err)
 	}
 
+	a.log.Debug("listed subscriptions", slog.Int("count", len(subs)))
+
 	var all []domain.EligibleAssignment
 	for _, sub := range subs {
 		if sub.ID == "" {
 			continue
 		}
+		a.log.Debug("listing eligible assignments", slog.String("subscription_id", sub.ID))
 		as, err := a.schedules.ListForSubscription(ctx, sub.ID)
 		if err != nil {
+			a.log.Debug("eligible assignment listing failed", slog.String("subscription_id", sub.ID), slog.Any("error", err))
 			return nil, err
 		}
+		a.log.Debug("listed eligible assignments", slog.String("subscription_id", sub.ID), slog.Int("count", len(as)))
 		for i := range as {
 			as[i].SubscriptionID = sub.ID
 			as[i].SubscriptionName = sub.Name

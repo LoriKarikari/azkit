@@ -3,6 +3,7 @@ package cli_test
 import (
 	"bytes"
 	"context"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
@@ -121,12 +122,12 @@ func TestRunner_helpDoesNotBuildListService(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	called := false
-	runner := cli.NewRunner(cli.Services{List: func() (*app.ListService, error) {
+	runner := cli.NewRunner(cli.Services{List: func(*slog.Logger) (*app.ListService, error) {
 		called = true
 		return nil, assert.AnError
-	}, Status: func() (*app.StatusService, error) {
+	}, Status: func(*slog.Logger) (*app.StatusService, error) {
 		return nil, assert.AnError
-	}, Activate: func() (*app.ActivationService, error) {
+	}, Activate: func(*slog.Logger) (*app.ActivationService, error) {
 		return nil, assert.AnError
 	}}, &stdout, &stderr)
 
@@ -170,11 +171,11 @@ func newRunner(stdout *bytes.Buffer, stderr *bytes.Buffer, err error) *cli.Runne
 		},
 		Err: err,
 	}
-	return cli.NewRunner(cli.Services{List: func() (*app.ListService, error) {
+	return cli.NewRunner(cli.Services{List: func(*slog.Logger) (*app.ListService, error) {
 		return app.NewListService(eligibleStore), nil
-	}, Status: func() (*app.StatusService, error) {
+	}, Status: func(*slog.Logger) (*app.StatusService, error) {
 		return app.NewStatusService(activeStore), nil
-	}, Activate: func() (*app.ActivationService, error) {
+	}, Activate: func(*slog.Logger) (*app.ActivationService, error) {
 		return nil, assert.AnError
 	}}, stdout, stderr)
 }

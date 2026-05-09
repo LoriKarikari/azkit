@@ -21,7 +21,7 @@ type ActivateCmd struct {
 }
 
 func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Streams) error {
-	act, err := services.Activate()
+	act, err := services.Activate(streams.Log)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 }
 
 func (c *ActivateCmd) waitForActive(ctx context.Context, services Services, result *domain.ActivationResult, streams *Streams) *domain.ActivationResult {
-	statusSvc, err := services.Status()
+	statusSvc, err := services.Status(streams.Log)
 	if err != nil {
 		return nil
 	}
