@@ -45,13 +45,26 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 	if c.JSON {
 		_, err = io.WriteString(streams.Stdout, renderActivationJSON(result))
 	} else {
-		_, _ = io.WriteString(streams.Stderr, fmt.Sprintf("Activating %s on %s for %s\n", result.Role, result.ScopeName, result.Duration))
+		_, _ = io.WriteString(
+			streams.Stderr,
+			fmt.Sprintf(
+				"Activating %s on %s for %s\n",
+				result.Role,
+				result.ScopeName,
+				result.Duration,
+			),
+		)
 		_, err = io.WriteString(streams.Stdout, renderActivationHuman(result))
 	}
 	return err
 }
 
-func (c *ActivateCmd) waitForActive(ctx context.Context, services Services, result *domain.ActivationResult, streams *Streams) *domain.ActivationResult {
+func (c *ActivateCmd) waitForActive(
+	ctx context.Context,
+	services Services,
+	result *domain.ActivationResult,
+	streams *Streams,
+) *domain.ActivationResult {
 	statusSvc, err := services.Status(streams.Log)
 	if err != nil {
 		return nil
@@ -63,7 +76,11 @@ func (c *ActivateCmd) waitForActive(ctx context.Context, services Services, resu
 
 	_, _ = io.WriteString(streams.Stderr, fmt.Sprintf("Waiting for %s on %s...\n", result.Role, result.ScopeName))
 
-	streams.Log.Debug("waiting for activation to propagate", slog.String("role", result.Role), slog.String("scope", result.ScopeID))
+	streams.Log.Debug(
+		"waiting for activation to propagate",
+		slog.String("role", result.Role),
+		slog.String("scope", result.ScopeID),
+	)
 
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()

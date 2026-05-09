@@ -42,11 +42,23 @@ func NewEligibleAssignments() (*EligibleAssignments, error) {
 }
 
 func NewEligibleAssignmentsFromCred(cred azcore.TokenCredential, log *slog.Logger) *EligibleAssignments {
-	return newEligibleAssignments(azureSubscriptions{cred: cred}, azureEligibilitySchedules{cred: cred}, log)
+	return newEligibleAssignments(
+		azureSubscriptions{cred: cred},
+		azureEligibilitySchedules{cred: cred},
+		log,
+	)
 }
 
-func newEligibleAssignments(subscriptions subscriptionSource, schedules eligibilityScheduleSource, log *slog.Logger) *EligibleAssignments {
-	return &EligibleAssignments{subscriptions: subscriptions, schedules: schedules, log: logger(log)}
+func newEligibleAssignments(
+	subscriptions subscriptionSource,
+	schedules eligibilityScheduleSource,
+	log *slog.Logger,
+) *EligibleAssignments {
+	return &EligibleAssignments{
+		subscriptions: subscriptions,
+		schedules:     schedules,
+		log:           logger(log),
+	}
 }
 
 func (a *EligibleAssignments) ListEligible(ctx context.Context) ([]domain.EligibleAssignment, error) {
@@ -65,10 +77,18 @@ func (a *EligibleAssignments) ListEligible(ctx context.Context) ([]domain.Eligib
 		a.log.Debug("listing eligible assignments", slog.String("subscription_id", sub.ID))
 		as, err := a.schedules.ListForSubscription(ctx, sub.ID)
 		if err != nil {
-			a.log.Debug("eligible assignment listing failed", slog.String("subscription_id", sub.ID), slog.Any("error", err))
+			a.log.Debug(
+				"eligible assignment listing failed",
+				slog.String("subscription_id", sub.ID),
+				slog.Any("error", err),
+			)
 			return nil, err
 		}
-		a.log.Debug("listed eligible assignments", slog.String("subscription_id", sub.ID), slog.Int("count", len(as)))
+		a.log.Debug(
+			"listed eligible assignments",
+			slog.String("subscription_id", sub.ID),
+			slog.Int("count", len(as)),
+		)
 		for i := range as {
 			as[i].SubscriptionID = sub.ID
 			as[i].SubscriptionName = sub.Name
@@ -111,7 +131,10 @@ type azureEligibilitySchedules struct {
 	cred azcore.TokenCredential
 }
 
-func (a azureEligibilitySchedules) ListForSubscription(ctx context.Context, subscriptionID string) ([]domain.EligibleAssignment, error) {
+func (a azureEligibilitySchedules) ListForSubscription(
+	ctx context.Context,
+	subscriptionID string,
+) ([]domain.EligibleAssignment, error) {
 	client, err := armauthorization.NewRoleEligibilitySchedulesClient(a.cred, nil)
 	if err != nil {
 		return nil, app.AuthFailed(err)
