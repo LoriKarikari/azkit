@@ -25,13 +25,14 @@ type Config struct {
 
 func Load(cfgPath string) (*Config, error) {
 	k := koanf.New(".")
+	explicitPath := cfgPath != ""
 
 	if cfgPath == "" {
 		cfgPath = defaultConfigPath()
 	}
 	if cfgPath != "" {
 		if err := k.Load(file.Provider(cfgPath), yaml.Parser()); err != nil {
-			if !os.IsNotExist(err) {
+			if explicitPath || !os.IsNotExist(err) {
 				return nil, fmt.Errorf("config file %s: %w", cfgPath, err)
 			}
 		}
@@ -41,42 +42,56 @@ func Load(cfgPath string) (*Config, error) {
 		return nil, fmt.Errorf("env vars: %w", err)
 	}
 
+	defaultDuration, err := durationValue(k, "default_duration", 2*time.Hour)
+	if err != nil {
+		return nil, err
+	}
+	noColor, err := boolValue(k, "no_color")
+	if err != nil {
+		return nil, err
+	}
+
 	c := &Config{
-		DefaultDuration: durationValue(k, "default_duration", 2*time.Hour),
+		DefaultDuration: defaultDuration,
 		TenantID:        k.String("tenant_id"),
 		SubscriptionID:  k.String("subscription_id"),
-		NoColor:         boolValue(k, "no_color"),
+		NoColor:         noColor,
 	}
 	return c, nil
 }
 
-func durationValue(k *koanf.Koanf, key string, fallback time.Duration) time.Duration {
+func durationValue(k *koanf.Koanf, key string, fallback time.Duration) (time.Duration, error) {
 	v := k.Get(key)
 	switch val := v.(type) {
+	case nil:
+		return fallback, nil
 	case time.Duration:
-		return val
+		return val, nil
 	case string:
 		d, err := time.ParseDuration(val)
-		if err == nil {
-			return d
+		if err != nil {
+			return 0, fmt.Errorf("config %s: %w", key, err)
 		}
+		return d, nil
 	}
-	return fallback
+	return 0, fmt.Errorf("config %s: expected duration, got %T", key, v)
 }
 
-func boolValue(k *koanf.Koanf, key string) bool {
-	if v := k.Get(key); v != nil {
-		switch val := v.(type) {
-		case bool:
-			return val
-		case string:
-			b, err := strconv.ParseBool(val)
-			if err == nil {
-				return b
-			}
+func boolValue(k *koanf.Koanf, key string) (bool, error) {
+	v := k.Get(key)
+	switch val := v.(type) {
+	case nil:
+		return false, nil
+	case bool:
+		return val, nil
+	case string:
+		b, err := strconv.ParseBool(val)
+		if err != nil {
+			return false, fmt.Errorf("config %s: %w", key, err)
 		}
+		return b, nil
 	}
-	return false
+	return false, fmt.Errorf("config %s: expected bool, got %T", key, v)
 }
 
 func envMapper(key string, value string) (string, any) {

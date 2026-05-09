@@ -84,24 +84,47 @@ func TestLoad_invalidYAML(t *testing.T) {
 	}
 }
 
-func TestLoad_missingFileSucceeds(t *testing.T) {
-	c, err := config.Load("/nonexistent/path/config.yaml")
-	if err != nil {
-		t.Fatalf("missing file should not error: %v", err)
-	}
-	if c.DefaultDuration != 2*time.Hour {
-		t.Fatalf("want default when file missing, got %v", c.DefaultDuration)
+func TestLoad_explicitMissingFileFails(t *testing.T) {
+	_, err := config.Load("/nonexistent/path/config.yaml")
+	if err == nil {
+		t.Fatal("want missing explicit file error, got nil")
 	}
 }
 
 func TestLoad_envOnlyDuration(t *testing.T) {
 	t.Setenv("PIMCTL_DEFAULT_DURATION", "90m")
 
-	c, err := config.Load("/nonexistent/path/config.yaml")
+	c, err := config.Load("")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if c.DefaultDuration != 90*time.Minute {
 		t.Fatalf("want 90m, got %v", c.DefaultDuration)
+	}
+}
+
+func TestLoad_invalidDurationFails(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	if err := os.WriteFile(path, []byte("default_duration: nope\n"), 0644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	_, err := config.Load(path)
+	if err == nil {
+		t.Fatal("want invalid duration error, got nil")
+	}
+}
+
+func TestLoad_invalidBoolFails(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	if err := os.WriteFile(path, []byte("no_color: sometimes\n"), 0644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	_, err := config.Load(path)
+	if err == nil {
+		t.Fatal("want invalid bool error, got nil")
 	}
 }
