@@ -91,7 +91,7 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 
 	cfg, err := config.Load(model.ConfigPath)
 	if err != nil {
-		_, _ = io.WriteString(r.streams.Stderr, err.Error()+"\n")
+		_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(model, parsed)))
 		return 1
 	}
 	r.streams.Config = cfg

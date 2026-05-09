@@ -33,7 +33,7 @@ func Load(cfgPath string) (*Config, error) {
 	if cfgPath != "" {
 		if err := k.Load(file.Provider(cfgPath), yaml.Parser()); err != nil {
 			if explicitPath || !os.IsNotExist(err) {
-				return nil, fmt.Errorf("config file %s: %w", cfgPath, err)
+				return nil, fmt.Errorf("config file %q: %w", cfgPath, err)
 			}
 		}
 	}
