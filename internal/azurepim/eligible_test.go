@@ -21,9 +21,10 @@ func TestEligibleAssignments_listsAcrossSubscriptions(t *testing.T) {
 			"sub-a": {{ID: "a1", Role: "Contributor"}},
 			"sub-b": {{ID: "a2", Role: "Reader"}},
 		}},
+		nil,
 	)
 
-	got, err := adapter.ListEligible(context.Background())
+	got, err := adapter.ListEligible(t.Context())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -42,9 +43,10 @@ func TestEligibleAssignments_wrapsSubscriptionError(t *testing.T) {
 	adapter := newEligibleAssignments(
 		fakeSubscriptions{err: errors.New("token failed")},
 		fakeSchedules{},
+		nil,
 	)
 
-	_, err := adapter.ListEligible(context.Background())
+	_, err := adapter.ListEligible(t.Context())
 	var appErr *app.Error
 	if !errors.As(err, &appErr) {
 		t.Fatalf("want app error, got %T", err)
@@ -59,9 +61,10 @@ func TestEligibleAssignments_returnsScheduleError(t *testing.T) {
 	adapter := newEligibleAssignments(
 		fakeSubscriptions{subs: []subscription{{ID: "sub-a"}}},
 		fakeSchedules{err: want},
+		nil,
 	)
 
-	_, err := adapter.ListEligible(context.Background())
+	_, err := adapter.ListEligible(t.Context())
 	if !errors.Is(err, want) {
 		t.Fatalf("want schedule error, got %v", err)
 	}
@@ -79,9 +82,10 @@ func TestEligibleAssignments_failsWholeListWhenSubscriptionScheduleFails(t *test
 				"sub-b": want,
 			},
 		},
+		nil,
 	)
 
-	got, err := adapter.ListEligible(context.Background())
+	got, err := adapter.ListEligible(t.Context())
 	if !errors.Is(err, want) {
 		t.Fatalf("want schedule error, got %v", err)
 	}
@@ -97,9 +101,10 @@ func TestEligibleAssignments_skipsBlankSubscriptionID(t *testing.T) {
 	adapter := newEligibleAssignments(
 		fakeSubscriptions{subs: []subscription{{ID: ""}, {ID: "sub-a"}}},
 		schedules,
+		nil,
 	)
 
-	got, err := adapter.ListEligible(context.Background())
+	got, err := adapter.ListEligible(t.Context())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

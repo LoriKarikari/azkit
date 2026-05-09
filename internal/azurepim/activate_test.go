@@ -27,9 +27,9 @@ func TestActivationStore_createsSelfActivateRequest(t *testing.T) {
 			},
 		},
 	}
-	store := newActivationStore(requests, func() time.Time { return activationTime("2026-05-07T18:00:00Z") }, func() string { return "request-id" })
+	store := newActivationStore(requests, func() time.Time { return activationTime("2026-05-07T18:00:00Z") }, func() string { return "request-id" }, nil)
 
-	result, err := store.Activate(context.Background(), domain.ActivationTarget{
+	result, err := store.Activate(t.Context(), domain.ActivationTarget{
 		Assignment: domain.EligibleAssignment{
 			ID:          "eligibility-schedule-id",
 			PrincipalID: "user-1",
@@ -83,9 +83,9 @@ func TestActivationStore_createsSelfActivateRequest(t *testing.T) {
 
 func TestActivationStore_mapsPermissionDenied(t *testing.T) {
 	requests := &fakeRoleAssignmentRequests{err: errors.New("403 AuthorizationFailed")}
-	store := newActivationStore(requests, time.Now, func() string { return "request-id" })
+	store := newActivationStore(requests, time.Now, func() string { return "request-id" }, nil)
 
-	_, err := store.Activate(context.Background(), domain.ActivationTarget{
+	_, err := store.Activate(t.Context(), domain.ActivationTarget{
 		Assignment: domain.EligibleAssignment{PrincipalID: "user-1", RoleDefID: "/roleDefs/111", ScopeID: "/subscriptions/abc"},
 		Reason:     "Deploy",
 		Duration:   2 * time.Hour,

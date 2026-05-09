@@ -21,7 +21,7 @@ func TestActivation_byScopeID(t *testing.T) {
 	act := &testActivator{result: okResult(t, 2*time.Hour)}
 	svc := app.NewActivationService(store, act)
 
-	got, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	got, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		ScopeID: "/sub/abc", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	if err != nil {
@@ -42,7 +42,7 @@ func TestActivation_bySubscriptionID(t *testing.T) {
 	act := &testActivator{result: okResult(t, 2*time.Hour)}
 	svc := app.NewActivationService(store, act)
 
-	got, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	got, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		Subscription: "00000000-0000-0000-0000-000000000000", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	if err != nil {
@@ -63,7 +63,7 @@ func TestActivation_bySubscriptionName(t *testing.T) {
 	act := &testActivator{result: okResult(t, 2*time.Hour)}
 	svc := app.NewActivationService(store, act)
 
-	got, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	got, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		Subscription: "Production Platform", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	if err != nil {
@@ -84,7 +84,7 @@ func TestActivation_byResourceGroup(t *testing.T) {
 	act := &testActivator{result: okResult(t, 2*time.Hour)}
 	svc := app.NewActivationService(store, act)
 
-	got, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	got, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		Subscription: "00000000-0000-0000-0000-000000000000", ResourceGroup: "prod-rg", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	if err != nil {
@@ -106,7 +106,7 @@ func TestActivation_byResourceGroupWithSubscriptionName(t *testing.T) {
 	act := &testActivator{result: okResult(t, 2*time.Hour)}
 	svc := app.NewActivationService(store, act)
 
-	got, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	got, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		Subscription: "production platform", ResourceGroup: "prod-rg", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	if err != nil {
@@ -125,7 +125,7 @@ func TestActivation_unknownSubscription(t *testing.T) {
 	}
 	svc := app.NewActivationService(store, &testActivator{})
 
-	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	_, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		Subscription: "nonexistent", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	var appErr *app.Error
@@ -145,7 +145,7 @@ func TestActivation_unknownResourceGroup(t *testing.T) {
 	}
 	svc := app.NewActivationService(store, &testActivator{})
 
-	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	_, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		Subscription: "00000000-0000-0000-0000-000000000000", ResourceGroup: "missing-rg", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	var appErr *app.Error
@@ -166,7 +166,7 @@ func TestActivation_ambiguousSubscription(t *testing.T) {
 	}
 	svc := app.NewActivationService(store, &testActivator{})
 
-	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	_, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		Subscription: "prod", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	var appErr *app.Error
@@ -178,7 +178,7 @@ func TestActivation_ambiguousSubscription(t *testing.T) {
 func TestActivation_conflictingSelectors(t *testing.T) {
 	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &testActivator{})
 
-	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	_, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		ScopeID: "/sub/abc", Subscription: "abc", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	if !errors.Is(err, app.ErrConflictingSelectors) {
@@ -188,7 +188,7 @@ func TestActivation_conflictingSelectors(t *testing.T) {
 
 func TestActivation_missingScope(t *testing.T) {
 	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &testActivator{})
-	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	_, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	if !errors.Is(err, app.ErrMissingScope) {
@@ -198,7 +198,7 @@ func TestActivation_missingScope(t *testing.T) {
 
 func TestActivation_missingRole(t *testing.T) {
 	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &testActivator{})
-	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	_, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		ScopeID: "/sub/abc", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	if !errors.Is(err, app.ErrMissingRole) {
@@ -208,7 +208,7 @@ func TestActivation_missingRole(t *testing.T) {
 
 func TestActivation_missingReason(t *testing.T) {
 	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &testActivator{})
-	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	_, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		ScopeID: "/sub/abc", Role: "Contributor", Reason: "   ", Duration: 2 * time.Hour,
 	})
 	if !errors.Is(err, app.ErrMissingReason) {
@@ -223,7 +223,7 @@ func TestActivation_noMatchingAssignment(t *testing.T) {
 		},
 	}
 	svc := app.NewActivationService(store, &testActivator{})
-	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	_, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		ScopeID: "/sub/abc", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	if !errors.Is(err, app.ErrEligibleNotFound) {
@@ -233,7 +233,7 @@ func TestActivation_noMatchingAssignment(t *testing.T) {
 
 func TestActivation_invalidDuration(t *testing.T) {
 	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &testActivator{})
-	_, err := svc.Activate(context.Background(), domain.ActivationRequest{
+	_, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		ScopeID: "/sub/abc", Role: "Contributor", Reason: "Deploy", Duration: -1,
 	})
 	if err == nil {
