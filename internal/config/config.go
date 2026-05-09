@@ -20,20 +20,20 @@ type Config struct {
 	DefaultDuration time.Duration `koanf:"default_duration"`
 	TenantID        string        `koanf:"tenant_id"`
 	SubscriptionID  string        `koanf:"subscription_id"`
-	NoColor         bool          `koanf:"no_color"`
+	IsColorDisabled bool          `koanf:"no_color"`
 }
 
-func Load(cfgPath string) (*Config, error) {
+func Load(configPath string) (*Config, error) {
 	k := koanf.New(".")
-	explicitPath := cfgPath != ""
+	hasExplicitPath := configPath != ""
 
-	if cfgPath == "" {
-		cfgPath = defaultConfigPath()
+	if configPath == "" {
+		configPath = defaultConfigPath()
 	}
-	if cfgPath != "" {
-		if err := k.Load(file.Provider(cfgPath), yaml.Parser()); err != nil {
-			if explicitPath || !os.IsNotExist(err) {
-				return nil, fmt.Errorf("config file %q: %w", cfgPath, err)
+	if configPath != "" {
+		if err := k.Load(file.Provider(configPath), yaml.Parser()); err != nil {
+			if hasExplicitPath || !os.IsNotExist(err) {
+				return nil, fmt.Errorf("config file %q: %w", configPath, err)
 			}
 		}
 	}
@@ -46,7 +46,7 @@ func Load(cfgPath string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	noColor, err := boolValue(k, "no_color")
+	isColorDisabled, err := boolValue(k, "no_color")
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func Load(cfgPath string) (*Config, error) {
 		DefaultDuration: defaultDuration,
 		TenantID:        k.String("tenant_id"),
 		SubscriptionID:  k.String("subscription_id"),
-		NoColor:         noColor,
+		IsColorDisabled: isColorDisabled,
 	}
 	return c, nil
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/config"
 )
 
-func TestLoad_defaults(t *testing.T) {
+func TestLoadDefaults(t *testing.T) {
 	c, err := config.Load("")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -17,7 +17,7 @@ func TestLoad_defaults(t *testing.T) {
 	if c.DefaultDuration != 2*time.Hour {
 		t.Fatalf("want 2h default, got %v", c.DefaultDuration)
 	}
-	if c.NoColor {
+	if c.IsColorDisabled {
 		t.Fatal("want no_color false by default")
 	}
 	if c.TenantID != "" {
@@ -25,7 +25,7 @@ func TestLoad_defaults(t *testing.T) {
 	}
 }
 
-func TestLoad_fromFile(t *testing.T) {
+func TestLoadFromFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
 	contents := "default_duration: 30m\nno_color: true\ntenant_id: abc-123\n"
@@ -40,7 +40,7 @@ func TestLoad_fromFile(t *testing.T) {
 	if c.DefaultDuration != 30*time.Minute {
 		t.Fatalf("want 30m, got %v", c.DefaultDuration)
 	}
-	if !c.NoColor {
+	if !c.IsColorDisabled {
 		t.Fatal("want no_color true")
 	}
 	if c.TenantID != "abc-123" {
@@ -48,7 +48,7 @@ func TestLoad_fromFile(t *testing.T) {
 	}
 }
 
-func TestLoad_envOverridesFile(t *testing.T) {
+func TestLoadEnvOverridesFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
 	contents := "default_duration: 30m\nsubscription_id: sub-file\n"
@@ -71,7 +71,7 @@ func TestLoad_envOverridesFile(t *testing.T) {
 	}
 }
 
-func TestLoad_invalidYAML(t *testing.T) {
+func TestLoadInvalidYAML(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
 	if err := os.WriteFile(path, []byte("invalid: [unclosed"), 0644); err != nil {
@@ -84,14 +84,14 @@ func TestLoad_invalidYAML(t *testing.T) {
 	}
 }
 
-func TestLoad_explicitMissingFileFails(t *testing.T) {
+func TestLoadExplicitMissingFileFails(t *testing.T) {
 	_, err := config.Load("/nonexistent/path/config.yaml")
 	if err == nil {
 		t.Fatal("want missing explicit file error, got nil")
 	}
 }
 
-func TestLoad_envOnlyDuration(t *testing.T) {
+func TestLoadEnvOnlyDuration(t *testing.T) {
 	t.Setenv("PIMCTL_DEFAULT_DURATION", "90m")
 
 	c, err := config.Load("")
@@ -103,7 +103,7 @@ func TestLoad_envOnlyDuration(t *testing.T) {
 	}
 }
 
-func TestLoad_invalidDurationFails(t *testing.T) {
+func TestLoadInvalidDurationFails(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
 	if err := os.WriteFile(path, []byte("default_duration: nope\n"), 0644); err != nil {
@@ -116,7 +116,7 @@ func TestLoad_invalidDurationFails(t *testing.T) {
 	}
 }
 
-func TestLoad_invalidBoolFails(t *testing.T) {
+func TestLoadInvalidBoolFails(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
 	if err := os.WriteFile(path, []byte("no_color: sometimes\n"), 0644); err != nil {
