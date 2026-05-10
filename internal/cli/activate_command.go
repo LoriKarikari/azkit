@@ -22,6 +22,13 @@ type ActivateCmd struct {
 	JSON          bool          `help:"Output as JSON"`
 }
 
+type interactiveActivation struct {
+	ctx      context.Context
+	services Services
+	streams  *Streams
+	act      *app.ActivationService
+}
+
 func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Streams) error {
 	act, err := services.Activate(streams.Log)
 	if err != nil {
@@ -29,7 +36,12 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 	}
 
 	if c.needsInteractive() && interactive.IsTerminal() {
-		return c.runInteractive(ctx, services, streams, act)
+		return c.runInteractive(interactiveActivation{
+			ctx:      ctx,
+			services: services,
+			streams:  streams,
+			act:      act,
+		})
 	}
 
 	if c.Role == "" {
@@ -74,33 +86,41 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 }
 
 func (c *ActivateCmd) needsInteractive() bool {
-	return (c.Scope == "" && c.Subscription == "") || c.Role == "" || c.Reason == ""
+	hasScopeSelector := c.Scope != "" || c.Subscription != ""
+	hasRole := c.Role != ""
+	hasReason := c.Reason != ""
+	return !hasScopeSelector || !hasRole || !hasReason
 }
 
-func (c *ActivateCmd) runInteractive(ctx context.Context, services Services, streams *Streams, act *app.ActivationService) error {
-	listSvc, err := services.List(streams.Log)
+func (c *ActivateCmd) runInteractive(flow interactiveActivation) error {
+	listSvc, err := flow.services.List(flow.streams.Log)
 	if err != nil {
 		return err
 	}
-	eligible, err := listSvc.List(ctx)
+	eligible, err := listSvc.List(flow.ctx)
 	if err != nil {
 		return err
 	}
 	if len(eligible) == 0 {
-		return &app.Error{Code: "eligible_not_found", Message: "No eligible assignments found."}
+		return app.ErrEligibleNotFound
 	}
 
-	result, err := interactive.Activate(ctx, eligible, act, streams.Config)
+	result, err := interactive.Activate(
+		flow.ctx,
+		eligible,
+		flow.act,
+		flow.streams.Config,
+	)
 	if err != nil {
 		return err
 	}
 
-	confirmed := waitForActive(ctx, services, result, streams)
+	confirmed := waitForActive(flow.ctx, flow.services, result, flow.streams)
 	if confirmed != nil {
 		result = confirmed
 	}
 
-	return renderActivationResult(streams, result, c.JSON)
+	return renderActivationResult(flow.streams, result, c.JSON)
 }
 
 func renderActivationResult(streams *Streams, result *domain.ActivationResult, asJSON bool) error {
@@ -108,7 +128,12 @@ func renderActivationResult(streams *Streams, result *domain.ActivationResult, a
 		_, err := io.WriteString(streams.Stdout, renderActivationJSON(result))
 		return err
 	}
-	activatingMsg := fmt.Sprintf("Activating %s on %s for %s\n", result.Role, result.ScopeName, result.Duration)
+	activatingMsg := fmt.Sprintf(
+		"Activating %s on %s for %s\n",
+		result.Role,
+		result.ScopeName,
+		result.Duration,
+	)
 	_, _ = io.WriteString(streams.Stderr, activatingMsg)
 	_, err := io.WriteString(streams.Stdout, renderActivationHuman(result))
 	return err
@@ -154,7 +179,11 @@ func waitForActive(
 			for _, a := range as {
 				isMatch := a.Role == result.Role && a.ScopeID == result.ScopeID
 				if isMatch && a.Status == domain.ActiveAssignmentActive {
-					confirmedMsg := fmt.Sprintf("✓ %s is active on %s\n", result.Role, result.ScopeName)
+					confirmedMsg := fmt.Sprintf(
+						"✓ %s is active on %s\n",
+						result.Role,
+						result.ScopeName,
+					)
 					_, _ = io.WriteString(streams.Stderr, confirmedMsg)
 					return &domain.ActivationResult{
 						Role:      a.Role,

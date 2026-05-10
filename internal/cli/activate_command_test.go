@@ -4,33 +4,56 @@ import (
 	"bytes"
 	"context"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/cli"
-	"github.com/LoriKarikari/pimctl/internal/config"
 	"github.com/LoriKarikari/pimctl/internal/domain"
 	"github.com/LoriKarikari/pimctl/internal/inmemory"
 )
 
 type fakeActivator struct {
 	result *domain.ActivationResult
+	target domain.ActivationTarget
 	err    error
 }
 
 func (a *fakeActivator) Activate(_ context.Context, target domain.ActivationTarget) (*domain.ActivationResult, error) {
+	a.target = target
 	if a.err != nil {
 		return nil, a.err
 	}
-	return a.result, nil
+	if a.result != nil {
+		return a.result, nil
+	}
+	return &domain.ActivationResult{
+		Role:      target.Assignment.Role,
+		ScopeID:   target.Assignment.ScopeID,
+		ScopeName: target.Assignment.ScopeName,
+		Duration:  target.Duration,
+		Reason:    target.Reason,
+	}, nil
+}
+
+type activateRunnerFixture struct {
+	stdout      *bytes.Buffer
+	stderr      *bytes.Buffer
+	eligibleErr error
+	activator   *fakeActivator
 }
 
 func TestActivate_missingRoleNonInteractive(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	runner := activateRunner(t, &stdout, &stderr, nil, &fakeActivator{}, nil)
+	runner := activateRunner(t, activateRunnerFixture{
+		stdout:    &stdout,
+		stderr:    &stderr,
+		activator: &fakeActivator{},
+	})
 
 	code := runner.Run(t.Context(), []string{"activate", "--scope", "/sub/abc", "--reason", "deploy"})
 	if code != 1 {
@@ -44,7 +67,11 @@ func TestActivate_missingRoleNonInteractive(t *testing.T) {
 func TestActivate_missingReasonNonInteractive(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	runner := activateRunner(t, &stdout, &stderr, nil, &fakeActivator{}, nil)
+	runner := activateRunner(t, activateRunnerFixture{
+		stdout:    &stdout,
+		stderr:    &stderr,
+		activator: &fakeActivator{},
+	})
 
 	code := runner.Run(t.Context(), []string{"activate", "--scope", "/sub/abc", "--role", "Contributor"})
 	if code != 1 {
@@ -58,16 +85,12 @@ func TestActivate_missingReasonNonInteractive(t *testing.T) {
 func TestActivate_nonInteractiveWithAllFlags(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	activator := &fakeActivator{
-		result: &domain.ActivationResult{
-			Role:      "Contributor",
-			ScopeID:   "/subscriptions/abc",
-			ScopeName: "sub-prod",
-			Duration:  2 * time.Hour,
-			Reason:    "deploy",
-		},
-	}
-	runner := activateRunner(t, &stdout, &stderr, nil, activator, nil)
+	activator := &fakeActivator{}
+	runner := activateRunner(t, activateRunnerFixture{
+		stdout:    &stdout,
+		stderr:    &stderr,
+		activator: activator,
+	})
 
 	code := runner.Run(t.Context(), []string{
 		"activate", "--scope", "/subscriptions/abc",
@@ -84,40 +107,28 @@ func TestActivate_nonInteractiveWithAllFlags(t *testing.T) {
 func TestActivate_configDefaultDuration(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	activator := &fakeActivator{
-		result: &domain.ActivationResult{
-			Role:      "Contributor",
-			ScopeID:   "/subscriptions/abc",
-			ScopeName: "sub-prod",
-			Duration:  30 * time.Minute,
-			Reason:    "deploy",
-		},
-	}
-	cfg := &config.Config{
-		DefaultDuration: 30 * time.Minute,
-	}
-	runner := activateRunner(t, &stdout, &stderr, nil, activator, cfg)
+	activator := &fakeActivator{}
+	runner := activateRunner(t, activateRunnerFixture{
+		stdout:    &stdout,
+		stderr:    &stderr,
+		activator: activator,
+	})
+	configPath := writeConfig(t, "default_duration: 30m\n")
 
 	code := runner.Run(t.Context(), []string{
+		"--config", configPath,
 		"activate", "--scope", "/subscriptions/abc",
 		"--role", "Contributor", "--reason", "deploy",
 	})
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "Contributor") {
-		t.Fatalf("want activation output, got: %s", stdout.String())
+	if activator.target.Duration != 30*time.Minute {
+		t.Fatalf("want 30m duration, got %s", activator.target.Duration)
 	}
 }
 
-func activateRunner(
-	t *testing.T,
-	stdout *bytes.Buffer,
-	stderr *bytes.Buffer,
-	eligibleErr error,
-	activator *fakeActivator,
-	cfg *config.Config,
-) *cli.Runner {
+func activateRunner(t *testing.T, f activateRunnerFixture) *cli.Runner {
 	t.Helper()
 	eligibleStore := &inmemory.EligibleAssignments{
 		Assignments: []domain.EligibleAssignment{
@@ -130,7 +141,7 @@ func activateRunner(
 				EligibleUntil: time.Now().Add(24 * time.Hour),
 			},
 		},
-		Err: eligibleErr,
+		Err: f.eligibleErr,
 	}
 	activeStore := &testActiveAssignments{
 		Assignments: []domain.ActiveAssignment{
@@ -143,7 +154,7 @@ func activateRunner(
 			},
 		},
 	}
-	runner := cli.NewRunner(cli.Services{
+	return cli.NewRunner(cli.Services{
 		List: func(*slog.Logger) (*app.ListService, error) {
 			return app.NewListService(eligibleStore), nil
 		},
@@ -151,8 +162,16 @@ func activateRunner(
 			return app.NewStatusService(activeStore), nil
 		},
 		Activate: func(*slog.Logger) (*app.ActivationService, error) {
-			return app.NewActivationService(eligibleStore, activator), nil
+			return app.NewActivationService(eligibleStore, f.activator), nil
 		},
-	}, stdout, stderr)
-	return runner
+	}, f.stdout, f.stderr)
+}
+
+func writeConfig(t *testing.T, contents string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(path, []byte(contents), 0644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	return path
 }

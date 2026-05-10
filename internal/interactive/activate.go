@@ -13,7 +13,12 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
-func Activate(ctx context.Context, eligible []domain.EligibleAssignment, svc *app.ActivationService, cfg *config.Config) (*domain.ActivationResult, error) {
+func Activate(
+	ctx context.Context,
+	eligible []domain.EligibleAssignment,
+	svc *app.ActivationService,
+	cfg *config.Config,
+) (*domain.ActivationResult, error) {
 	defaultDuration := 2 * time.Hour
 	if cfg != nil && cfg.DefaultDuration > 0 {
 		defaultDuration = cfg.DefaultDuration

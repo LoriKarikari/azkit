@@ -42,18 +42,27 @@ func NewActivationService(store EligibleAssignments, activator ActivationStore) 
 	return &ActivationService{store: store, activator: activator, resolver: activationResolver{}}
 }
 
-func (s *ActivationService) ActivateResolved(ctx context.Context, target domain.ActivationTarget) (*domain.ActivationResult, error) {
+func (s *ActivationService) ActivateResolved(
+	ctx context.Context,
+	target domain.ActivationTarget,
+) (*domain.ActivationResult, error) {
 	target.Reason = strings.TrimSpace(target.Reason)
 	if target.Reason == "" {
 		return nil, ErrMissingReason
 	}
 	if target.Duration <= 0 {
-		return nil, &Error{Code: CodeInvalidDuration, Message: fmt.Sprintf("Invalid activation duration: %s.", target.Duration)}
+		return nil, &Error{
+			Code:    CodeInvalidDuration,
+			Message: fmt.Sprintf("Invalid activation duration: %s.", target.Duration),
+		}
 	}
 	return s.activator.Activate(ctx, target)
 }
 
-func (s *ActivationService) Activate(ctx context.Context, req domain.ActivationRequest) (*domain.ActivationResult, error) {
+func (s *ActivationService) Activate(
+	ctx context.Context,
+	req domain.ActivationRequest,
+) (*domain.ActivationResult, error) {
 	if err := validateActivation(req); err != nil {
 		return nil, err
 	}
