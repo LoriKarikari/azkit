@@ -63,8 +63,8 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		duration = 2 * time.Hour
 	}
 
-	activateCtx, activateCancel := context.WithTimeout(ctx, 60*time.Second)
-	defer activateCancel()
+	activateCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
 
 	result, err := act.Activate(activateCtx, domain.ActivationRequest{
 		ScopeID:       c.Scope,
