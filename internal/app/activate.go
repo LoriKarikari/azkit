@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/LoriKarikari/pimctl/internal/domain"
@@ -53,7 +52,7 @@ func (s *ActivationService) ActivateResolved(
 	if target.Duration <= 0 {
 		return nil, &Error{
 			Code:    CodeInvalidDuration,
-			Message: fmt.Sprintf("Invalid activation duration: %s.", target.Duration),
+			Message: "Invalid activation duration.",
 		}
 	}
 	return s.activator.Activate(ctx, target)

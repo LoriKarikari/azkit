@@ -135,7 +135,9 @@ func renderActivationResult(streams *Streams, result *domain.ActivationResult, a
 		result.ScopeName,
 		result.Duration,
 	)
-	_, _ = io.WriteString(streams.Stderr, activatingMsg)
+	if _, err := io.WriteString(streams.Stderr, activatingMsg); err != nil {
+		streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
+	}
 	_, err := io.WriteString(streams.Stdout, renderActivationHuman(result))
 	return err
 }
@@ -156,7 +158,9 @@ func waitForActive(
 	defer cancel()
 
 	waitingMsg := fmt.Sprintf("Waiting for %s on %s...\n", result.Role, result.ScopeName)
-	_, _ = io.WriteString(streams.Stderr, waitingMsg)
+	if _, err := io.WriteString(streams.Stderr, waitingMsg); err != nil {
+		streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
+	}
 
 	streams.Log.Debug(
 		"waiting for activation to propagate",
@@ -170,7 +174,9 @@ func waitForActive(
 	for {
 		select {
 		case <-deadline.Done():
-			_, _ = io.WriteString(streams.Stderr, "Timeout waiting for activation.\n")
+			if _, err := io.WriteString(streams.Stderr, "Timeout waiting for activation.\n"); err != nil {
+				streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
+			}
 			return nil
 		case <-ticker.C:
 			as, err := statusSvc.Status(deadline)
@@ -185,7 +191,9 @@ func waitForActive(
 						result.Role,
 						result.ScopeName,
 					)
-					_, _ = io.WriteString(streams.Stderr, confirmedMsg)
+					if _, err := io.WriteString(streams.Stderr, confirmedMsg); err != nil {
+						streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
+					}
 					return &domain.ActivationResult{
 						Role:      a.Role,
 						ScopeID:   a.ScopeID,
