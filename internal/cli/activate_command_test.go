@@ -14,6 +14,7 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/cli"
 	"github.com/LoriKarikari/pimctl/internal/domain"
 	"github.com/LoriKarikari/pimctl/internal/inmemory"
+	"github.com/LoriKarikari/pimctl/internal/interactive"
 )
 
 type fakeActivator struct {
@@ -130,6 +131,8 @@ func TestActivate_configDefaultDuration(t *testing.T) {
 
 func activateRunner(t *testing.T, f activateRunnerFixture) *cli.Runner {
 	t.Helper()
+	interactive.IsTerminalFn = func() bool { return false }
+	t.Cleanup(func() { interactive.IsTerminalFn = interactive.IsTerminal })
 	eligibleStore := &inmemory.EligibleAssignments{
 		Assignments: []domain.EligibleAssignment{
 			{

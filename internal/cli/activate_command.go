@@ -34,7 +34,7 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		return err
 	}
 
-	if c.needsInteractive() && interactive.IsTerminal() {
+	if c.needsInteractive(streams) && interactive.IsTerminalFn() {
 		return c.runInteractive(ctx, interactiveActivation{
 			services: services,
 			streams:  streams,
@@ -86,8 +86,11 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 	return renderActivationResult(streams, result, c.JSON)
 }
 
-func (c *ActivateCmd) needsInteractive() bool {
+func (c *ActivateCmd) needsInteractive(streams *Streams) bool {
 	hasScopeSelector := c.Scope != "" || c.Subscription != ""
+	if !hasScopeSelector && streams.Config != nil && streams.Config.SubscriptionID != "" {
+		hasScopeSelector = true
+	}
 	hasRole := c.Role != ""
 	hasReason := c.Reason != ""
 	return !hasScopeSelector || !hasRole || !hasReason
