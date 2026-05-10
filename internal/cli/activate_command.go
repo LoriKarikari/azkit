@@ -102,6 +102,9 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 	if err != nil {
 		return err
 	}
+	if c.Role != "" {
+		eligible = filterEligibleByRole(eligible, c.Role)
+	}
 	if len(eligible) == 0 {
 		return app.ErrEligibleNotFound
 	}
@@ -122,6 +125,19 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 	}
 
 	return renderActivationResult(flow.streams, result, c.JSON)
+}
+
+func filterEligibleByRole(
+	eligible []domain.EligibleAssignment,
+	role string,
+) []domain.EligibleAssignment {
+	filtered := make([]domain.EligibleAssignment, 0, len(eligible))
+	for _, a := range eligible {
+		if a.Role == role || a.RoleDefID == role {
+			filtered = append(filtered, a)
+		}
+	}
+	return filtered
 }
 
 func renderActivationResult(streams *Streams, result *domain.ActivationResult, asJSON bool) error {
