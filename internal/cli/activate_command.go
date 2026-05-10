@@ -117,6 +117,10 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		eligible,
 		flow.act,
 		flow.streams.Config,
+		interactive.ActivationInput{
+			Reason:   c.Reason,
+			Duration: c.Duration,
+		},
 	)
 	if err != nil {
 		return err
