@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/LoriKarikari/pimctl/internal/domain"
@@ -39,6 +40,17 @@ type ActivationService struct {
 
 func NewActivationService(store EligibleAssignments, activator ActivationStore) *ActivationService {
 	return &ActivationService{store: store, activator: activator, resolver: activationResolver{}}
+}
+
+func (s *ActivationService) ActivateResolved(ctx context.Context, target domain.ActivationTarget) (*domain.ActivationResult, error) {
+	target.Reason = strings.TrimSpace(target.Reason)
+	if target.Reason == "" {
+		return nil, ErrMissingReason
+	}
+	if target.Duration <= 0 {
+		return nil, &Error{Code: CodeInvalidDuration, Message: fmt.Sprintf("Invalid activation duration: %s.", target.Duration)}
+	}
+	return s.activator.Activate(ctx, target)
 }
 
 func (s *ActivationService) Activate(ctx context.Context, req domain.ActivationRequest) (*domain.ActivationResult, error) {

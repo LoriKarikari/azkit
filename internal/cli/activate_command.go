@@ -7,15 +7,17 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/pimctl/internal/interactive"
 )
 
 type ActivateCmd struct {
 	Scope         string        `help:"Azure resource scope ID (exact)"`
 	Subscription  string        `help:"Subscription ID or exact name"`
 	ResourceGroup string        `help:"Resource group name (requires --subscription)"`
-	Role          string        `required:"" help:"Role display name or definition ID"`
-	Reason        string        `required:"" help:"Justification for the activation"`
+	Role          string        `help:"Role display name or definition ID"`
+	Reason        string        `help:"Justification for the activation"`
 	Duration      time.Duration `help:"How long the role stays active (default from config)"`
 	JSON          bool          `help:"Output as JSON"`
 }
@@ -25,6 +27,18 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 	if err != nil {
 		return err
 	}
+
+	if c.needsInteractive() && interactive.IsTerminal() {
+		return c.runInteractive(ctx, services, streams, act)
+	}
+
+	if c.Role == "" {
+		return &app.Error{Code: app.CodeMissingRole, Message: "Activation role is required."}
+	}
+	if c.Reason == "" {
+		return &app.Error{Code: app.CodeMissingReason, Message: "Activation reason is required."}
+	}
+
 	duration := c.Duration
 	subscription := c.Subscription
 	if streams.Config != nil {
@@ -38,6 +52,7 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 	if duration == 0 {
 		duration = 2 * time.Hour
 	}
+
 	result, err := act.Activate(ctx, domain.ActivationRequest{
 		ScopeID:       c.Scope,
 		Subscription:  subscription,
@@ -50,29 +65,56 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		return err
 	}
 
-	confirmed := c.waitForActive(ctx, services, result, streams)
+	confirmed := waitForActive(ctx, services, result, streams)
 	if confirmed != nil {
 		result = confirmed
 	}
 
-	if c.JSON {
-		_, err = io.WriteString(streams.Stdout, renderActivationJSON(result))
-	} else {
-		_, _ = io.WriteString(
-			streams.Stderr,
-			fmt.Sprintf(
-				"Activating %s on %s for %s\n",
-				result.Role,
-				result.ScopeName,
-				result.Duration,
-			),
-		)
-		_, err = io.WriteString(streams.Stdout, renderActivationHuman(result))
+	return renderActivationResult(streams, result, c.JSON)
+}
+
+func (c *ActivateCmd) needsInteractive() bool {
+	return (c.Scope == "" && c.Subscription == "") || c.Role == "" || c.Reason == ""
+}
+
+func (c *ActivateCmd) runInteractive(ctx context.Context, services Services, streams *Streams, act *app.ActivationService) error {
+	listSvc, err := services.List(streams.Log)
+	if err != nil {
+		return err
 	}
+	eligible, err := listSvc.List(ctx)
+	if err != nil {
+		return err
+	}
+	if len(eligible) == 0 {
+		return &app.Error{Code: "eligible_not_found", Message: "No eligible assignments found."}
+	}
+
+	result, err := interactive.Activate(ctx, eligible, act, streams.Config)
+	if err != nil {
+		return err
+	}
+
+	confirmed := waitForActive(ctx, services, result, streams)
+	if confirmed != nil {
+		result = confirmed
+	}
+
+	return renderActivationResult(streams, result, c.JSON)
+}
+
+func renderActivationResult(streams *Streams, result *domain.ActivationResult, asJSON bool) error {
+	if asJSON {
+		_, err := io.WriteString(streams.Stdout, renderActivationJSON(result))
+		return err
+	}
+	activatingMsg := fmt.Sprintf("Activating %s on %s for %s\n", result.Role, result.ScopeName, result.Duration)
+	_, _ = io.WriteString(streams.Stderr, activatingMsg)
+	_, err := io.WriteString(streams.Stdout, renderActivationHuman(result))
 	return err
 }
 
-func (c *ActivateCmd) waitForActive(
+func waitForActive(
 	ctx context.Context,
 	services Services,
 	result *domain.ActivationResult,
@@ -87,8 +129,8 @@ func (c *ActivateCmd) waitForActive(
 	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
 	defer cancel()
 
-	waitingMessage := fmt.Sprintf("Waiting for %s on %s...\n", result.Role, result.ScopeName)
-	_, _ = io.WriteString(streams.Stderr, waitingMessage)
+	waitingMsg := fmt.Sprintf("Waiting for %s on %s...\n", result.Role, result.ScopeName)
+	_, _ = io.WriteString(streams.Stderr, waitingMsg)
 
 	streams.Log.Debug(
 		"waiting for activation to propagate",
@@ -110,10 +152,10 @@ func (c *ActivateCmd) waitForActive(
 				continue
 			}
 			for _, a := range as {
-				isMatchingAssignment := a.Role == result.Role && a.ScopeID == result.ScopeID
-				if isMatchingAssignment && a.Status == domain.ActiveAssignmentActive {
-					activeMessage := fmt.Sprintf("✓ %s is active on %s\n", result.Role, result.ScopeName)
-					_, _ = io.WriteString(streams.Stderr, activeMessage)
+				isMatch := a.Role == result.Role && a.ScopeID == result.ScopeID
+				if isMatch && a.Status == domain.ActiveAssignmentActive {
+					confirmedMsg := fmt.Sprintf("✓ %s is active on %s\n", result.Role, result.ScopeName)
+					_, _ = io.WriteString(streams.Stderr, confirmedMsg)
 					return &domain.ActivationResult{
 						Role:      a.Role,
 						ScopeID:   a.ScopeID,
