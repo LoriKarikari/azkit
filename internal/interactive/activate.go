@@ -2,6 +2,7 @@ package interactive
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -47,7 +48,7 @@ func Activate(
 				Value(&reason).
 				Validate(func(s string) error {
 					if strings.TrimSpace(s) == "" {
-						return fmt.Errorf("reason is required")
+						return errors.New("reason is required")
 					}
 					return nil
 				}),
@@ -60,7 +61,7 @@ func Activate(
 						return fmt.Errorf("invalid duration: %w", err)
 					}
 					if d <= 0 {
-						return fmt.Errorf("duration must be positive")
+						return errors.New("duration must be positive")
 					}
 					return nil
 				}),
