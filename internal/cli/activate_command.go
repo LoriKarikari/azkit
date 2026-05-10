@@ -23,7 +23,6 @@ type ActivateCmd struct {
 }
 
 type interactiveActivation struct {
-	ctx      context.Context
 	services Services
 	streams  *Streams
 	act      *app.ActivationService
@@ -36,8 +35,7 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 	}
 
 	if c.needsInteractive() && interactive.IsTerminal() {
-		return c.runInteractive(interactiveActivation{
-			ctx:      ctx,
+		return c.runInteractive(ctx, interactiveActivation{
 			services: services,
 			streams:  streams,
 			act:      act,
@@ -65,7 +63,10 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		duration = 2 * time.Hour
 	}
 
-	result, err := act.Activate(ctx, domain.ActivationRequest{
+	activateCtx, activateCancel := context.WithTimeout(ctx, 60*time.Second)
+	defer activateCancel()
+
+	result, err := act.Activate(activateCtx, domain.ActivationRequest{
 		ScopeID:       c.Scope,
 		Subscription:  subscription,
 		ResourceGroup: c.ResourceGroup,
@@ -92,12 +93,12 @@ func (c *ActivateCmd) needsInteractive() bool {
 	return !hasScopeSelector || !hasRole || !hasReason
 }
 
-func (c *ActivateCmd) runInteractive(flow interactiveActivation) error {
+func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActivation) error {
 	listSvc, err := flow.services.List(flow.streams.Log)
 	if err != nil {
 		return err
 	}
-	eligible, err := listSvc.List(flow.ctx)
+	eligible, err := listSvc.List(ctx)
 	if err != nil {
 		return err
 	}
@@ -106,7 +107,7 @@ func (c *ActivateCmd) runInteractive(flow interactiveActivation) error {
 	}
 
 	result, err := interactive.Activate(
-		flow.ctx,
+		ctx,
 		eligible,
 		flow.act,
 		flow.streams.Config,
@@ -115,7 +116,7 @@ func (c *ActivateCmd) runInteractive(flow interactiveActivation) error {
 		return err
 	}
 
-	confirmed := waitForActive(flow.ctx, flow.services, result, flow.streams)
+	confirmed := waitForActive(ctx, flow.services, result, flow.streams)
 	if confirmed != nil {
 		result = confirmed
 	}
