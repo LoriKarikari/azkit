@@ -1,5 +1,5 @@
 [changelog]
-header = "# Changelog\n"
+header = ""
 body = """
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group | upper_first }}
@@ -12,20 +12,17 @@ trim = true
 
 [git]
 conventional_commits = true
-filter_unconventional = false
+filter_commits = true
 commit_parsers = [
   { message = "^feat", group = "Features" },
   { message = "^fix", group = "Bug Fixes" },
-  { message = "^docs", group = "Documentation" },
-  { message = "^perf", group = "Performance" },
-  { message = "^refactor", group = "Refactors" },
-  { message = "^style", group = "Style" },
-  { message = "^test", group = "Tests" },
-  { message = "^chore", group = "Chores" },
-  { message = "^ci", group = "CI" },
+  { message = "^docs", skip = true },
+  { message = "^perf", skip = true },
+  { message = "^refactor", skip = true },
+  { message = "^style", skip = true },
+  { message = "^test", skip = true },
+  { message = "^chore", skip = true },
+  { message = "^ci", skip = true },
 ]
-protect_breaking_commit_prefix = "BREAKING CHANGE:"
-filter_commits = false
 tag_pattern = "v[0-9]*"
-topo_order = false
 sort_commits = "oldest"
