@@ -9,6 +9,7 @@ Generate a completion script for your shell, then save it where your shell loads
 Bash:
 
 ```bash
+mkdir -p ~/.local/share/bash-completion/completions
 pimctl completion bash > ~/.local/share/bash-completion/completions/pimctl
 ```
 
@@ -29,6 +30,7 @@ autoload -Uz compinit && compinit
 Fish:
 
 ```fish
+mkdir -p ~/.config/fish/completions
 pimctl completion fish > ~/.config/fish/completions/pimctl.fish
 ```
 

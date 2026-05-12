@@ -2,6 +2,8 @@ package cli_test
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -27,6 +29,9 @@ func TestCompletionBash(t *testing.T) {
 	if !strings.Contains(got, "complete -F _pimctl_completions pimctl") {
 		t.Fatal("want bash complete registration")
 	}
+	if !strings.Contains(got, "--duration") {
+		t.Fatal("want activate flags")
+	}
 }
 
 func TestCompletionZsh(t *testing.T) {
@@ -44,6 +49,9 @@ func TestCompletionZsh(t *testing.T) {
 	}
 	if !strings.Contains(got, "#compdef pimctl") {
 		t.Fatal("want zsh compdef")
+	}
+	if !strings.Contains(got, "--resource-group") {
+		t.Fatal("want activate flags")
 	}
 }
 
@@ -63,6 +71,9 @@ func TestCompletionFish(t *testing.T) {
 	if !strings.Contains(got, "complete -c pimctl") {
 		t.Fatal("want fish complete command")
 	}
+	if !strings.Contains(got, "-l extended") {
+		t.Fatal("want list/status flags")
+	}
 }
 
 func TestCompletionPowerShell(t *testing.T) {
@@ -80,6 +91,27 @@ func TestCompletionPowerShell(t *testing.T) {
 	}
 	if !strings.Contains(got, "Register-ArgumentCompleter") {
 		t.Fatal("want PowerShell argument completer")
+	}
+	if !strings.Contains(got, "--subscription") {
+		t.Fatal("want activate flags")
+	}
+}
+
+func TestCompletionIgnoresInvalidConfig(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(configPath, []byte("invalid: [unclosed"), 0644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	code := runner.Run(t.Context(), []string{"--config", configPath, "completion", "bash"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "pimctl") {
+		t.Fatal("want script referencing pimctl")
 	}
 }
 
