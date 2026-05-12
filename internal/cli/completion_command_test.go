@@ -8,7 +8,7 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/cli"
 )
 
-func TestCompletion_bash(t *testing.T) {
+func TestCompletionBash(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
@@ -24,9 +24,12 @@ func TestCompletion_bash(t *testing.T) {
 	if !strings.Contains(got, "pimctl") {
 		t.Fatal("want script referencing pimctl")
 	}
+	if !strings.Contains(got, "complete -F _pimctl_completions pimctl") {
+		t.Fatal("want bash complete registration")
+	}
 }
 
-func TestCompletion_zsh(t *testing.T) {
+func TestCompletionZsh(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
@@ -35,12 +38,16 @@ func TestCompletion_zsh(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "pimctl") {
+	got := stdout.String()
+	if !strings.Contains(got, "pimctl") {
 		t.Fatal("want script referencing pimctl")
+	}
+	if !strings.Contains(got, "#compdef pimctl") {
+		t.Fatal("want zsh compdef")
 	}
 }
 
-func TestCompletion_fish(t *testing.T) {
+func TestCompletionFish(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
@@ -49,12 +56,16 @@ func TestCompletion_fish(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "pimctl") {
+	got := stdout.String()
+	if !strings.Contains(got, "pimctl") {
 		t.Fatal("want script referencing pimctl")
+	}
+	if !strings.Contains(got, "complete -c pimctl") {
+		t.Fatal("want fish complete command")
 	}
 }
 
-func TestCompletion_powershell(t *testing.T) {
+func TestCompletionPowerShell(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
@@ -63,12 +74,16 @@ func TestCompletion_powershell(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "pimctl") {
+	got := stdout.String()
+	if !strings.Contains(got, "pimctl") {
 		t.Fatal("want script referencing pimctl")
+	}
+	if !strings.Contains(got, "Register-ArgumentCompleter") {
+		t.Fatal("want PowerShell argument completer")
 	}
 }
 
-func TestCompletion_unknownShell(t *testing.T) {
+func TestCompletionUnknownShell(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)

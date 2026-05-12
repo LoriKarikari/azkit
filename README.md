@@ -2,7 +2,43 @@
 
 `pimctl` is a high-quality Go CLI for activating and managing Azure Privileged Identity Management access for Azure resource roles.
 
-The project is currently in planning. The first product slice will be `pimctl list`, showing eligible Azure resource role assignments with polished human output.
+## Shell completions
+
+Generate a completion script for your shell, then save it where your shell loads completions.
+
+Bash:
+
+```bash
+pimctl completion bash > ~/.local/share/bash-completion/completions/pimctl
+```
+
+Zsh:
+
+```bash
+mkdir -p ~/.zsh/completions
+pimctl completion zsh > ~/.zsh/completions/_pimctl
+```
+
+Add `~/.zsh/completions` to `fpath` if it is not already there:
+
+```zsh
+fpath=(~/.zsh/completions $fpath)
+autoload -Uz compinit && compinit
+```
+
+Fish:
+
+```fish
+pimctl completion fish > ~/.config/fish/completions/pimctl.fish
+```
+
+PowerShell:
+
+```powershell
+pimctl completion powershell | Out-String | Invoke-Expression
+```
+
+To load it every time, add that PowerShell command to your profile.
 
 ## Design direction
 
