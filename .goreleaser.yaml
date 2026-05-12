@@ -3,6 +3,8 @@ version: 2
 builds:
   - main: ./cmd/pimctl
     binary: pimctl
+    ldflags:
+      - -s -w -X github.com/LoriKarikari/pimctl/internal/cli.version={{.Version}} -X github.com/LoriKarikari/pimctl/internal/cli.commit={{.Commit}} -X github.com/LoriKarikari/pimctl/internal/cli.date={{.Date}}
     goos:
       - linux
       - darwin

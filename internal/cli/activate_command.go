@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -30,24 +31,24 @@ type interactiveActivation struct {
 }
 
 func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Streams) error {
+	needsInteractive := c.needsInteractive(streams) && interactive.IsTerminalFn()
+	if !needsInteractive {
+		if err := c.validateNonInteractive(); err != nil {
+			return err
+		}
+	}
+
 	act, err := services.Activate(streams.Log)
 	if err != nil {
 		return err
 	}
 
-	if c.needsInteractive(streams) && interactive.IsTerminalFn() {
+	if needsInteractive {
 		return c.runInteractive(ctx, interactiveActivation{
 			services: services,
 			streams:  streams,
 			act:      act,
 		})
-	}
-
-	if c.Role == "" {
-		return &app.Error{Code: app.CodeMissingRole, Message: "Activation role is required."}
-	}
-	if c.Reason == "" {
-		return &app.Error{Code: app.CodeMissingReason, Message: "Activation reason is required."}
 	}
 
 	duration := c.Duration
@@ -85,6 +86,22 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 	}
 
 	return renderActivationResult(streams, result, c.JSON)
+}
+
+func (c *ActivateCmd) validateNonInteractive() error {
+	if strings.TrimSpace(c.Role) == "" {
+		return &app.Error{
+			Code:    app.CodeMissingRole,
+			Message: "Activation role is required.",
+		}
+	}
+	if strings.TrimSpace(c.Reason) == "" {
+		return &app.Error{
+			Code:    app.CodeMissingReason,
+			Message: "Activation reason is required.",
+		}
+	}
+	return nil
 }
 
 func (c *ActivateCmd) needsInteractive(streams *Streams) bool {
@@ -233,7 +250,11 @@ func waitForActive(
 	for {
 		select {
 		case <-deadline.Done():
-			if _, err := io.WriteString(streams.Stderr, "Timeout waiting for activation.\n"); err != nil {
+			message := "Timeout waiting for activation.\n"
+			if errors.Is(deadline.Err(), context.Canceled) {
+				message = "Activation wait canceled.\n"
+			}
+			if _, err := io.WriteString(streams.Stderr, message); err != nil {
 				streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
 			}
 			return nil
