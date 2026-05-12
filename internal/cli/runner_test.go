@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -118,6 +120,55 @@ func TestRunner_statusErrorJSON(t *testing.T) {
 	}
 }
 
+func TestRunner_version(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"version"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d", code)
+	}
+	if !strings.Contains(stdout.String(), "pimctl dev") {
+		t.Fatalf("missing version output:\n%s", stdout.String())
+	}
+	if stderr.String() != "" {
+		t.Fatalf("want empty stderr, got: %q", stderr.String())
+	}
+}
+
+func TestRunner_versionIgnoresInvalidConfig(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+	configPath := writeRunnerConfig(t, "invalid: [unclosed")
+
+	code := runner.Run(t.Context(), []string{"--config", configPath, "version"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "pimctl dev") {
+		t.Fatalf("missing version output:\n%s", stdout.String())
+	}
+}
+
+func TestRunner_usageErrorExitsTwo(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"--bad"})
+	if code != 2 {
+		t.Fatalf("want exit 2, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("want empty stdout, got: %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "unknown flag") {
+		t.Fatalf("want parse error on stderr, got: %s", stderr.String())
+	}
+}
+
 func TestRunner_helpDoesNotBuildListService(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -190,6 +241,15 @@ func (s *testActiveAssignments) ListActive(_ context.Context) ([]domain.ActiveAs
 type testActiveAssignments struct {
 	Assignments []domain.ActiveAssignment
 	Err         error
+}
+
+func writeRunnerConfig(t *testing.T, contents string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(path, []byte(contents), 0644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	return path
 }
 
 func runnerTime(value string) time.Time {

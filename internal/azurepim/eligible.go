@@ -25,6 +25,12 @@ type subscription struct {
 	Name string
 }
 
+var (
+	_ app.EligibleAssignments   = (*EligibleAssignments)(nil)
+	_ subscriptionSource        = (*azureSubscriptions)(nil)
+	_ eligibilityScheduleSource = (*azureEligibilitySchedules)(nil)
+)
+
 type subscriptionSource interface {
 	ListSubscriptions(context.Context) ([]subscription, error)
 }

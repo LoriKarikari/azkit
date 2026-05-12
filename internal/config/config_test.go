@@ -17,18 +17,12 @@ func TestLoadDefaults(t *testing.T) {
 	if c.DefaultDuration != 2*time.Hour {
 		t.Fatalf("want 2h default, got %v", c.DefaultDuration)
 	}
-	if c.IsColorDisabled {
-		t.Fatal("want no_color false by default")
-	}
-	if c.TenantID != "" {
-		t.Fatal("want empty tenant_id by default")
-	}
 }
 
 func TestLoadFromFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
-	contents := "default_duration: 30m\nno_color: true\ntenant_id: abc-123\n"
+	contents := "default_duration: 30m\nsubscription_id: sub-file\n"
 	if err := os.WriteFile(path, []byte(contents), 0644); err != nil {
 		t.Fatalf("write config: %v", err)
 	}
@@ -40,11 +34,8 @@ func TestLoadFromFile(t *testing.T) {
 	if c.DefaultDuration != 30*time.Minute {
 		t.Fatalf("want 30m, got %v", c.DefaultDuration)
 	}
-	if !c.IsColorDisabled {
-		t.Fatal("want no_color true")
-	}
-	if c.TenantID != "abc-123" {
-		t.Fatalf("want tenant_id abc-123, got %s", c.TenantID)
+	if c.SubscriptionID != "sub-file" {
+		t.Fatalf("want subscription_id sub-file, got %s", c.SubscriptionID)
 	}
 }
 
@@ -113,18 +104,5 @@ func TestLoadInvalidDurationFails(t *testing.T) {
 	_, err := config.Load(path)
 	if err == nil {
 		t.Fatal("want invalid duration error, got nil")
-	}
-}
-
-func TestLoadInvalidBoolFails(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "config.yaml")
-	if err := os.WriteFile(path, []byte("no_color: sometimes\n"), 0644); err != nil {
-		t.Fatalf("write config: %v", err)
-	}
-
-	_, err := config.Load(path)
-	if err == nil {
-		t.Fatal("want invalid bool error, got nil")
 	}
 }

@@ -21,8 +21,9 @@ func TestActivateReturnsNotFoundForEmptyAssignments(t *testing.T) {
 		svc,
 		nil,
 		interactive.ActivationInput{
-			Reason:   "deploy",
-			Duration: 30 * time.Minute,
+			Reason:      "deploy",
+			Duration:    30 * time.Minute,
+			AutoConfirm: true,
 		},
 	)
 	if !errors.Is(err, app.ErrEligibleNotFound) {
@@ -46,8 +47,9 @@ func TestActivateSkipsFormWhenInputsAreComplete(t *testing.T) {
 		svc,
 		nil,
 		interactive.ActivationInput{
-			Reason:   "deploy",
-			Duration: 30 * time.Minute,
+			Reason:      "deploy",
+			Duration:    30 * time.Minute,
+			AutoConfirm: true,
 		},
 	)
 	if err != nil {
