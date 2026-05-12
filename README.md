@@ -1,5 +1,10 @@
 # pimctl
 
+[![Go Version](https://img.shields.io/github/go-mod/go-version/LoriKarikari/pimctl)](https://go.dev/dl)
+[![CI](https://github.com/LoriKarikari/pimctl/actions/workflows/ci.yml/badge.svg)](https://github.com/LoriKarikari/pimctl/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/LoriKarikari/pimctl)](https://goreportcard.com/report/github.com/LoriKarikari/pimctl)
+[![License](https://img.shields.io/github/license/LoriKarikari/pimctl)](./LICENSE)
+
 `pimctl` is a small CLI for Azure PIM resource role workflows.
 
 It lists eligible assignments, activates roles, and shows current active assignments.
