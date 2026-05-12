@@ -36,6 +36,14 @@ _Avoid_: Max duration, activation duration
 A time-bound elevation from eligible assignment to active Azure resource role assignment.
 _Avoid_: Login, assume role
 
+**Activation expiry**:
+The time when an active Azure resource role assignment ends and the elevation drops.
+_Avoid_: Logout, session timeout
+
+**Deactivation**:
+A self-initiated request to end an active assignment before its activation expiry.
+_Avoid_: Logout, cancellation, expiry
+
 **Credential**:
 The Azure identity used by the CLI to call Azure and Microsoft APIs.
 _Avoid_: Session, login state
@@ -59,6 +67,7 @@ _Avoid_: Comment, message
 ## Relationships
 
 - An **Activation** activates exactly one **Azure resource role** for one Azure resource scope.
+- A **Deactivation** ends one **Activation** before its **Activation expiry**.
 
 ## Example dialogue
 
