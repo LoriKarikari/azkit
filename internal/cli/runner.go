@@ -118,17 +118,26 @@ func (r *Runner) handleParseError(err error) int {
 	var exitCoder kong.ExitCoder
 	if errors.As(err, &exitCoder) {
 		code := exitCoder.ExitCode()
-		if code != 0 {
-			_, _ = io.WriteString(r.streams.Stderr, err.Error()+"\n")
+		if code == 0 {
+			return 0
 		}
-		return code
+		_, _ = io.WriteString(r.streams.Stderr, err.Error()+"\n")
+		return 2
 	}
 	_, _ = io.WriteString(r.streams.Stderr, err.Error()+"\n")
-	return 1
+	return 2
 }
 
 func commandNeedsConfig(parsed *kong.Context) bool {
-	return !strings.HasPrefix(parsed.Command(), "completion")
+	command := strings.Fields(parsed.Command())
+	if len(command) == 0 {
+		return true
+	}
+	switch command[0] {
+	case "completion", "version":
+		return false
+	}
+	return true
 }
 
 func wantsJSON(model CLI, parsed *kong.Context) bool {
