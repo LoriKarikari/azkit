@@ -32,11 +32,8 @@ type interactiveActivation struct {
 func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Streams) error {
 	needsInteractive := c.needsInteractive(streams) && interactive.IsTerminalFn()
 	if !needsInteractive {
-		if strings.TrimSpace(c.Role) == "" {
-			return &app.Error{Code: app.CodeMissingRole, Message: "Activation role is required."}
-		}
-		if strings.TrimSpace(c.Reason) == "" {
-			return &app.Error{Code: app.CodeMissingReason, Message: "Activation reason is required."}
+		if err := c.validateNonInteractive(); err != nil {
+			return err
 		}
 	}
 
@@ -88,6 +85,22 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 	}
 
 	return renderActivationResult(streams, result, c.JSON)
+}
+
+func (c *ActivateCmd) validateNonInteractive() error {
+	if strings.TrimSpace(c.Role) == "" {
+		return &app.Error{
+			Code:    app.CodeMissingRole,
+			Message: "Activation role is required.",
+		}
+	}
+	if strings.TrimSpace(c.Reason) == "" {
+		return &app.Error{
+			Code:    app.CodeMissingReason,
+			Message: "Activation reason is required.",
+		}
+	}
+	return nil
 }
 
 func (c *ActivateCmd) needsInteractive(streams *Streams) bool {

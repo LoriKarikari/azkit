@@ -102,20 +102,8 @@ func Activate(
 	}
 
 	if !input.AutoConfirm {
-		confirmed := false
-		form := huh.NewForm(huh.NewGroup(
-			huh.NewConfirm().
-				Title("Activate this role?").
-				Description(confirmDescription(selected, reason, durationText)).
-				Affirmative("Activate").
-				Negative("Cancel").
-				Value(&confirmed),
-		))
-		if err := form.RunWithContext(ctx); err != nil {
+		if err := confirmActivation(ctx, selected, reason, durationText); err != nil {
 			return nil, err
-		}
-		if !confirmed {
-			return nil, errors.New("activation canceled")
 		}
 	}
 
@@ -134,6 +122,31 @@ func fmtAssignment(a domain.EligibleAssignment) string {
 	return fmt.Sprintf("%s — %s", a.Role, a.ScopeName)
 }
 
+func confirmActivation(ctx context.Context, selected domain.EligibleAssignment, reason string, duration string) error {
+	confirmed := false
+	form := huh.NewForm(huh.NewGroup(
+		huh.NewConfirm().
+			Title("Activate this role?").
+			Description(confirmDescription(selected, reason, duration)).
+			Affirmative("Activate").
+			Negative("Cancel").
+			Value(&confirmed),
+	))
+	if err := form.RunWithContext(ctx); err != nil {
+		return err
+	}
+	if !confirmed {
+		return errors.New("activation canceled")
+	}
+	return nil
+}
+
 func confirmDescription(a domain.EligibleAssignment, reason string, duration string) string {
-	return fmt.Sprintf("Role: %s\nScope: %s\nDuration: %s\nReason: %s", a.Role, a.ScopeName, duration, strings.TrimSpace(reason))
+	return fmt.Sprintf(
+		"Role: %s\nScope: %s\nDuration: %s\nReason: %s",
+		a.Role,
+		a.ScopeName,
+		duration,
+		strings.TrimSpace(reason),
+	)
 }
