@@ -1,14 +1,65 @@
 # pimctl
 
-A CLI for Azure PIM resource role workflows — list eligible assignments, activate a role, check active status.
+`pimctl` is a small CLI for Azure PIM resource role workflows.
 
-## Design
+It lists eligible assignments, activates roles, and shows current active assignments.
 
-- Native Go client. No shelling out to `az`.
-- Azure resource role PIM only. Entra roles and PIM for Groups are out of scope for now.
-- Human output by default, `--json` for scripts.
-- Kong for command parsing, Koanf for config, Charm stack for interactive flows.
-- Vertical slices. No empty architecture folders.
+## Scope
+
+`pimctl` supports Azure resource role PIM. It does not manage Entra roles or PIM for Groups.
+
+## Quickstart
+
+List roles you can activate:
+
+```bash
+pimctl list
+```
+
+Activate a role:
+
+```bash
+pimctl activate \
+  --subscription "Production" \
+  --resource-group rg-app \
+  --role Contributor \
+  --reason "Investigating incident"
+```
+
+Check active assignments:
+
+```bash
+pimctl status
+```
+
+Use JSON output for scripts:
+
+```bash
+pimctl list --json
+pimctl status --json
+```
+
+## Configuration
+
+Config is optional. By default, `pimctl` reads:
+
+```text
+~/.config/pimctl/config.yaml
+```
+
+Example:
+
+```yaml
+default_duration: 2h
+subscription_id: 00000000-0000-0000-0000-000000000000
+```
+
+Environment variables use the `PIMCTL_` prefix:
+
+```bash
+export PIMCTL_DEFAULT_DURATION=2h
+export PIMCTL_SUBSCRIPTION_ID=00000000-0000-0000-0000-000000000000
+```
 
 ## Docs
 

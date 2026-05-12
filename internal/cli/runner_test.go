@@ -118,6 +118,23 @@ func TestRunner_statusErrorJSON(t *testing.T) {
 	}
 }
 
+func TestRunner_version(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"version"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d", code)
+	}
+	if !strings.Contains(stdout.String(), "pimctl dev") {
+		t.Fatalf("missing version output:\n%s", stdout.String())
+	}
+	if stderr.String() != "" {
+		t.Fatalf("want empty stderr, got: %q", stderr.String())
+	}
+}
+
 func TestRunner_helpDoesNotBuildListService(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

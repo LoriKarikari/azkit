@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -18,9 +17,7 @@ const envPrefix = "PIMCTL_"
 
 type Config struct {
 	DefaultDuration time.Duration `koanf:"default_duration"`
-	TenantID        string        `koanf:"tenant_id"`
 	SubscriptionID  string        `koanf:"subscription_id"`
-	IsColorDisabled bool          `koanf:"no_color"`
 }
 
 func Load(configPath string) (*Config, error) {
@@ -46,16 +43,9 @@ func Load(configPath string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	isColorDisabled, err := boolValue(k, "no_color")
-	if err != nil {
-		return nil, err
-	}
-
 	c := &Config{
 		DefaultDuration: defaultDuration,
-		TenantID:        k.String("tenant_id"),
 		SubscriptionID:  k.String("subscription_id"),
-		IsColorDisabled: isColorDisabled,
 	}
 	return c, nil
 }
@@ -77,30 +67,10 @@ func durationValue(k *koanf.Koanf, key string, fallback time.Duration) (time.Dur
 	return 0, fmt.Errorf("config %s: expected duration, got %T", key, v)
 }
 
-func boolValue(k *koanf.Koanf, key string) (bool, error) {
-	v := k.Get(key)
-	switch val := v.(type) {
-	case nil:
-		return false, nil
-	case bool:
-		return val, nil
-	case string:
-		b, err := strconv.ParseBool(val)
-		if err != nil {
-			return false, fmt.Errorf("config %s: %w", key, err)
-		}
-		return b, nil
-	}
-	return false, fmt.Errorf("config %s: expected bool, got %T", key, v)
-}
-
 func envMapper(key string, value string) (string, any) {
 	mapKey := strings.ToLower(strings.TrimPrefix(key, envPrefix))
 	if d, err := time.ParseDuration(value); err == nil {
 		return mapKey, d
-	}
-	if b, err := strconv.ParseBool(value); err == nil {
-		return mapKey, b
 	}
 	return mapKey, value
 }

@@ -15,8 +15,9 @@ import (
 )
 
 type ActivationInput struct {
-	Reason   string
-	Duration time.Duration
+	Reason      string
+	Duration    time.Duration
+	AutoConfirm bool
 }
 
 func Activate(
@@ -100,6 +101,24 @@ func Activate(
 		return nil, fmt.Errorf("parsing activation duration: %w", err)
 	}
 
+	if !input.AutoConfirm {
+		confirmed := false
+		form := huh.NewForm(huh.NewGroup(
+			huh.NewConfirm().
+				Title("Activate this role?").
+				Description(confirmDescription(selected, reason, durationText)).
+				Affirmative("Activate").
+				Negative("Cancel").
+				Value(&confirmed),
+		))
+		if err := form.RunWithContext(ctx); err != nil {
+			return nil, err
+		}
+		if !confirmed {
+			return nil, errors.New("activation canceled")
+		}
+	}
+
 	target := domain.ActivationTarget{
 		Assignment: selected,
 		Reason:     strings.TrimSpace(reason),
@@ -113,4 +132,8 @@ func fmtAssignment(a domain.EligibleAssignment) string {
 		return fmt.Sprintf("%s — %s (%s)", a.Role, a.ScopeName, a.SubscriptionName)
 	}
 	return fmt.Sprintf("%s — %s", a.Role, a.ScopeName)
+}
+
+func confirmDescription(a domain.EligibleAssignment, reason string, duration string) string {
+	return fmt.Sprintf("Role: %s\nScope: %s\nDuration: %s\nReason: %s", a.Role, a.ScopeName, duration, strings.TrimSpace(reason))
 }

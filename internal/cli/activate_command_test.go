@@ -41,24 +41,30 @@ func (a *fakeActivator) Activate(_ context.Context, target domain.ActivationTarg
 }
 
 type activateRunnerFixture struct {
-	stdout      *bytes.Buffer
-	stderr      *bytes.Buffer
-	eligibleErr error
-	activator   *fakeActivator
+	stdout         *bytes.Buffer
+	stderr         *bytes.Buffer
+	eligibleErr    error
+	activator      *fakeActivator
+	activateCalled *bool
 }
 
 func TestActivate_missingRoleNonInteractive(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	activateCalled := false
 	runner := activateRunner(t, activateRunnerFixture{
-		stdout:    &stdout,
-		stderr:    &stderr,
-		activator: &fakeActivator{},
+		stdout:         &stdout,
+		stderr:         &stderr,
+		activator:      &fakeActivator{},
+		activateCalled: &activateCalled,
 	})
 
 	code := runner.Run(t.Context(), []string{"activate", "--scope", "/sub/abc", "--reason", "deploy"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
+	}
+	if activateCalled {
+		t.Fatal("activate service should not be built for local validation errors")
 	}
 	if !strings.Contains(stderr.String(), "role is required") {
 		t.Fatalf("want missing role error, got: %s", stderr.String())
@@ -165,6 +171,9 @@ func activateRunner(t *testing.T, f activateRunnerFixture) *cli.Runner {
 			return app.NewStatusService(activeStore), nil
 		},
 		Activate: func(*slog.Logger) (*app.ActivationService, error) {
+			if f.activateCalled != nil {
+				*f.activateCalled = true
+			}
 			return app.NewActivationService(eligibleStore, f.activator), nil
 		},
 	}, f.stdout, f.stderr)

@@ -45,7 +45,7 @@ A guided terminal flow for choosing and activating an eligible assignment.
 _Avoid_: Wizard, dashboard
 
 **Configuration**:
-User-controlled defaults for Azure tenant, subscription, color, and activation duration.
+User-controlled defaults for activation duration and subscription selection.
 _Avoid_: Preferences, settings
 
 **Human output**:

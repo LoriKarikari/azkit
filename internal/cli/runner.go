@@ -52,6 +52,7 @@ type CLI struct {
 	Status     StatusCmd     `cmd:"" help:"List active PIM role assignments"`
 	Activate   ActivateCmd   `cmd:"" help:"Activate an eligible PIM role assignment"`
 	Completion CompletionCmd `cmd:"" help:"Generate shell completion script"`
+	Version    VersionCmd    `cmd:"" help:"Show version information"`
 }
 
 type kongExit int
