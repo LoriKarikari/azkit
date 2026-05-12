@@ -4,7 +4,7 @@
 
 ## Shell completions
 
-Generate a completion script for your shell, then save it where your shell loads completions.
+Generate a completion script for your shell, then save it where your shell loads completions. The generated scripts call `pimctl` for completions, so keep the binary on your `PATH`.
 
 Bash:
 

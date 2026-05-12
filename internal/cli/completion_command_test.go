@@ -26,11 +26,8 @@ func TestCompletionBash(t *testing.T) {
 	if !strings.Contains(got, "pimctl") {
 		t.Fatal("want script referencing pimctl")
 	}
-	if !strings.Contains(got, "complete -F _pimctl_completions pimctl") {
+	if !strings.Contains(got, "complete -C pimctl pimctl") {
 		t.Fatal("want bash complete registration")
-	}
-	if !strings.Contains(got, "--duration") {
-		t.Fatal("want activate flags")
 	}
 }
 
@@ -47,11 +44,8 @@ func TestCompletionZsh(t *testing.T) {
 	if !strings.Contains(got, "pimctl") {
 		t.Fatal("want script referencing pimctl")
 	}
-	if !strings.Contains(got, "#compdef pimctl") {
-		t.Fatal("want zsh compdef")
-	}
-	if !strings.Contains(got, "--resource-group") {
-		t.Fatal("want activate flags")
+	if !strings.Contains(got, "bashcompinit") {
+		t.Fatal("want zsh bash completion bridge")
 	}
 }
 
@@ -68,11 +62,8 @@ func TestCompletionFish(t *testing.T) {
 	if !strings.Contains(got, "pimctl") {
 		t.Fatal("want script referencing pimctl")
 	}
-	if !strings.Contains(got, "complete -c pimctl") {
-		t.Fatal("want fish complete command")
-	}
-	if !strings.Contains(got, "-l extended") {
-		t.Fatal("want list/status flags")
+	if !strings.Contains(got, "__complete_pimctl") {
+		t.Fatal("want fish completion function")
 	}
 }
 
@@ -91,9 +82,6 @@ func TestCompletionPowerShell(t *testing.T) {
 	}
 	if !strings.Contains(got, "Register-ArgumentCompleter") {
 		t.Fatal("want PowerShell argument completer")
-	}
-	if !strings.Contains(got, "--subscription") {
-		t.Fatal("want activate flags")
 	}
 }
 
@@ -126,5 +114,22 @@ func TestCompletionUnknownShell(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "unknown shell") {
 		t.Fatalf("want unknown shell error, got: %s", stderr.String())
+	}
+}
+
+func TestKongpleteCompletesCommands(t *testing.T) {
+	t.Setenv("COMP_LINE", "pimctl ")
+	t.Setenv("COMP_POINT", "7")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
+
+	code := runner.Run(t.Context(), []string{})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "activate") || !strings.Contains(got, "completion") {
+		t.Fatalf("want command completions, got: %s", got)
 	}
 }

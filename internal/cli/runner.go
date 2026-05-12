@@ -5,9 +5,11 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/alecthomas/kong"
+	"github.com/willabides/kongplete"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/config"
@@ -79,6 +81,10 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 		_, _ = io.WriteString(r.streams.Stderr, RenderError(err, false))
 		return 1
 	}
+	if os.Getenv("COMP_LINE") != "" {
+		kongplete.Complete(parser, kongplete.WithExitFunc(func(code int) { panic(kongExit(code)) }))
+	}
+
 	parsed, err := parser.Parse(args)
 	if err != nil {
 		return r.handleParseError(err)
