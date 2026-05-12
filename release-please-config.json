@@ -2,6 +2,8 @@
   "packages": {
     ".": {
       "release-type": "go",
+      "changelog-type": "github",
+      "bump-minor-pre-major": true,
       "changelog-sections": [
         {"type": "feat", "section": "Features", "hidden": false},
         {"type": "fix", "section": "Bug Fixes", "hidden": false},
