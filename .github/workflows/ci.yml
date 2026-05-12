@@ -37,3 +37,10 @@ jobs:
 
       - name: Lint
         run: golangci-lint run
+
+      - name: Check GoReleaser config
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: check
