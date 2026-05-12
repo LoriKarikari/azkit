@@ -47,7 +47,8 @@ type CLI struct {
 	ConfigPath string      `name:"config" help:"Path to config file"`
 	List       ListCmd     `cmd:"" help:"List eligible PIM role assignments"`
 	Status     StatusCmd   `cmd:"" help:"List active PIM role assignments"`
-	Activate   ActivateCmd `cmd:"" help:"Activate an eligible PIM role assignment"`
+	Activate   ActivateCmd   `cmd:"" help:"Activate an eligible PIM role assignment"`
+	Completion CompletionCmd `cmd:"" help:"Generate shell completion script"`
 }
 
 type kongExit int
