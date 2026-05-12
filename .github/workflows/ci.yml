@@ -27,7 +27,7 @@ jobs:
         run: go mod download
 
       - name: Test
-        run: go test ./...
+        run: go test -race -shuffle=on ./...
 
       - name: Vet
         run: go vet ./...
@@ -37,6 +37,9 @@ jobs:
 
       - name: Lint
         run: golangci-lint run
+
+      - name: Vulnerability scan
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
       - name: Check GoReleaser config
         uses: goreleaser/goreleaser-action@v6
