@@ -2,6 +2,7 @@ package interactive_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -10,6 +11,24 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/inmemory"
 	"github.com/LoriKarikari/pimctl/internal/interactive"
 )
+
+func TestActivateReturnsNotFoundForEmptyAssignments(t *testing.T) {
+	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &fakeActivator{})
+
+	_, err := interactive.Activate(
+		t.Context(),
+		[]domain.EligibleAssignment{},
+		svc,
+		nil,
+		interactive.ActivationInput{
+			Reason:   "deploy",
+			Duration: 30 * time.Minute,
+		},
+	)
+	if !errors.Is(err, app.ErrEligibleNotFound) {
+		t.Fatalf("want ErrEligibleNotFound, got %v", err)
+	}
+}
 
 func TestActivateSkipsFormWhenInputsAreComplete(t *testing.T) {
 	activator := &fakeActivator{}

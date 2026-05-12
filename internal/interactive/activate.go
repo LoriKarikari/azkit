@@ -26,11 +26,15 @@ func Activate(
 	cfg *config.Config,
 	input ActivationInput,
 ) (*domain.ActivationResult, error) {
+	if len(eligible) == 0 {
+		return nil, app.ErrEligibleNotFound
+	}
+
 	defaultDuration := 2 * time.Hour
 	if cfg != nil && cfg.DefaultDuration > 0 {
 		defaultDuration = cfg.DefaultDuration
 	}
-	if input.Duration > 0 {
+	if input.Duration != 0 {
 		defaultDuration = input.Duration
 	}
 
@@ -65,7 +69,7 @@ func Activate(
 				return nil
 			}))
 	}
-	if input.Duration == 0 {
+	if input.Duration <= 0 {
 		fields = append(fields, huh.NewInput().
 			Title("Duration").
 			Value(&durationText).

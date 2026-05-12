@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
@@ -87,12 +88,12 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 }
 
 func (c *ActivateCmd) needsInteractive(streams *Streams) bool {
-	hasScopeSelector := c.Scope != "" || c.Subscription != ""
+	hasScopeSelector := strings.TrimSpace(c.Scope) != "" || strings.TrimSpace(c.Subscription) != ""
 	if !hasScopeSelector && streams.Config != nil && streams.Config.SubscriptionID != "" {
 		hasScopeSelector = true
 	}
-	hasRole := c.Role != ""
-	hasReason := c.Reason != ""
+	hasRole := strings.TrimSpace(c.Role) != ""
+	hasReason := strings.TrimSpace(c.Reason) != ""
 	return !hasScopeSelector || !hasRole || !hasReason
 }
 
@@ -105,9 +106,7 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 	if err != nil {
 		return err
 	}
-	if c.Role != "" {
-		eligible = filterEligibleByRole(eligible, c.Role)
-	}
+	eligible = c.filterEligible(eligible)
 	if len(eligible) == 0 {
 		return app.ErrEligibleNotFound
 	}
@@ -134,17 +133,54 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 	return renderActivationResult(flow.streams, result, c.JSON)
 }
 
-func filterEligibleByRole(
-	eligible []domain.EligibleAssignment,
-	role string,
-) []domain.EligibleAssignment {
+func (c *ActivateCmd) filterEligible(eligible []domain.EligibleAssignment) []domain.EligibleAssignment {
 	filtered := make([]domain.EligibleAssignment, 0, len(eligible))
 	for _, a := range eligible {
-		if a.Role == role || a.RoleDefID == role {
+		if c.matchesEligible(a) {
 			filtered = append(filtered, a)
 		}
 	}
 	return filtered
+}
+
+func (c *ActivateCmd) matchesEligible(a domain.EligibleAssignment) bool {
+	role := strings.TrimSpace(c.Role)
+	if role != "" && a.Role != role && a.RoleDefID != role {
+		return false
+	}
+	if c.Scope != "" && a.ScopeID != c.Scope {
+		return false
+	}
+	if c.Subscription != "" && !matchesSubscription(a, c.Subscription) {
+		return false
+	}
+	if c.ResourceGroup != "" && !matchesResourceGroup(a, c.ResourceGroup) {
+		return false
+	}
+	return true
+}
+
+func matchesSubscription(a domain.EligibleAssignment, input string) bool {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return true
+	}
+	lower := strings.ToLower(input)
+	if a.SubscriptionID == input || strings.EqualFold(a.SubscriptionName, input) {
+		return true
+	}
+	if a.ScopeType == domain.ScopeSubscription && strings.EqualFold(a.ScopeName, input) {
+		return true
+	}
+	return strings.HasPrefix(strings.ToLower(a.ScopeID), "/subscriptions/"+lower)
+}
+
+func matchesResourceGroup(a domain.EligibleAssignment, input string) bool {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return true
+	}
+	return a.ScopeType == domain.ScopeResourceGroup && strings.EqualFold(a.ScopeName, input)
 }
 
 func renderActivationResult(streams *Streams, result *domain.ActivationResult, asJSON bool) error {
