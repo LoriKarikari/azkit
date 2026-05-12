@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -249,7 +250,11 @@ func waitForActive(
 	for {
 		select {
 		case <-deadline.Done():
-			if _, err := io.WriteString(streams.Stderr, "Timeout waiting for activation.\n"); err != nil {
+			message := "Timeout waiting for activation.\n"
+			if errors.Is(deadline.Err(), context.Canceled) {
+				message = "Activation wait canceled.\n"
+			}
+			if _, err := io.WriteString(streams.Stderr, message); err != nil {
 				streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
 			}
 			return nil
