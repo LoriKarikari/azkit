@@ -20,6 +20,11 @@ type ActiveAssignments struct {
 	log           *slog.Logger
 }
 
+var (
+	_ app.ActiveAssignments = (*ActiveAssignments)(nil)
+	_ activeInstanceSource  = (*azureActiveInstances)(nil)
+)
+
 type activeInstanceSource interface {
 	ListForScope(
 		context.Context,

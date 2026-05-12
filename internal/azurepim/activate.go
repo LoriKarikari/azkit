@@ -14,6 +14,11 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
+var (
+	_ app.ActivationStore    = (*ActivationStore)(nil)
+	_ roleAssignmentRequests = (*azureRoleAssignmentRequests)(nil)
+)
+
 type roleAssignmentRequests interface {
 	Create(
 		context.Context,
