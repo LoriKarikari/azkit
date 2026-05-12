@@ -2,6 +2,10 @@
 
 ## 0.1.0 (2026-05-12)
 
+**Full Changelog**: https://github.com/LoriKarikari/pimctl/compare/v0.1.0...v0.1.0
+
+## 0.1.0 (2026-05-12)
+
 ## What's Changed
 * feat: add list command with fake assignments by @LoriKarikari in https://github.com/LoriKarikari/pimctl/pull/13
 * ci: add test vet lint workflow by @LoriKarikari in https://github.com/LoriKarikari/pimctl/pull/14
