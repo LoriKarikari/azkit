@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/samber/lo"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
@@ -216,6 +217,8 @@ func renderActivationResult(streams *Streams, result *domain.ActivationResult, a
 	return err
 }
 
+const defaultWaitTimeout = 60 * time.Second
+
 func waitForActive(
 	ctx context.Context,
 	services Services,
@@ -227,14 +230,18 @@ func waitForActive(
 		return nil
 	}
 
-	const defaultWaitTimeout = 60 * time.Second
 	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
 	defer cancel()
 
-	waitingMsg := fmt.Sprintf("Waiting for %s on %s...\n", result.Role, result.ScopeName)
-	if _, err := io.WriteString(streams.Stderr, waitingMsg); err != nil {
-		streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
-	}
+	spinnerDone := make(chan struct{})
+	defer close(spinnerDone)
+	go spin(
+		streams.Stderr,
+		fmt.Sprintf("Waiting for %s on %s", result.Role, result.ScopeName),
+		spinnerDone,
+		150*time.Millisecond,
+		time.Now,
+	)
 
 	streams.Log.Debug(
 		"waiting for activation to propagate",
@@ -248,9 +255,10 @@ func waitForActive(
 	for {
 		select {
 		case <-deadline.Done():
-			message := "Timeout waiting for activation.\n"
+			_, _ = io.WriteString(streams.Stderr, "\r\033[K")
+			message := "Activation was accepted, but Azure did not report it active within 60s. Run pimctl status to check again.\n"
 			if errors.Is(deadline.Err(), context.Canceled) {
-				message = "Activation wait canceled.\n"
+				message = "Activation wait canceled. Run pimctl status to check whether Azure finished it.\n"
 			}
 			if _, err := io.WriteString(streams.Stderr, message); err != nil {
 				streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
@@ -264,6 +272,7 @@ func waitForActive(
 			for _, a := range as {
 				isMatch := a.Role == result.Role && a.ScopeID == result.ScopeID
 				if isMatch && a.Status == domain.ActiveAssignmentActive {
+					_, _ = io.WriteString(streams.Stderr, "\r\033[K")
 					confirmedMsg := fmt.Sprintf(
 						"✓ %s is active on %s\n",
 						result.Role,
@@ -285,4 +294,25 @@ func waitForActive(
 			}
 		}
 	}
+}
+
+func spin(w io.Writer, msg string, done <-chan struct{}, interval time.Duration, now func() time.Time) {
+	s := spinner.New(spinner.WithSpinner(spinner.Dot))
+	startedAt := now()
+	writeSpin(w, s.View(), msg, 0)
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			s, _ = s.Update(s.Tick())
+			writeSpin(w, s.View(), msg, now().Sub(startedAt))
+		}
+	}
+}
+
+func writeSpin(w io.Writer, frame, msg string, elapsed time.Duration) {
+	_, _ = io.WriteString(w, fmt.Sprintf("\r%s %s... %s", frame, msg, elapsed.Round(time.Second)))
 }
