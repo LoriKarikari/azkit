@@ -16,7 +16,7 @@ func validateActivation(req domain.ActivationRequest) error {
 	}
 	if req.Duration <= 0 {
 		return &Error{
-			Code:    CodeInvalidDuration,
+			Code:    domain.CodeInvalidDuration,
 			Message: fmt.Sprintf("Invalid activation duration: %s.", req.Duration),
 		}
 	}

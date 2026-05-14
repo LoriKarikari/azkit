@@ -60,7 +60,7 @@ func TestActivateResolved_invalidDuration(t *testing.T) {
 		Duration:   -1,
 	})
 	var appErr *app.Error
-	if !errors.As(err, &appErr) || appErr.Code != app.CodeInvalidDuration {
+	if !errors.As(err, &appErr) || appErr.Code != domain.CodeInvalidDuration {
 		t.Fatalf("want invalid duration error, got %v", err)
 	}
 }

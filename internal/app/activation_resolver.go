@@ -77,7 +77,7 @@ func resolveByID(id string, eligible []domain.EligibleAssignment) (string, error
 		}
 	}
 	return "", &Error{
-		Code:    CodeUnknownSubscription,
+		Code:    domain.CodeUnknownSubscription,
 		Message: fmt.Sprintf("Subscription %s not found among your eligible assignments.%s", id, selectorSuggestions(subscriptionSuggestions(eligible))),
 	}
 }
@@ -108,7 +108,7 @@ func resolveByName(name string, eligible []domain.EligibleAssignment) (string, e
 
 	if len(seen) == 0 {
 		return "", &Error{
-			Code:    CodeUnknownSubscription,
+			Code:    domain.CodeUnknownSubscription,
 			Message: fmt.Sprintf("Subscription %q not found among your eligible assignments.%s", name, selectorSuggestions(subscriptionSuggestions(eligible))),
 		}
 	}
@@ -119,7 +119,7 @@ func resolveByName(name string, eligible []domain.EligibleAssignment) (string, e
 		}
 		sort.Strings(matches)
 		return "", &Error{
-			Code:    CodeAmbiguousSubscription,
+			Code:    domain.CodeAmbiguousSubscription,
 			Message: fmt.Sprintf("Subscription name %q is ambiguous. Matches: %s. Use the subscription ID instead.", name, strings.Join(matches, ", ")),
 		}
 	}
@@ -153,7 +153,7 @@ func resolveResourceGroup(subscriptionID, name string, eligible []domain.Eligibl
 		}
 	}
 	return "", &Error{
-		Code:    CodeUnknownResourceGroup,
+		Code:    domain.CodeUnknownResourceGroup,
 		Message: fmt.Sprintf("Resource group %q not found in subscription.%s", name, selectorSuggestions(resourceGroupSuggestions(subscriptionID, eligible))),
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
+	"github.com/LoriKarikari/pimctl/internal/domain"
 	"github.com/LoriKarikari/pimctl/internal/interactive"
 )
 
@@ -22,7 +23,7 @@ func (c *DeactivateCmd) Run(ctx context.Context, services Services, streams *Str
 
 	if c.AssignmentID == "" {
 		return &app.Error{
-			Code:    app.CodeActiveAssignmentNotFound,
+			Code:    domain.CodeActiveAssignmentNotFound,
 			Message: "Assignment ID is required. Run pimctl status --verbose to find it.",
 		}
 	}

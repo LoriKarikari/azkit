@@ -95,7 +95,7 @@ func TestActivationStore_mapsPermissionDenied(t *testing.T) {
 	if !errors.As(err, &appErr) {
 		t.Fatalf("want app error, got %T", err)
 	}
-	if appErr.Code != app.CodePermissionDenied {
+	if appErr.Code != domain.CodePermissionDenied {
 		t.Fatalf("want permission denied, got %s", appErr.Code)
 	}
 }

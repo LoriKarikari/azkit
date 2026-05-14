@@ -129,7 +129,7 @@ func TestActivation_unknownSubscription(t *testing.T) {
 		Subscription: "nonexistent", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	var appErr *app.Error
-	if !errors.As(err, &appErr) || appErr.Code != app.CodeUnknownSubscription {
+	if !errors.As(err, &appErr) || appErr.Code != domain.CodeUnknownSubscription {
 		t.Fatalf("want unknown subscription, got %v", err)
 	}
 	if !strings.Contains(appErr.Message, "Production Platform") {
@@ -149,7 +149,7 @@ func TestActivation_unknownResourceGroup(t *testing.T) {
 		Subscription: "00000000-0000-0000-0000-000000000000", ResourceGroup: "missing-rg", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	var appErr *app.Error
-	if !errors.As(err, &appErr) || appErr.Code != app.CodeUnknownResourceGroup {
+	if !errors.As(err, &appErr) || appErr.Code != domain.CodeUnknownResourceGroup {
 		t.Fatalf("want unknown resource group, got %v", err)
 	}
 	if !strings.Contains(appErr.Message, "prod-rg") {
@@ -170,7 +170,7 @@ func TestActivation_ambiguousSubscription(t *testing.T) {
 		Subscription: "prod", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	var appErr *app.Error
-	if !errors.As(err, &appErr) || appErr.Code != app.CodeAmbiguousSubscription {
+	if !errors.As(err, &appErr) || appErr.Code != domain.CodeAmbiguousSubscription {
 		t.Fatalf("want ambiguous subscription, got %v", err)
 	}
 }
@@ -240,7 +240,7 @@ func TestActivation_invalidDuration(t *testing.T) {
 		t.Fatal("want error, got nil")
 	}
 	var appErr *app.Error
-	if !errors.As(err, &appErr) || appErr.Code != app.CodeInvalidDuration {
+	if !errors.As(err, &appErr) || appErr.Code != domain.CodeInvalidDuration {
 		t.Fatalf("want invalid duration, got %v", err)
 	}
 }

@@ -1,17 +1,13 @@
 package app
 
-import "fmt"
+import (
+	"fmt"
 
-type Code string
-
-const (
-	CodeAuthFailed       Code = "authentication_failed"
-	CodeAzureAPIError    Code = "azure_api_error"
-	CodePermissionDenied Code = "permission_denied"
+	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
 type Error struct {
-	Code    Code
+	Code    domain.Code
 	Message string
 	Cause   error
 }
@@ -29,7 +25,7 @@ func (e *Error) Unwrap() error {
 
 func AuthFailed(err error) *Error {
 	return &Error{
-		Code:    CodeAuthFailed,
+		Code:    domain.CodeAuthFailed,
 		Message: "Could not authenticate with Azure.",
 		Cause:   err,
 	}
@@ -37,7 +33,7 @@ func AuthFailed(err error) *Error {
 
 func AzureAPIError(err error) *Error {
 	return &Error{
-		Code:    CodeAzureAPIError,
+		Code:    domain.CodeAzureAPIError,
 		Message: "Azure API call failed.",
 		Cause:   err,
 	}
@@ -45,7 +41,7 @@ func AzureAPIError(err error) *Error {
 
 func PermissionDenied(err error) *Error {
 	return &Error{
-		Code:    CodePermissionDenied,
+		Code:    domain.CodePermissionDenied,
 		Message: "Insufficient permissions for PIM operations.",
 		Cause:   err,
 	}

@@ -93,13 +93,13 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 func (c *ActivateCmd) validateNonInteractive() error {
 	if strings.TrimSpace(c.Role) == "" {
 		return &app.Error{
-			Code:    app.CodeMissingRole,
+			Code:    domain.CodeMissingRole,
 			Message: "Activation role is required.",
 		}
 	}
 	if strings.TrimSpace(c.Reason) == "" {
 		return &app.Error{
-			Code:    app.CodeMissingReason,
+			Code:    domain.CodeMissingReason,
 			Message: "Activation reason is required.",
 		}
 	}
