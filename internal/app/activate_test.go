@@ -92,7 +92,7 @@ func TestActivation_ignoresActiveAssignmentWithoutExpiry(t *testing.T) {
 		},
 	}
 	act := &testActivator{result: okResult(t, 2*time.Hour)}
-	svc := app.NewActivationService(store, act, active)
+	svc := app.NewActivationService(store, active, act)
 
 	got, err := svc.Activate(t.Context(), domain.ActivationRequest{
 		ScopeID: "/sub/abc", Role: "Contributor", Reason: "Deploy", Duration: time.Hour,
