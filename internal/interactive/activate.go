@@ -92,6 +92,9 @@ func Activate(
 	if len(groups) > 0 {
 		form := huh.NewForm(groups...)
 		if err := form.RunWithContext(ctx); err != nil {
+			if errors.Is(err, huh.ErrUserAborted) {
+				return nil, ErrCanceled
+			}
 			return nil, err
 		}
 	}
@@ -133,10 +136,13 @@ func confirmActivation(ctx context.Context, selected domain.EligibleAssignment, 
 			Value(&confirmed),
 	))
 	if err := form.RunWithContext(ctx); err != nil {
+		if errors.Is(err, huh.ErrUserAborted) {
+			return ErrCanceled
+		}
 		return err
 	}
 	if !confirmed {
-		return errors.New("activation canceled")
+		return ErrCanceled
 	}
 	return nil
 }

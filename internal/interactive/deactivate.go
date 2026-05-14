@@ -36,6 +36,9 @@ func Deactivate(
 				Value(&selected),
 		))
 		if err := form.RunWithContext(ctx); err != nil {
+			if errors.Is(err, huh.ErrUserAborted) {
+				return nil, ErrCanceled
+			}
 			return nil, err
 		}
 	}
@@ -64,10 +67,13 @@ func confirmDeactivation(ctx context.Context, selected domain.ActiveAssignment, 
 			Value(&confirmed),
 	))
 	if err := form.RunWithContext(ctx); err != nil {
+		if errors.Is(err, huh.ErrUserAborted) {
+			return ErrCanceled
+		}
 		return err
 	}
 	if !confirmed {
-		return errors.New("deactivation canceled")
+		return ErrCanceled
 	}
 	return nil
 }
