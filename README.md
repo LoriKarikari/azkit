@@ -5,9 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/LoriKarikari/pimctl)](https://goreportcard.com/report/github.com/LoriKarikari/pimctl)
 [![License](https://img.shields.io/github/license/LoriKarikari/pimctl)](./LICENSE)
 
-`pimctl` is a small CLI for Azure PIM resource role workflows.
-
-It lists eligible assignments, activates roles, deactivates active assignments, and shows current active assignments.
+`pimctl` is a small CLI for Azure PIM resource roles. It lists eligible assignments, activates roles, deactivates active assignments, and shows what is active now.
 
 ## Scope
 
@@ -37,12 +35,14 @@ Check active assignments:
 pimctl status
 ```
 
-Show assignment IDs (needed for deactivation):
+Find the `assignment_id` for an active assignment:
 
 ```bash
 pimctl status --verbose
 pimctl status --json
 ```
+
+Default status output stays short. Use `--verbose` or `--json` when you need the ID for a script or deactivation.
 
 Deactivate an active assignment:
 
@@ -50,21 +50,17 @@ Deactivate an active assignment:
 pimctl deactivate <assignment-id>
 ```
 
-With a reason:
+Add a reason if you want one recorded with the request:
 
 ```bash
 pimctl deactivate <assignment-id> --reason "Incident resolved"
 ```
 
-Interactive picker (no ID needed, runs in a terminal):
+In a terminal, `pimctl deactivate` opens a picker.
 
-```bash
-pimctl deactivate
-```
+Success means Azure accepted the deactivation request. The assignment may still appear in `pimctl status` for a short time.
 
-Deactivation asks Azure to end the assignment. The command returns once Azure accepts the request — the assignment may still appear in `pimctl status` for a short time afterward.
-
-Use JSON output for scripts:
+For scripts:
 
 ```bash
 pimctl list --json
@@ -93,12 +89,6 @@ Environment variables use the `PIMCTL_` prefix:
 export PIMCTL_DEFAULT_DURATION=2h
 export PIMCTL_SUBSCRIPTION_ID=00000000-0000-0000-0000-000000000000
 ```
-
-## Docs
-
-- Domain language: [`CONTEXT.md`](./CONTEXT.md)
-- Architecture decisions: [`docs/adr/`](./docs/adr/)
-- Agent/project conventions: [`AGENTS.md`](./AGENTS.md)
 
 ## License
 
