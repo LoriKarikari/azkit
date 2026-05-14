@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
@@ -19,26 +21,22 @@ func (activationResolver) Resolve(req domain.ActivationRequest, eligible []domai
 		return domain.ActivationTarget{}, err
 	}
 
-	match := findMatch(eligible, scopeID, req.Role)
-	if match == nil {
+	match, ok := findMatch(eligible, scopeID, req.Role)
+	if !ok {
 		return domain.ActivationTarget{}, ErrEligibleNotFound
 	}
 
 	return domain.ActivationTarget{
-		Assignment: *match,
+		Assignment: match,
 		Reason:     req.Reason,
 		Duration:   req.Duration,
 	}, nil
 }
 
-func findMatch(eligible []domain.EligibleAssignment, scopeID, role string) *domain.EligibleAssignment {
-	for i := range eligible {
-		if eligible[i].ScopeID == scopeID &&
-			(eligible[i].Role == role || eligible[i].RoleDefID == role) {
-			return &eligible[i]
-		}
-	}
-	return nil
+func findMatch(eligible []domain.EligibleAssignment, scopeID, role string) (domain.EligibleAssignment, bool) {
+	return lo.Find(eligible, func(a domain.EligibleAssignment) bool {
+		return a.ScopeID == scopeID && (a.Role == role || a.RoleDefID == role)
+	})
 }
 
 func resolveScope(req domain.ActivationRequest, eligible []domain.EligibleAssignment) (string, error) {

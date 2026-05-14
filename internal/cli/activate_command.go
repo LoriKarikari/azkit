@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/domain"
 	"github.com/LoriKarikari/pimctl/internal/interactive"
@@ -151,13 +153,9 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 }
 
 func (c *ActivateCmd) filterEligible(eligible []domain.EligibleAssignment) []domain.EligibleAssignment {
-	filtered := make([]domain.EligibleAssignment, 0, len(eligible))
-	for _, a := range eligible {
-		if c.matchesEligible(a) {
-			filtered = append(filtered, a)
-		}
-	}
-	return filtered
+	return lo.Filter(eligible, func(a domain.EligibleAssignment, _ int) bool {
+		return c.matchesEligible(a)
+	})
 }
 
 func (c *ActivateCmd) matchesEligible(a domain.EligibleAssignment) bool {
