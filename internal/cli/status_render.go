@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"text/tabwriter"
 	"time"
@@ -38,8 +37,7 @@ func RenderStatusJSON(as []domain.ActiveAssignment) string {
 			AssignmentID: a.ID,
 		}
 	}
-	b, _ := json.MarshalIndent(out, "", "  ")
-	return string(b) + "\n"
+	return marshalJSON(out)
 }
 
 func RenderStatusHuman(as []domain.ActiveAssignment, verbose bool) string {

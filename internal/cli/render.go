@@ -38,6 +38,11 @@ func RenderJSON(as []domain.EligibleAssignment) string {
 	return string(b) + "\n"
 }
 
+func marshalJSON(v any) string {
+	b, _ := json.MarshalIndent(v, "", "  ")
+	return string(b) + "\n"
+}
+
 func RenderHuman(as []domain.EligibleAssignment, verbose bool) string {
 	if len(as) == 0 {
 		return "No eligible assignments.\n"

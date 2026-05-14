@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"text/tabwriter"
 
@@ -35,8 +34,7 @@ func renderActivationJSON(result *domain.ActivationResult) string {
 		ExpiresAt: jsonTime(result.ExpiresAt),
 		Reason:    result.Reason,
 	}
-	b, _ := json.MarshalIndent(out, "", "  ")
-	return string(b) + "\n"
+	return marshalJSON(out)
 }
 
 func renderActivationHuman(result *domain.ActivationResult) string {
