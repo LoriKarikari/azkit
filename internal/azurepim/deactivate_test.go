@@ -85,8 +85,13 @@ func TestDeactivationStore_omitsBlankJustification(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if requests.parameters.Properties.Justification != nil {
-		t.Fatalf("want no justification, got %s", *requests.parameters.Properties.Justification)
+	props := requests.parameters.Properties
+	if props == nil {
+		t.Fatal("missing properties")
+		return
+	}
+	if props.Justification != nil {
+		t.Fatalf("want no justification, got %s", *props.Justification)
 	}
 }
 
