@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
@@ -32,16 +34,12 @@ func (s *DeactivationService) Deactivate(
 		return nil, err
 	}
 
-	var found *domain.ActiveAssignment
-	for i := range assignments {
-		if assignments[i].ID == assignmentID {
-			found = &assignments[i]
-			break
-		}
-	}
-	if found == nil {
+	found, ok := lo.Find(assignments, func(a domain.ActiveAssignment) bool {
+		return a.ID == assignmentID
+	})
+	if !ok {
 		return nil, ErrActiveAssignmentNotFound
 	}
 
-	return s.store.Deactivate(ctx, *found, reason)
+	return s.store.Deactivate(ctx, found, reason)
 }

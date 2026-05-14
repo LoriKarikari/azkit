@@ -51,8 +51,8 @@ func TestEligibleAssignments_wrapsSubscriptionError(t *testing.T) {
 	if !errors.As(err, &appErr) {
 		t.Fatalf("want app error, got %T", err)
 	}
-	if appErr.Code != app.CodeAuthFailed {
-		t.Fatalf("want %s, got %s", app.CodeAuthFailed, appErr.Code)
+	if appErr.Code != domain.CodeAuthFailed {
+		t.Fatalf("want %s, got %s", domain.CodeAuthFailed, appErr.Code)
 	}
 }
 

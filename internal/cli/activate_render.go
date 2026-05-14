@@ -2,10 +2,8 @@ package cli
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"text/tabwriter"
-	"time"
 
 	"github.com/LoriKarikari/pimctl/internal/domain"
 )
@@ -32,12 +30,11 @@ func renderActivationJSON(result *domain.ActivationResult) string {
 			Name: result.ScopeName,
 		},
 		Duration:  result.Duration.String(),
-		StartedAt: renderTime(result.StartedAt),
-		ExpiresAt: renderTime(result.ExpiresAt),
+		StartedAt: jsonTime(result.StartedAt),
+		ExpiresAt: jsonTime(result.ExpiresAt),
 		Reason:    result.Reason,
 	}
-	b, _ := json.MarshalIndent(out, "", "  ")
-	return string(b) + "\n"
+	return marshalJSON(out)
 }
 
 func renderActivationHuman(result *domain.ActivationResult) string {
@@ -49,11 +46,4 @@ func renderActivationHuman(result *domain.ActivationResult) string {
 	_, _ = fmt.Fprintf(w, "Reason:\t%s\n", result.Reason)
 	_ = w.Flush()
 	return buf.String()
-}
-
-func renderTime(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	return t.UTC().Format(time.RFC3339)
 }

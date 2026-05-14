@@ -7,26 +7,13 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
-const (
-	CodeEligibleNotFound         Code = "eligible_not_found"
-	CodeActiveAssignmentNotFound Code = "active_assignment_not_found"
-	CodeMissingScope             Code = "missing_scope"
-	CodeMissingRole              Code = "missing_role"
-	CodeMissingReason            Code = "missing_reason"
-	CodeInvalidDuration          Code = "invalid_duration"
-	CodeConflictingSelectors     Code = "conflicting_selectors"
-	CodeUnknownSubscription      Code = "unknown_subscription"
-	CodeAmbiguousSubscription    Code = "ambiguous_subscription"
-	CodeUnknownResourceGroup     Code = "unknown_resource_group"
-)
-
 var (
-	ErrEligibleNotFound         = &Error{Code: CodeEligibleNotFound, Message: "No matching eligible assignment found."}
-	ErrActiveAssignmentNotFound = &Error{Code: CodeActiveAssignmentNotFound, Message: "No matching active assignment found."}
-	ErrMissingScope             = &Error{Code: CodeMissingScope, Message: "Activation scope is required."}
-	ErrMissingRole              = &Error{Code: CodeMissingRole, Message: "Activation role is required."}
-	ErrMissingReason            = &Error{Code: CodeMissingReason, Message: "Activation reason is required."}
-	ErrConflictingSelectors     = &Error{Code: CodeConflictingSelectors, Message: "Use --scope or --subscription, not both."}
+	ErrEligibleNotFound         = &Error{Code: domain.CodeEligibleNotFound, Message: "No matching eligible assignment found."}
+	ErrActiveAssignmentNotFound = &Error{Code: domain.CodeActiveAssignmentNotFound, Message: "No matching active assignment found."}
+	ErrMissingScope             = &Error{Code: domain.CodeMissingScope, Message: "Activation scope is required."}
+	ErrMissingRole              = &Error{Code: domain.CodeMissingRole, Message: "Activation role is required."}
+	ErrMissingReason            = &Error{Code: domain.CodeMissingReason, Message: "Activation reason is required."}
+	ErrConflictingSelectors     = &Error{Code: domain.CodeConflictingSelectors, Message: "Use --scope or --subscription, not both."}
 )
 
 type ActivationStore interface {
@@ -53,7 +40,7 @@ func (s *ActivationService) ActivateResolved(
 	}
 	if target.Duration <= 0 {
 		return nil, &Error{
-			Code:    CodeInvalidDuration,
+			Code:    domain.CodeInvalidDuration,
 			Message: "Invalid activation duration.",
 		}
 	}

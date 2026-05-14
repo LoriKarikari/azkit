@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"text/tabwriter"
 
@@ -27,8 +26,7 @@ func renderDeactivationJSON(result *domain.DeactivationResult) string {
 		AssignmentID: result.AssignmentID,
 		Status:       string(result.Status),
 	}
-	b, _ := json.MarshalIndent(out, "", "  ")
-	return string(b) + "\n"
+	return marshalJSON(out)
 }
 
 func renderDeactivationHuman(result *domain.DeactivationResult) string {

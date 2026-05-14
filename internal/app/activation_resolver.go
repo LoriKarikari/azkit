@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
@@ -19,26 +21,22 @@ func (activationResolver) Resolve(req domain.ActivationRequest, eligible []domai
 		return domain.ActivationTarget{}, err
 	}
 
-	match := findMatch(eligible, scopeID, req.Role)
-	if match == nil {
+	match, ok := findMatch(eligible, scopeID, req.Role)
+	if !ok {
 		return domain.ActivationTarget{}, ErrEligibleNotFound
 	}
 
 	return domain.ActivationTarget{
-		Assignment: *match,
+		Assignment: match,
 		Reason:     req.Reason,
 		Duration:   req.Duration,
 	}, nil
 }
 
-func findMatch(eligible []domain.EligibleAssignment, scopeID, role string) *domain.EligibleAssignment {
-	for i := range eligible {
-		if eligible[i].ScopeID == scopeID &&
-			(eligible[i].Role == role || eligible[i].RoleDefID == role) {
-			return &eligible[i]
-		}
-	}
-	return nil
+func findMatch(eligible []domain.EligibleAssignment, scopeID, role string) (domain.EligibleAssignment, bool) {
+	return lo.Find(eligible, func(a domain.EligibleAssignment) bool {
+		return a.ScopeID == scopeID && (a.Role == role || a.RoleDefID == role)
+	})
 }
 
 func resolveScope(req domain.ActivationRequest, eligible []domain.EligibleAssignment) (string, error) {
@@ -79,7 +77,7 @@ func resolveByID(id string, eligible []domain.EligibleAssignment) (string, error
 		}
 	}
 	return "", &Error{
-		Code:    CodeUnknownSubscription,
+		Code:    domain.CodeUnknownSubscription,
 		Message: fmt.Sprintf("Subscription %s not found among your eligible assignments.%s", id, selectorSuggestions(subscriptionSuggestions(eligible))),
 	}
 }
@@ -110,7 +108,7 @@ func resolveByName(name string, eligible []domain.EligibleAssignment) (string, e
 
 	if len(seen) == 0 {
 		return "", &Error{
-			Code:    CodeUnknownSubscription,
+			Code:    domain.CodeUnknownSubscription,
 			Message: fmt.Sprintf("Subscription %q not found among your eligible assignments.%s", name, selectorSuggestions(subscriptionSuggestions(eligible))),
 		}
 	}
@@ -121,7 +119,7 @@ func resolveByName(name string, eligible []domain.EligibleAssignment) (string, e
 		}
 		sort.Strings(matches)
 		return "", &Error{
-			Code:    CodeAmbiguousSubscription,
+			Code:    domain.CodeAmbiguousSubscription,
 			Message: fmt.Sprintf("Subscription name %q is ambiguous. Matches: %s. Use the subscription ID instead.", name, strings.Join(matches, ", ")),
 		}
 	}
@@ -155,7 +153,7 @@ func resolveResourceGroup(subscriptionID, name string, eligible []domain.Eligibl
 		}
 	}
 	return "", &Error{
-		Code:    CodeUnknownResourceGroup,
+		Code:    domain.CodeUnknownResourceGroup,
 		Message: fmt.Sprintf("Resource group %q not found in subscription.%s", name, selectorSuggestions(resourceGroupSuggestions(subscriptionID, eligible))),
 	}
 }
