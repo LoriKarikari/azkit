@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/huh"
+	"github.com/samber/lo"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/domain"
@@ -24,11 +25,9 @@ func Deactivate(
 
 	selected := active[0]
 	if len(active) > 1 {
-		options := make([]huh.Option[domain.ActiveAssignment], len(active))
-		for i, a := range active {
-			label := fmtActiveAssignment(a)
-			options[i] = huh.NewOption(label, a)
-		}
+		options := lo.Map(active, func(a domain.ActiveAssignment, _ int) huh.Option[domain.ActiveAssignment] {
+			return huh.NewOption(fmtActiveAssignment(a), a)
+		})
 		form := huh.NewForm(huh.NewGroup(
 			huh.NewSelect[domain.ActiveAssignment]().
 				Title("Select an active assignment to deactivate").

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/huh"
+	"github.com/samber/lo"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/config"
@@ -45,11 +46,9 @@ func Activate(
 	groups := make([]*huh.Group, 0, 2)
 
 	if len(eligible) > 1 {
-		options := make([]huh.Option[domain.EligibleAssignment], len(eligible))
-		for i, a := range eligible {
-			label := fmtAssignment(a)
-			options[i] = huh.NewOption(label, a)
-		}
+		options := lo.Map(eligible, func(a domain.EligibleAssignment, _ int) huh.Option[domain.EligibleAssignment] {
+			return huh.NewOption(fmtAssignment(a), a)
+		})
 		groups = append(groups, huh.NewGroup(
 			huh.NewSelect[domain.EligibleAssignment]().
 				Title("Select an eligible assignment").
