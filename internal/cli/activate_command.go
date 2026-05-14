@@ -320,7 +320,7 @@ func waitForActive(
 }
 
 func matchesActivatedAssignment(active domain.ActiveAssignment, result *domain.ActivationResult) bool {
-	if active.Status != domain.ActiveAssignmentActive || !strings.EqualFold(active.ScopeID, result.ScopeID) {
+	if active.Status != domain.ActiveAssignmentActive || active.EndTime.IsZero() || !strings.EqualFold(active.ScopeID, result.ScopeID) {
 		return false
 	}
 	if result.RoleDefID != "" && strings.EqualFold(active.RoleDefID, result.RoleDefID) {
