@@ -46,17 +46,26 @@ func RenderHuman(as []domain.EligibleAssignment, verbose bool) string {
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 
 	if verbose {
-		fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tELIGIBLE UNTIL\tASSIGNMENT ID\tSCOPE ID")
+		_, _ = fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tELIGIBLE UNTIL\tASSIGNMENT ID\tSCOPE ID")
 		for _, a := range as {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", a.Role, a.ScopeType, a.ScopeName, humanTime(a.EligibleUntil), a.ID, a.ScopeID)
+			_, _ = fmt.Fprintf(
+				w,
+				"%s\t%s\t%s\t%s\t%s\t%s\n",
+				a.Role,
+				a.ScopeType,
+				a.ScopeName,
+				humanTime(a.EligibleUntil),
+				a.ID,
+				a.ScopeID,
+			)
 		}
 	} else {
-		fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tELIGIBLE UNTIL")
+		_, _ = fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tELIGIBLE UNTIL")
 		for _, a := range as {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", a.Role, a.ScopeType, a.ScopeName, humanTime(a.EligibleUntil))
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", a.Role, a.ScopeType, a.ScopeName, humanTime(a.EligibleUntil))
 		}
 	}
-	w.Flush()
+	_ = w.Flush()
 	return buf.String()
 }
 

@@ -42,12 +42,12 @@ func renderActivationJSON(result *domain.ActivationResult) string {
 
 func renderActivationHuman(result *domain.ActivationResult) string {
 	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "✓ Activated %s on %s\n", result.Role, result.ScopeName)
+	_, _ = fmt.Fprintf(&buf, "✓ Activated %s on %s\n", result.Role, result.ScopeName)
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(w, "Duration:\t%s\n", result.Duration)
-	fmt.Fprintf(w, "Expires:\t%s\n", result.ExpiresAt.UTC().Format("2006-01-02 15:04 UTC"))
-	fmt.Fprintf(w, "Reason:\t%s\n", result.Reason)
-	w.Flush()
+	_, _ = fmt.Fprintf(w, "Duration:\t%s\n", result.Duration)
+	_, _ = fmt.Fprintf(w, "Expires:\t%s\n", result.ExpiresAt.UTC().Format("2006-01-02 15:04 UTC"))
+	_, _ = fmt.Fprintf(w, "Reason:\t%s\n", result.Reason)
+	_ = w.Flush()
 	return buf.String()
 }
 
