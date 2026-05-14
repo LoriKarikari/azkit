@@ -50,25 +50,25 @@ func RenderStatusHuman(as []domain.ActiveAssignment, verbose bool) string {
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 
 	if verbose {
-		fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tSTATUS\tSTARTED\tEXPIRES\tASSIGNMENT ID\tSCOPE ID")
+		_, _ = fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tSTATUS\tSTARTED\tEXPIRES\tASSIGNMENT ID\tSCOPE ID")
 		for _, a := range as {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 				a.Role, a.ScopeType, a.ScopeName,
 				a.Status,
 				humanTime(a.StartTime), humanTime(a.EndTime),
 				a.ID, a.ScopeID)
 		}
 	} else {
-		fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tSTATUS\tEXPIRES")
+		_, _ = fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tSTATUS\tEXPIRES")
 		for _, a := range as {
 			status := statusSymbol(a.Status)
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 				a.Role, a.ScopeType, a.ScopeName,
 				status,
 				expiresStatus(a.EndTime))
 		}
 	}
-	w.Flush()
+	_ = w.Flush()
 	return buf.String()
 }
 

@@ -12,8 +12,12 @@ const (
 
 type ActiveAssignmentStatus string
 
+type DeactivationRequestStatus string
+
 const (
 	ActiveAssignmentActive ActiveAssignmentStatus = "active"
+
+	DeactivationRequested DeactivationRequestStatus = "deactivation_requested"
 )
 
 type EligibleAssignment struct {
@@ -67,4 +71,13 @@ type ActivationResult struct {
 	StartedAt time.Time
 	ExpiresAt time.Time
 	Reason    string
+}
+
+type DeactivationResult struct {
+	Role         string
+	ScopeID      string
+	ScopeName    string
+	ScopeType    ScopeType
+	AssignmentID string
+	Status       DeactivationRequestStatus
 }
