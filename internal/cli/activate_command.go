@@ -283,7 +283,7 @@ func waitForActive(
 			}
 			return nil
 		case <-ticker.C:
-			as, err := statusSvc.Status(deadline)
+			as, err := statusSvc.StatusForScope(deadline, result.ScopeID)
 			if err != nil {
 				continue
 			}

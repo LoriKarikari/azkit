@@ -83,7 +83,7 @@ func (s *ActivationService) findActive(ctx context.Context, target domain.Activa
 	if s.active == nil {
 		return nil, false
 	}
-	active, err := s.active.ListActive(ctx)
+	active, err := s.active.ListActiveForScope(ctx, target.Assignment.ScopeID)
 	if err != nil {
 		return nil, false
 	}
