@@ -284,6 +284,11 @@ func waitForActive(
 		case <-ticker.C:
 			as, err := statusSvc.StatusForScope(deadline, result.ScopeID)
 			if err != nil {
+				streams.Log.Debug(
+					"activation status poll failed",
+					slog.String("scope", result.ScopeID),
+					slog.Any("error", err),
+				)
 				continue
 			}
 			for _, a := range as {

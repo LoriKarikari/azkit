@@ -53,7 +53,11 @@ func (s *ActivationService) ActivateResolved(
 			Message: "Invalid activation duration.",
 		}
 	}
-	if result, ok := s.findActive(ctx, target); ok {
+	result, ok, err := s.findActive(ctx, target)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
 		return result, nil
 	}
 	return s.activator.Activate(ctx, target)
@@ -77,19 +81,26 @@ func (s *ActivationService) Activate(
 	if err != nil {
 		return nil, err
 	}
-	if result, ok := s.findActive(ctx, target); ok {
+	result, ok, err := s.findActive(ctx, target)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
 		return result, nil
 	}
 	return s.activator.Activate(ctx, target)
 }
 
-func (s *ActivationService) findActive(ctx context.Context, target domain.ActivationTarget) (*domain.ActivationResult, bool) {
+func (s *ActivationService) findActive(
+	ctx context.Context,
+	target domain.ActivationTarget,
+) (*domain.ActivationResult, bool, error) {
 	if s.active == nil {
-		return nil, false
+		return nil, false, nil
 	}
 	active, err := s.active.ListActiveForScope(ctx, target.Assignment.ScopeID)
 	if err != nil {
-		return nil, false
+		return nil, false, err
 	}
 	for _, assignment := range active {
 		if !matchesActiveAssignment(assignment, target.Assignment) {
@@ -108,9 +119,9 @@ func (s *ActivationService) findActive(ctx context.Context, target domain.Activa
 			StartedAt:     assignment.StartTime,
 			ExpiresAt:     assignment.EndTime,
 			AlreadyActive: true,
-		}, true
+		}, true, nil
 	}
-	return nil, false
+	return nil, false, nil
 }
 
 func matchesActiveAssignment(active domain.ActiveAssignment, eligible domain.EligibleAssignment) bool {
