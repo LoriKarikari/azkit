@@ -5,9 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/LoriKarikari/pimctl)](https://goreportcard.com/report/github.com/LoriKarikari/pimctl)
 [![License](https://img.shields.io/github/license/LoriKarikari/pimctl)](./LICENSE)
 
-`pimctl` is a small CLI for Azure PIM resource role workflows.
-
-It lists eligible assignments, activates roles, and shows current active assignments.
+`pimctl` manages Azure PIM resource roles. It lists eligible assignments, activates roles, deactivates active assignments, and shows what is active now.
 
 ## Scope
 
@@ -37,11 +35,37 @@ Check active assignments:
 pimctl status
 ```
 
-Use JSON output for scripts:
+Find the `assignment_id` for an active assignment:
+
+```bash
+pimctl status --verbose
+pimctl status --json
+```
+
+Default status output stays short. Use `--verbose` or `--json` when you need the ID for a script or deactivation.
+
+Deactivate an active assignment:
+
+```bash
+pimctl deactivate <assignment-id>
+```
+
+Add a reason if you want one recorded with the request:
+
+```bash
+pimctl deactivate <assignment-id> --reason "Incident resolved"
+```
+
+In a terminal, `pimctl deactivate` opens a picker.
+
+Success means Azure accepted the deactivation request. The assignment may still appear in `pimctl status` for a short time.
+
+For scripts:
 
 ```bash
 pimctl list --json
 pimctl status --json
+pimctl deactivate <assignment-id> --json
 ```
 
 ## Configuration
@@ -65,12 +89,6 @@ Environment variables use the `PIMCTL_` prefix:
 export PIMCTL_DEFAULT_DURATION=2h
 export PIMCTL_SUBSCRIPTION_ID=00000000-0000-0000-0000-000000000000
 ```
-
-## Docs
-
-- Domain language: [`CONTEXT.md`](./CONTEXT.md)
-- Architecture decisions: [`docs/adr/`](./docs/adr/)
-- Agent/project conventions: [`AGENTS.md`](./AGENTS.md)
 
 ## License
 
