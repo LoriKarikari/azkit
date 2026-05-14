@@ -64,13 +64,14 @@ type ActivationTarget struct {
 }
 
 type ActivationResult struct {
-	Role      string
-	ScopeID   string
-	ScopeName string
-	Duration  time.Duration
-	StartedAt time.Time
-	ExpiresAt time.Time
-	Reason    string
+	Role          string
+	ScopeID       string
+	ScopeName     string
+	Duration      time.Duration
+	StartedAt     time.Time
+	ExpiresAt     time.Time
+	Reason        string
+	AlreadyActive bool
 }
 
 type DeactivationResult struct {

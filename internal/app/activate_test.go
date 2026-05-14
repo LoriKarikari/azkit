@@ -32,6 +32,47 @@ func TestActivation_byScopeID(t *testing.T) {
 	}
 }
 
+func TestActivation_skipsAlreadyActiveAssignment(t *testing.T) {
+	startedAt := time.Date(2026, 5, 14, 18, 0, 0, 0, time.UTC)
+	store := &inmemory.EligibleAssignments{
+		Assignments: []domain.EligibleAssignment{
+			{ID: "sched-1", Role: "Contributor", RoleDefID: "/roleDefs/111", PrincipalID: "user-1", ScopeID: "/sub/abc", ScopeName: "sub-prod"},
+		},
+	}
+	active := &inmemory.ActiveAssignments{
+		Assignments: []domain.ActiveAssignment{
+			{
+				ID:        "active-1",
+				Role:      "Contributor",
+				RoleDefID: "/roleDefs/111",
+				ScopeID:   "/sub/abc",
+				ScopeName: "sub-prod",
+				StartTime: startedAt,
+				EndTime:   startedAt.Add(2 * time.Hour),
+				Status:    domain.ActiveAssignmentActive,
+			},
+		},
+	}
+	act := &testActivator{result: okResult(t, 2*time.Hour)}
+	svc := app.NewActivationService(store, act, active)
+
+	got, err := svc.Activate(t.Context(), domain.ActivationRequest{
+		ScopeID: "/sub/abc", Role: "Contributor", Reason: "Deploy", Duration: time.Hour,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if act.called {
+		t.Fatal("activation API should not be called")
+	}
+	if !got.AlreadyActive {
+		t.Fatalf("want already active result, got %+v", got)
+	}
+	if got.Duration != 2*time.Hour {
+		t.Fatalf("want active duration 2h, got %s", got.Duration)
+	}
+}
+
 func TestActivation_bySubscriptionID(t *testing.T) {
 	store := &inmemory.EligibleAssignments{
 		Assignments: []domain.EligibleAssignment{
@@ -257,9 +298,11 @@ func okResult(t *testing.T, dur time.Duration) *domain.ActivationResult {
 type testActivator struct {
 	result *domain.ActivationResult
 	err    error
+	called bool
 }
 
 func (a *testActivator) Activate(_ context.Context, target domain.ActivationTarget) (*domain.ActivationResult, error) {
+	a.called = true
 	if a.err != nil {
 		return nil, a.err
 	}

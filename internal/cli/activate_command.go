@@ -83,9 +83,11 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		return err
 	}
 
-	confirmed := waitForActive(ctx, services, result, streams)
-	if confirmed != nil {
-		result = confirmed
+	if !result.AlreadyActive {
+		confirmed := waitForActive(ctx, services, result, streams)
+		if confirmed != nil {
+			result = confirmed
+		}
 	}
 
 	return renderActivationResult(streams, result, c.JSON)
@@ -145,9 +147,11 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		return err
 	}
 
-	confirmed := waitForActive(ctx, flow.services, result, flow.streams)
-	if confirmed != nil {
-		result = confirmed
+	if !result.AlreadyActive {
+		confirmed := waitForActive(ctx, flow.services, result, flow.streams)
+		if confirmed != nil {
+			result = confirmed
+		}
 	}
 
 	return renderActivationResult(flow.streams, result, c.JSON)
@@ -210,6 +214,9 @@ func renderActivationResult(streams *Streams, result *domain.ActivationResult, a
 		result.ScopeName,
 		result.Duration,
 	)
+	if result.AlreadyActive {
+		activatingMsg = fmt.Sprintf("Already active: %s on %s\n", result.Role, result.ScopeName)
+	}
 	if _, err := io.WriteString(streams.Stderr, activatingMsg); err != nil {
 		streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
 	}
