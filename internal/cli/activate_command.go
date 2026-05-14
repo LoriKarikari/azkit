@@ -240,7 +240,6 @@ func waitForActive(
 		fmt.Sprintf("Waiting for %s on %s", result.Role, result.ScopeName),
 		spinnerDone,
 		150*time.Millisecond,
-		time.Now,
 	)
 
 	streams.Log.Debug(
@@ -296,9 +295,9 @@ func waitForActive(
 	}
 }
 
-func spin(w io.Writer, msg string, done <-chan struct{}, interval time.Duration, now func() time.Time) {
+func spin(w io.Writer, msg string, done <-chan struct{}, interval time.Duration) {
 	s := spinner.New(spinner.WithSpinner(spinner.Dot))
-	startedAt := now()
+	startedAt := time.Now()
 	writeSpin(w, s.View(), msg, 0)
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -308,7 +307,7 @@ func spin(w io.Writer, msg string, done <-chan struct{}, interval time.Duration,
 			return
 		case <-ticker.C:
 			s, _ = s.Update(s.Tick())
-			writeSpin(w, s.View(), msg, now().Sub(startedAt))
+			writeSpin(w, s.View(), msg, time.Since(startedAt))
 		}
 	}
 }
