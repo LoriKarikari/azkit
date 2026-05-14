@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0 (2026-05-14)
+
+**Full Changelog**: https://github.com/LoriKarikari/pimctl/compare/v0.1.0...v0.2.0
+
 ## 0.1.0 (2026-05-12)
 
 ## What's Changed
