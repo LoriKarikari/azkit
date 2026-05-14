@@ -54,6 +54,7 @@ func TestActivationStore_createsSelfActivateRequest(t *testing.T) {
 	props := requests.parameters.Properties
 	if props == nil {
 		t.Fatal("missing properties")
+		return
 	}
 	if *props.PrincipalID != "user-1" {
 		t.Fatalf("want principal user-1, got %s", *props.PrincipalID)

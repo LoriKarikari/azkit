@@ -43,5 +43,14 @@ func (r *Runtime) Services() cli.Services {
 			activator := azurepim.NewActivationStore(cred, log)
 			return app.NewActivationService(store, activator), nil
 		},
+		Deactivate: func(log *slog.Logger) (*app.DeactivationService, error) {
+			cred, err := azidentity.NewDefaultAzureCredential(nil)
+			if err != nil {
+				return nil, app.AuthFailed(err)
+			}
+			active := azurepim.NewActiveAssignments(cred, log)
+			deactivator := azurepim.NewDeactivationStore(cred, log)
+			return app.NewDeactivationService(active, deactivator), nil
+		},
 	}
 }

@@ -17,3 +17,15 @@ func (s *EligibleAssignments) ListEligible(_ context.Context) ([]domain.Eligible
 	}
 	return s.Assignments, nil
 }
+
+type ActiveAssignments struct {
+	Assignments []domain.ActiveAssignment
+	Err         error
+}
+
+func (s *ActiveAssignments) ListActive(_ context.Context) ([]domain.ActiveAssignment, error) {
+	if s.Err != nil {
+		return nil, s.Err
+	}
+	return s.Assignments, nil
+}

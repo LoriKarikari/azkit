@@ -180,6 +180,8 @@ func TestRunner_helpDoesNotBuildListService(t *testing.T) {
 		return nil, assert.AnError
 	}, Activate: func(*slog.Logger) (*app.ActivationService, error) {
 		return nil, assert.AnError
+	}, Deactivate: func(*slog.Logger) (*app.DeactivationService, error) {
+		return nil, assert.AnError
 	}}, &stdout, &stderr)
 
 	code := runner.Run(t.Context(), []string{"--help"})
@@ -227,6 +229,8 @@ func newRunner(stdout *bytes.Buffer, stderr *bytes.Buffer, err error) *cli.Runne
 	}, Status: func(*slog.Logger) (*app.StatusService, error) {
 		return app.NewStatusService(activeStore), nil
 	}, Activate: func(*slog.Logger) (*app.ActivationService, error) {
+		return nil, assert.AnError
+	}, Deactivate: func(*slog.Logger) (*app.DeactivationService, error) {
 		return nil, assert.AnError
 	}}, stdout, stderr)
 }
