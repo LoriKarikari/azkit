@@ -7,7 +7,7 @@
 
 `pimctl` is a small CLI for Azure PIM resource role workflows.
 
-It lists eligible assignments, activates roles, and shows current active assignments.
+It lists eligible assignments, activates roles, deactivates active assignments, and shows current active assignments.
 
 ## Scope
 
@@ -37,11 +37,39 @@ Check active assignments:
 pimctl status
 ```
 
+Show assignment IDs (needed for deactivation):
+
+```bash
+pimctl status --verbose
+pimctl status --json
+```
+
+Deactivate an active assignment:
+
+```bash
+pimctl deactivate <assignment-id>
+```
+
+With a reason:
+
+```bash
+pimctl deactivate <assignment-id> --reason "Incident resolved"
+```
+
+Interactive picker (no ID needed, runs in a terminal):
+
+```bash
+pimctl deactivate
+```
+
+Deactivation asks Azure to end the assignment. The command returns once Azure accepts the request — the assignment may still appear in `pimctl status` for a short time afterward.
+
 Use JSON output for scripts:
 
 ```bash
 pimctl list --json
 pimctl status --json
+pimctl deactivate <assignment-id> --json
 ```
 
 ## Configuration
