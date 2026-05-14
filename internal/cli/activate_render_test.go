@@ -52,13 +52,13 @@ func TestRenderActivationJSON(t *testing.T) {
 
 func TestRenderActivationJSONAlreadyActive(t *testing.T) {
 	result := &domain.ActivationResult{
-		Role:          "Contributor",
-		ScopeID:       "/subscriptions/abc",
-		ScopeName:     "sub-prod",
-		Duration:      2 * time.Hour,
-		StartedAt:     mustTime("2026-05-07T18:00:00Z"),
-		ExpiresAt:     mustTime("2026-05-07T20:00:00Z"),
-		AlreadyActive: true,
+		Role:      "Contributor",
+		ScopeID:   "/subscriptions/abc",
+		ScopeName: "sub-prod",
+		Duration:  2 * time.Hour,
+		StartedAt: mustTime("2026-05-07T18:00:00Z"),
+		ExpiresAt: mustTime("2026-05-07T20:00:00Z"),
+		Outcome:   domain.ActivationAlreadyActive,
 	}
 
 	got := renderActivationJSON(result)
@@ -66,8 +66,8 @@ func TestRenderActivationJSONAlreadyActive(t *testing.T) {
 	if err := json.Unmarshal([]byte(got), &decoded); err != nil {
 		t.Fatalf("invalid JSON: %v", err)
 	}
-	if decoded["already_active"] != true {
-		t.Fatalf("want already_active true, got %v", decoded["already_active"])
+	if decoded["outcome"] != "already_active" {
+		t.Fatalf("want outcome already_active, got %v", decoded["outcome"])
 	}
 }
 
@@ -94,7 +94,7 @@ func TestRenderActivationHumanPending(t *testing.T) {
 		Duration:  2 * time.Hour,
 		ExpiresAt: mustTime("2026-05-07T20:00:00Z"),
 		Reason:    "Deploy",
-		Pending:   true,
+		Outcome:   domain.ActivationPending,
 	}
 
 	got := renderActivationHuman(result)
@@ -106,11 +106,11 @@ func TestRenderActivationHumanPending(t *testing.T) {
 
 func TestRenderActivationHumanAlreadyActive(t *testing.T) {
 	result := &domain.ActivationResult{
-		Role:          "Contributor",
-		ScopeName:     "sub-prod",
-		Duration:      2 * time.Hour,
-		ExpiresAt:     mustTime("2026-05-07T20:00:00Z"),
-		AlreadyActive: true,
+		Role:      "Contributor",
+		ScopeName: "sub-prod",
+		Duration:  2 * time.Hour,
+		ExpiresAt: mustTime("2026-05-07T20:00:00Z"),
+		Outcome:   domain.ActivationAlreadyActive,
 	}
 
 	got := renderActivationHuman(result)

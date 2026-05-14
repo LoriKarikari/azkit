@@ -83,12 +83,12 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		return err
 	}
 
-	if !result.AlreadyActive {
+	if result.Outcome != domain.ActivationAlreadyActive {
 		confirmed := waitForActive(ctx, services, result, streams)
 		if confirmed != nil {
 			result = confirmed
 		} else {
-			result.Pending = true
+			result.Outcome = domain.ActivationPending
 		}
 	}
 
@@ -149,12 +149,12 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		return err
 	}
 
-	if !result.AlreadyActive {
+	if result.Outcome != domain.ActivationAlreadyActive {
 		confirmed := waitForActive(ctx, flow.services, result, flow.streams)
 		if confirmed != nil {
 			result = confirmed
 		} else {
-			result.Pending = true
+			result.Outcome = domain.ActivationPending
 		}
 	}
 
@@ -212,7 +212,7 @@ func renderActivationResult(streams *Streams, result *domain.ActivationResult, a
 		_, err := io.WriteString(streams.Stdout, renderActivationJSON(result))
 		return err
 	}
-	if !result.AlreadyActive {
+	if result.Outcome != domain.ActivationAlreadyActive {
 		activatingMsg := fmt.Sprintf(
 			"Activating %s on %s for %s\n",
 			result.Role,
@@ -273,7 +273,8 @@ func waitForActive(
 		case <-deadline.Done():
 			stopSpinner()
 			_, _ = io.WriteString(streams.Stderr, "\r\033[K")
-			message := "Activation was accepted, but Azure did not report it active within 60s. Run pimctl status to check again.\n"
+			message := "Activation was accepted, but Azure did not report it active within 60s. " +
+				"Run pimctl status to check again.\n"
 			if errors.Is(deadline.Err(), context.Canceled) {
 				message = "Activation wait canceled. Run pimctl status to check whether Azure finished it.\n"
 			}
@@ -292,7 +293,7 @@ func waitForActive(
 				continue
 			}
 			for _, a := range as {
-				if matchesActivatedAssignment(a, result) {
+				if domain.ActiveAssignmentConfirmsResult(a, result) {
 					stopSpinner()
 					_, _ = io.WriteString(streams.Stderr, "\r\033[K")
 					confirmedMsg := fmt.Sprintf(
@@ -303,30 +304,14 @@ func waitForActive(
 					if _, err := io.WriteString(streams.Stderr, confirmedMsg); err != nil {
 						streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
 					}
-					return &domain.ActivationResult{
-						Role:      a.Role,
-						RoleDefID: a.RoleDefID,
-						ScopeID:   a.ScopeID,
-						ScopeName: a.ScopeName,
-						Duration:  result.Duration,
-						StartedAt: a.StartTime,
-						ExpiresAt: a.EndTime,
-						Reason:    result.Reason,
-					}
+					confirmed := domain.ActivationResultFromActive(a, domain.ActivationActive)
+					confirmed.Duration = result.Duration
+					confirmed.Reason = result.Reason
+					return &confirmed
 				}
 			}
 		}
 	}
-}
-
-func matchesActivatedAssignment(active domain.ActiveAssignment, result *domain.ActivationResult) bool {
-	if active.Status != domain.ActiveAssignmentActive || active.EndTime.IsZero() || !strings.EqualFold(active.ScopeID, result.ScopeID) {
-		return false
-	}
-	if result.RoleDefID != "" && strings.EqualFold(active.RoleDefID, result.RoleDefID) {
-		return true
-	}
-	return active.Role == result.Role
 }
 
 func spin(w io.Writer, msg string, done <-chan struct{}, interval time.Duration) {
