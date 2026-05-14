@@ -40,7 +40,7 @@ func (s *DeactivationService) Deactivate(
 		}
 	}
 	if found == nil {
-		return nil, ErrActiveNotFound
+		return nil, ErrActiveAssignmentNotFound
 	}
 
 	return s.store.Deactivate(ctx, *found, reason)

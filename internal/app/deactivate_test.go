@@ -79,8 +79,8 @@ func TestDeactivation_assignmentNotFound(t *testing.T) {
 	svc := app.NewDeactivationService(active, &testDeactivator{})
 
 	_, err := svc.Deactivate(t.Context(), "inst-nonexistent", "")
-	if !errors.Is(err, app.ErrActiveNotFound) {
-		t.Fatalf("want ErrActiveNotFound, got %v", err)
+	if !errors.Is(err, app.ErrActiveAssignmentNotFound) {
+		t.Fatalf("want ErrActiveAssignmentNotFound, got %v", err)
 	}
 }
 
@@ -89,8 +89,8 @@ func TestDeactivation_emptyAssignmentList(t *testing.T) {
 	svc := app.NewDeactivationService(active, &testDeactivator{})
 
 	_, err := svc.Deactivate(t.Context(), "inst-1", "")
-	if !errors.Is(err, app.ErrActiveNotFound) {
-		t.Fatalf("want ErrActiveNotFound, got %v", err)
+	if !errors.Is(err, app.ErrActiveAssignmentNotFound) {
+		t.Fatalf("want ErrActiveAssignmentNotFound, got %v", err)
 	}
 }
 
