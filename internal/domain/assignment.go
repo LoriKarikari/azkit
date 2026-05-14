@@ -105,7 +105,10 @@ func ActiveAssignmentMatchesEligible(active ActiveAssignment, eligible EligibleA
 }
 
 func ActiveMatchesRoleScope(active ActiveAssignment, role, roleDefID, scopeID string) bool {
-	if active.Status != ActiveAssignmentActive || active.EndTime.IsZero() || !strings.EqualFold(active.ScopeID, scopeID) {
+	isActive := active.Status == ActiveAssignmentActive
+	hasExpiry := !active.EndTime.IsZero()
+	matchesScope := strings.EqualFold(active.ScopeID, scopeID)
+	if !isActive || !hasExpiry || !matchesScope {
 		return false
 	}
 	if roleDefID != "" && strings.EqualFold(active.RoleDefID, roleDefID) {

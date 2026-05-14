@@ -273,7 +273,8 @@ func waitForActive(
 		case <-deadline.Done():
 			stopSpinner()
 			_, _ = io.WriteString(streams.Stderr, "\r\033[K")
-			message := "Activation was accepted, but Azure did not report it active within 60s. Run pimctl status to check again.\n"
+			message := "Activation was accepted, but Azure did not report it active within 60s. " +
+				"Run pimctl status to check again.\n"
 			if errors.Is(deadline.Err(), context.Canceled) {
 				message = "Activation wait canceled. Run pimctl status to check whether Azure finished it.\n"
 			}
