@@ -65,6 +65,7 @@ type ActivationTarget struct {
 
 type ActivationResult struct {
 	Role          string
+	RoleDefID     string
 	ScopeID       string
 	ScopeName     string
 	Duration      time.Duration
@@ -72,6 +73,7 @@ type ActivationResult struct {
 	ExpiresAt     time.Time
 	Reason        string
 	AlreadyActive bool
+	Pending       bool
 }
 
 type DeactivationResult struct {

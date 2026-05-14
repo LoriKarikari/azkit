@@ -87,6 +87,8 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		confirmed := waitForActive(ctx, services, result, streams)
 		if confirmed != nil {
 			result = confirmed
+		} else {
+			result.Pending = true
 		}
 	}
 
@@ -151,6 +153,8 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		confirmed := waitForActive(ctx, flow.services, result, flow.streams)
 		if confirmed != nil {
 			result = confirmed
+		} else {
+			result.Pending = true
 		}
 	}
 
@@ -284,8 +288,7 @@ func waitForActive(
 				continue
 			}
 			for _, a := range as {
-				isMatch := a.Role == result.Role && a.ScopeID == result.ScopeID
-				if isMatch && a.Status == domain.ActiveAssignmentActive {
+				if matchesActivatedAssignment(a, result) {
 					stopSpinner()
 					_, _ = io.WriteString(streams.Stderr, "\r\033[K")
 					confirmedMsg := fmt.Sprintf(
@@ -298,6 +301,7 @@ func waitForActive(
 					}
 					return &domain.ActivationResult{
 						Role:      a.Role,
+						RoleDefID: a.RoleDefID,
 						ScopeID:   a.ScopeID,
 						ScopeName: a.ScopeName,
 						Duration:  result.Duration,
@@ -309,6 +313,16 @@ func waitForActive(
 			}
 		}
 	}
+}
+
+func matchesActivatedAssignment(active domain.ActiveAssignment, result *domain.ActivationResult) bool {
+	if active.Status != domain.ActiveAssignmentActive || !strings.EqualFold(active.ScopeID, result.ScopeID) {
+		return false
+	}
+	if result.RoleDefID != "" && strings.EqualFold(active.RoleDefID, result.RoleDefID) {
+		return true
+	}
+	return active.Role == result.Role
 }
 
 func spin(w io.Writer, msg string, done <-chan struct{}, interval time.Duration) {

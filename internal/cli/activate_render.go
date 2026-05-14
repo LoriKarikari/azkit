@@ -16,6 +16,7 @@ type activationJSON struct {
 	ExpiresAt     string          `json:"expires_at"`
 	Reason        string          `json:"reason"`
 	AlreadyActive bool            `json:"already_active"`
+	Pending       bool            `json:"pending"`
 }
 
 type activationScope struct {
@@ -35,6 +36,7 @@ func renderActivationJSON(result *domain.ActivationResult) string {
 		ExpiresAt:     jsonTime(result.ExpiresAt),
 		Reason:        result.Reason,
 		AlreadyActive: result.AlreadyActive,
+		Pending:       result.Pending,
 	}
 	return marshalJSON(out)
 }
@@ -42,6 +44,9 @@ func renderActivationJSON(result *domain.ActivationResult) string {
 func renderActivationHuman(result *domain.ActivationResult) string {
 	var buf bytes.Buffer
 	message := "✓ Activated %s on %s\n"
+	if result.Pending {
+		message = "✓ Activation requested for %s on %s\n"
+	}
 	if result.AlreadyActive {
 		message = "✓ Already active: %s on %s\n"
 	}
@@ -51,6 +56,9 @@ func renderActivationHuman(result *domain.ActivationResult) string {
 	_, _ = fmt.Fprintf(w, "Expires:\t%s\n", result.ExpiresAt.UTC().Format("2006-01-02 15:04 UTC"))
 	if result.Reason != "" {
 		_, _ = fmt.Fprintf(w, "Reason:\t%s\n", result.Reason)
+	}
+	if result.Pending {
+		_, _ = fmt.Fprintln(w, "Status:\tWaiting for Azure to report this assignment as active")
 	}
 	_ = w.Flush()
 	return buf.String()

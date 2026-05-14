@@ -97,6 +97,7 @@ func (s *ActivationService) findActive(ctx context.Context, target domain.Activa
 		}
 		return &domain.ActivationResult{
 			Role:          assignment.Role,
+			RoleDefID:     assignment.RoleDefID,
 			ScopeID:       assignment.ScopeID,
 			ScopeName:     assignment.ScopeName,
 			Duration:      duration,
@@ -109,10 +110,10 @@ func (s *ActivationService) findActive(ctx context.Context, target domain.Activa
 }
 
 func matchesActiveAssignment(active domain.ActiveAssignment, eligible domain.EligibleAssignment) bool {
-	if active.Status != domain.ActiveAssignmentActive || active.ScopeID != eligible.ScopeID {
+	if active.Status != domain.ActiveAssignmentActive || !strings.EqualFold(active.ScopeID, eligible.ScopeID) {
 		return false
 	}
-	if eligible.RoleDefID != "" && active.RoleDefID == eligible.RoleDefID {
+	if eligible.RoleDefID != "" && strings.EqualFold(active.RoleDefID, eligible.RoleDefID) {
 		return true
 	}
 	return active.Role == eligible.Role

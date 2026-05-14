@@ -87,6 +87,23 @@ func TestRenderActivationHuman(t *testing.T) {
 	}
 }
 
+func TestRenderActivationHumanPending(t *testing.T) {
+	result := &domain.ActivationResult{
+		Role:      "Contributor",
+		ScopeName: "sub-prod",
+		Duration:  2 * time.Hour,
+		ExpiresAt: mustTime("2026-05-07T20:00:00Z"),
+		Reason:    "Deploy",
+		Pending:   true,
+	}
+
+	got := renderActivationHuman(result)
+	want := "✓ Activation requested for Contributor on sub-prod\nDuration:  2h0m0s\nExpires:   2026-05-07 20:00 UTC\nReason:    Deploy\nStatus:    Waiting for Azure to report this assignment as active\n"
+	if got != want {
+		t.Fatalf("want:\n%s\ngot:\n%s", want, got)
+	}
+}
+
 func TestRenderActivationHumanAlreadyActive(t *testing.T) {
 	result := &domain.ActivationResult{
 		Role:          "Contributor",
