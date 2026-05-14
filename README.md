@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/LoriKarikari/pimctl)](https://goreportcard.com/report/github.com/LoriKarikari/pimctl)
 [![License](https://img.shields.io/github/license/LoriKarikari/pimctl)](./LICENSE)
 
-`pimctl` is a small CLI for Azure PIM resource roles. It lists eligible assignments, activates roles, deactivates active assignments, and shows what is active now.
+`pimctl` manages Azure PIM resource roles. It lists eligible assignments, activates roles, deactivates active assignments, and shows what is active now.
 
 ## Scope
 
