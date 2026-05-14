@@ -8,15 +8,19 @@ import (
 
 type ActiveAssignments interface {
 	ListActive(context.Context) ([]domain.ActiveAssignment, error)
-	ListActiveForScope(context.Context, string) ([]domain.ActiveAssignment, error)
 }
 
 type StatusService struct {
-	store ActiveAssignments
+	store  ActiveAssignments
+	scoped ActiveAssignmentLookup
 }
 
 func NewStatusService(store ActiveAssignments) *StatusService {
-	return &StatusService{store: store}
+	svc := &StatusService{store: store}
+	if scoped, ok := store.(ActiveAssignmentLookup); ok {
+		svc.scoped = scoped
+	}
+	return svc
 }
 
 func (s *StatusService) Status(ctx context.Context) ([]domain.ActiveAssignment, error) {
@@ -24,5 +28,18 @@ func (s *StatusService) Status(ctx context.Context) ([]domain.ActiveAssignment, 
 }
 
 func (s *StatusService) StatusForScope(ctx context.Context, scope string) ([]domain.ActiveAssignment, error) {
-	return s.store.ListActiveForScope(ctx, scope)
+	if s.scoped != nil {
+		return s.scoped.ListActiveForScope(ctx, scope)
+	}
+	assignments, err := s.store.ListActive(ctx)
+	if err != nil {
+		return nil, err
+	}
+	matched := []domain.ActiveAssignment{}
+	for _, assignment := range assignments {
+		if assignment.ScopeID == scope {
+			matched = append(matched, assignment)
+		}
+	}
+	return matched, nil
 }

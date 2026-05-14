@@ -42,7 +42,7 @@ func (r *Runtime) Services() cli.Services {
 			store := azurepim.NewEligibleAssignmentsFromCred(cred, log)
 			active := azurepim.NewActiveAssignments(cred, log)
 			activator := azurepim.NewActivationStore(cred, log)
-			return app.NewActivationService(store, activator, active), nil
+			return app.NewActivationService(store, active, activator), nil
 		},
 		Deactivate: func(log *slog.Logger) (*app.DeactivationService, error) {
 			cred, err := azidentity.NewDefaultAzureCredential(nil)

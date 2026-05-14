@@ -25,7 +25,7 @@ func TestActivateResolved_validTarget(t *testing.T) {
 			Reason:    "deploy",
 		},
 	}
-	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, activator)
+	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, nil, activator)
 
 	got, err := svc.ActivateResolved(t.Context(), domain.ActivationTarget{
 		Assignment: assignment,
@@ -41,7 +41,7 @@ func TestActivateResolved_validTarget(t *testing.T) {
 }
 
 func TestActivateResolved_missingReason(t *testing.T) {
-	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &testActivator{})
+	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, nil, &testActivator{})
 	_, err := svc.ActivateResolved(t.Context(), domain.ActivationTarget{
 		Assignment: domain.EligibleAssignment{Role: "Reader", ScopeID: "/sub/1"},
 		Reason:     "   ",
@@ -53,7 +53,7 @@ func TestActivateResolved_missingReason(t *testing.T) {
 }
 
 func TestActivateResolved_invalidDuration(t *testing.T) {
-	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &testActivator{})
+	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, nil, &testActivator{})
 	_, err := svc.ActivateResolved(t.Context(), domain.ActivationTarget{
 		Assignment: domain.EligibleAssignment{Role: "Reader", ScopeID: "/sub/1"},
 		Reason:     "deploy",

@@ -20,19 +20,23 @@ type ActivationStore interface {
 	Activate(context.Context, domain.ActivationTarget) (*domain.ActivationResult, error)
 }
 
+type ActiveAssignmentLookup interface {
+	ListActiveForScope(context.Context, string) ([]domain.ActiveAssignment, error)
+}
+
 type ActivationService struct {
 	store     EligibleAssignments
-	active    ActiveAssignments
+	active    ActiveAssignmentLookup
 	activator ActivationStore
 	resolver  activationResolver
 }
 
-func NewActivationService(store EligibleAssignments, activator ActivationStore, active ...ActiveAssignments) *ActivationService {
-	svc := &ActivationService{store: store, activator: activator, resolver: activationResolver{}}
-	if len(active) > 0 {
-		svc.active = active[0]
-	}
-	return svc
+func NewActivationService(
+	store EligibleAssignments,
+	active ActiveAssignmentLookup,
+	activator ActivationStore,
+) *ActivationService {
+	return &ActivationService{store: store, active: active, activator: activator, resolver: activationResolver{}}
 }
 
 func (s *ActivationService) ActivateResolved(

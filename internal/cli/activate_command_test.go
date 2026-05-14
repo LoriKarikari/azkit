@@ -175,7 +175,7 @@ func activateRunner(t *testing.T, f activateRunnerFixture) *cli.Runner {
 			if f.activateCalled != nil {
 				*f.activateCalled = true
 			}
-			return app.NewActivationService(eligibleStore, f.activator), nil
+			return app.NewActivationService(eligibleStore, nil, f.activator), nil
 		},
 		Deactivate: func(*slog.Logger) (*app.DeactivationService, error) {
 			return nil, assert.AnError
