@@ -81,7 +81,7 @@ func activeInstance(id, role, roleDefID, scopeID, scopeName string, status armau
 	return &armauthorization.RoleAssignmentScheduleInstance{
 		ID: &id,
 		Properties: &armauthorization.RoleAssignmentScheduleInstanceProperties{
-			PrincipalID:   ptr("user-1"),
+			PrincipalID:   new("user-1"),
 			StartDateTime: &startTime,
 			EndDateTime:   &endTime,
 			Status:        &status,
@@ -106,8 +106,4 @@ func activeTime(value string) time.Time {
 		panic(err)
 	}
 	return t
-}
-
-func ptr(value string) *string {
-	return &value
 }
