@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0 (2026-05-14)
+
+## What's Changed
+* chore: clean up deactivation internals by @LoriKarikari in https://github.com/LoriKarikari/pimctl/pull/49
+* feat: show spinner while waiting for activation by @LoriKarikari in https://github.com/LoriKarikari/pimctl/pull/51
+* feat: skip activation when role is already active by @LoriKarikari in https://github.com/LoriKarikari/pimctl/pull/52
+* fix: ignore active assignments without expiry by @LoriKarikari in https://github.com/LoriKarikari/pimctl/pull/53
+* refactor: centralize activation outcome handling by @LoriKarikari in https://github.com/LoriKarikari/pimctl/pull/54
+* ci: let release-please own release notes by @LoriKarikari in https://github.com/LoriKarikari/pimctl/pull/55
+
+
+**Full Changelog**: https://github.com/LoriKarikari/pimctl/compare/v0.1.0...v0.2.0
+
 ## 0.1.0 (2026-05-12)
 
 ## What's Changed
