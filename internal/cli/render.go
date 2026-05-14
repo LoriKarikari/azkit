@@ -34,8 +34,7 @@ func RenderJSON(as []domain.EligibleAssignment) string {
 			AssignmentID:  a.ID,
 		}
 	}
-	b, _ := json.MarshalIndent(out, "", "  ")
-	return string(b) + "\n"
+	return marshalJSON(out)
 }
 
 func marshalJSON(v any) string {
