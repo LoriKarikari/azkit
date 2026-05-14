@@ -13,7 +13,7 @@ import (
 )
 
 func TestActivateReturnsNotFoundForEmptyAssignments(t *testing.T) {
-	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, &fakeActivator{})
+	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, nil, &fakeActivator{})
 
 	_, err := interactive.Activate(
 		t.Context(),
@@ -33,7 +33,7 @@ func TestActivateReturnsNotFoundForEmptyAssignments(t *testing.T) {
 
 func TestActivateSkipsFormWhenInputsAreComplete(t *testing.T) {
 	activator := &fakeActivator{}
-	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, activator)
+	svc := app.NewActivationService(&inmemory.EligibleAssignments{}, nil, activator)
 
 	result, err := interactive.Activate(
 		t.Context(),

@@ -20,14 +20,23 @@ type ActivationStore interface {
 	Activate(context.Context, domain.ActivationTarget) (*domain.ActivationResult, error)
 }
 
+type ActiveAssignmentLookup interface {
+	ListActiveForScope(context.Context, string) ([]domain.ActiveAssignment, error)
+}
+
 type ActivationService struct {
 	store     EligibleAssignments
+	active    ActiveAssignmentLookup
 	activator ActivationStore
 	resolver  activationResolver
 }
 
-func NewActivationService(store EligibleAssignments, activator ActivationStore) *ActivationService {
-	return &ActivationService{store: store, activator: activator, resolver: activationResolver{}}
+func NewActivationService(
+	store EligibleAssignments,
+	active ActiveAssignmentLookup,
+	activator ActivationStore,
+) *ActivationService {
+	return &ActivationService{store: store, active: active, activator: activator, resolver: activationResolver{}}
 }
 
 func (s *ActivationService) ActivateResolved(
@@ -43,6 +52,13 @@ func (s *ActivationService) ActivateResolved(
 			Code:    domain.CodeInvalidDuration,
 			Message: "Invalid activation duration.",
 		}
+	}
+	result, ok, err := s.findActive(ctx, target)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		return result, nil
 	}
 	return s.activator.Activate(ctx, target)
 }
@@ -65,5 +81,55 @@ func (s *ActivationService) Activate(
 	if err != nil {
 		return nil, err
 	}
+	result, ok, err := s.findActive(ctx, target)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		return result, nil
+	}
 	return s.activator.Activate(ctx, target)
+}
+
+func (s *ActivationService) findActive(
+	ctx context.Context,
+	target domain.ActivationTarget,
+) (*domain.ActivationResult, bool, error) {
+	if s.active == nil {
+		return nil, false, nil
+	}
+	active, err := s.active.ListActiveForScope(ctx, target.Assignment.ScopeID)
+	if err != nil {
+		return nil, false, err
+	}
+	for _, assignment := range active {
+		if !matchesActiveAssignment(assignment, target.Assignment) {
+			continue
+		}
+		duration := assignment.EndTime.Sub(assignment.StartTime)
+		if duration <= 0 {
+			duration = target.Duration
+		}
+		return &domain.ActivationResult{
+			Role:          assignment.Role,
+			RoleDefID:     assignment.RoleDefID,
+			ScopeID:       assignment.ScopeID,
+			ScopeName:     assignment.ScopeName,
+			Duration:      duration,
+			StartedAt:     assignment.StartTime,
+			ExpiresAt:     assignment.EndTime,
+			AlreadyActive: true,
+		}, true, nil
+	}
+	return nil, false, nil
+}
+
+func matchesActiveAssignment(active domain.ActiveAssignment, eligible domain.EligibleAssignment) bool {
+	if active.Status != domain.ActiveAssignmentActive || !strings.EqualFold(active.ScopeID, eligible.ScopeID) {
+		return false
+	}
+	if eligible.RoleDefID != "" && strings.EqualFold(active.RoleDefID, eligible.RoleDefID) {
+		return true
+	}
+	return active.Role == eligible.Role
 }

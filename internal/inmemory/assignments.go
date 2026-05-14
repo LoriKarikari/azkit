@@ -29,3 +29,16 @@ func (s *ActiveAssignments) ListActive(_ context.Context) ([]domain.ActiveAssign
 	}
 	return s.Assignments, nil
 }
+
+func (s *ActiveAssignments) ListActiveForScope(_ context.Context, scope string) ([]domain.ActiveAssignment, error) {
+	if s.Err != nil {
+		return nil, s.Err
+	}
+	assignments := []domain.ActiveAssignment{}
+	for _, assignment := range s.Assignments {
+		if assignment.ScopeID == scope {
+			assignments = append(assignments, assignment)
+		}
+	}
+	return assignments, nil
+}

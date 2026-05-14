@@ -242,6 +242,19 @@ func (s *testActiveAssignments) ListActive(_ context.Context) ([]domain.ActiveAs
 	return s.Assignments, nil
 }
 
+func (s *testActiveAssignments) ListActiveForScope(_ context.Context, scope string) ([]domain.ActiveAssignment, error) {
+	if s.Err != nil {
+		return nil, s.Err
+	}
+	assignments := []domain.ActiveAssignment{}
+	for _, assignment := range s.Assignments {
+		if assignment.ScopeID == scope {
+			assignments = append(assignments, assignment)
+		}
+	}
+	return assignments, nil
+}
+
 type testActiveAssignments struct {
 	Assignments []domain.ActiveAssignment
 	Err         error

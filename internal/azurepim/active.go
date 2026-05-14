@@ -70,31 +70,44 @@ func (a *ActiveAssignments) ListActive(ctx context.Context) ([]domain.ActiveAssi
 		}
 		scope := fmt.Sprintf("/subscriptions/%s", sub.ID)
 		a.log.Debug("listing active assignment instances", slog.String("scope", scope))
-		instances, err := a.instances.ListForScope(ctx, scope)
+		assignments, err := a.ListActiveForScope(ctx, scope)
 		if err != nil {
-			a.log.Debug(
-				"active assignment instance listing failed",
-				slog.String("scope", scope),
-				slog.Any("error", err),
-			)
 			return nil, err
 		}
-		a.log.Debug(
-			"listed active assignment instances",
-			slog.String("scope", scope),
-			slog.Int("count", len(instances)),
-		)
-		for _, instance := range instances {
-			assignment, ok := activeInstanceToDomain(instance, a.now().UTC())
-			if !ok {
-				continue
-			}
-			assignment.SubscriptionID = sub.ID
-			assignment.SubscriptionName = sub.Name
-			all = append(all, assignment)
+		for i := range assignments {
+			assignments[i].SubscriptionID = sub.ID
+			assignments[i].SubscriptionName = sub.Name
 		}
+		all = append(all, assignments...)
 	}
 	return all, nil
+}
+
+func (a *ActiveAssignments) ListActiveForScope(ctx context.Context, scope string) ([]domain.ActiveAssignment, error) {
+	a.log.Debug("listing active assignment instances", slog.String("scope", scope))
+	instances, err := a.instances.ListForScope(ctx, scope)
+	if err != nil {
+		a.log.Debug(
+			"active assignment instance listing failed",
+			slog.String("scope", scope),
+			slog.Any("error", err),
+		)
+		return nil, err
+	}
+	a.log.Debug(
+		"listed active assignment instances",
+		slog.String("scope", scope),
+		slog.Int("count", len(instances)),
+	)
+	assignments := []domain.ActiveAssignment{}
+	for _, instance := range instances {
+		assignment, ok := activeInstanceToDomain(instance, a.now().UTC())
+		if !ok {
+			continue
+		}
+		assignments = append(assignments, assignment)
+	}
+	return assignments, nil
 }
 
 type azureActiveInstances struct {

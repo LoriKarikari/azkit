@@ -50,6 +50,27 @@ func TestRenderActivationJSON(t *testing.T) {
 	}
 }
 
+func TestRenderActivationJSONAlreadyActive(t *testing.T) {
+	result := &domain.ActivationResult{
+		Role:          "Contributor",
+		ScopeID:       "/subscriptions/abc",
+		ScopeName:     "sub-prod",
+		Duration:      2 * time.Hour,
+		StartedAt:     mustTime("2026-05-07T18:00:00Z"),
+		ExpiresAt:     mustTime("2026-05-07T20:00:00Z"),
+		AlreadyActive: true,
+	}
+
+	got := renderActivationJSON(result)
+	var decoded map[string]any
+	if err := json.Unmarshal([]byte(got), &decoded); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if decoded["already_active"] != true {
+		t.Fatalf("want already_active true, got %v", decoded["already_active"])
+	}
+}
+
 func TestRenderActivationHuman(t *testing.T) {
 	result := &domain.ActivationResult{
 		Role:      "Contributor",
@@ -61,6 +82,39 @@ func TestRenderActivationHuman(t *testing.T) {
 
 	got := renderActivationHuman(result)
 	want := "✓ Activated Contributor on sub-prod\nDuration:  2h0m0s\nExpires:   2026-05-07 20:00 UTC\nReason:    Deploy\n"
+	if got != want {
+		t.Fatalf("want:\n%s\ngot:\n%s", want, got)
+	}
+}
+
+func TestRenderActivationHumanPending(t *testing.T) {
+	result := &domain.ActivationResult{
+		Role:      "Contributor",
+		ScopeName: "sub-prod",
+		Duration:  2 * time.Hour,
+		ExpiresAt: mustTime("2026-05-07T20:00:00Z"),
+		Reason:    "Deploy",
+		Pending:   true,
+	}
+
+	got := renderActivationHuman(result)
+	want := "✓ Activation requested for Contributor on sub-prod\nDuration:  2h0m0s\nExpires:   2026-05-07 20:00 UTC\nReason:    Deploy\nStatus:    Waiting for Azure to report this assignment as active\n"
+	if got != want {
+		t.Fatalf("want:\n%s\ngot:\n%s", want, got)
+	}
+}
+
+func TestRenderActivationHumanAlreadyActive(t *testing.T) {
+	result := &domain.ActivationResult{
+		Role:          "Contributor",
+		ScopeName:     "sub-prod",
+		Duration:      2 * time.Hour,
+		ExpiresAt:     mustTime("2026-05-07T20:00:00Z"),
+		AlreadyActive: true,
+	}
+
+	got := renderActivationHuman(result)
+	want := "✓ Already active: Contributor on sub-prod\nDuration:  2h0m0s\nExpires:   2026-05-07 20:00 UTC\n"
 	if got != want {
 		t.Fatalf("want:\n%s\ngot:\n%s", want, got)
 	}

@@ -115,6 +115,7 @@ func (a *ActivationStore) Activate(
 
 	result := &domain.ActivationResult{
 		Role:      target.Assignment.Role,
+		RoleDefID: target.Assignment.RoleDefID,
 		ScopeID:   target.Assignment.ScopeID,
 		ScopeName: target.Assignment.ScopeName,
 		Duration:  target.Duration,
