@@ -125,7 +125,7 @@ func (s *ActivationService) findActive(
 }
 
 func matchesActiveAssignment(active domain.ActiveAssignment, eligible domain.EligibleAssignment) bool {
-	if active.Status != domain.ActiveAssignmentActive || !strings.EqualFold(active.ScopeID, eligible.ScopeID) {
+	if active.Status != domain.ActiveAssignmentActive || active.EndTime.IsZero() || !strings.EqualFold(active.ScopeID, eligible.ScopeID) {
 		return false
 	}
 	if eligible.RoleDefID != "" && strings.EqualFold(active.RoleDefID, eligible.RoleDefID) {

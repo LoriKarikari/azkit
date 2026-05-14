@@ -73,6 +73,41 @@ func TestActivation_skipsAlreadyActiveAssignment(t *testing.T) {
 	}
 }
 
+func TestActivation_ignoresActiveAssignmentWithoutExpiry(t *testing.T) {
+	store := &inmemory.EligibleAssignments{
+		Assignments: []domain.EligibleAssignment{
+			{ID: "sched-1", Role: "Contributor", RoleDefID: "/roleDefs/111", PrincipalID: "user-1", ScopeID: "/sub/abc", ScopeName: "sub-prod"},
+		},
+	}
+	active := &inmemory.ActiveAssignments{
+		Assignments: []domain.ActiveAssignment{
+			{
+				ID:        "active-1",
+				Role:      "Contributor",
+				RoleDefID: "/roleDefs/111",
+				ScopeID:   "/sub/abc",
+				ScopeName: "sub-prod",
+				Status:    domain.ActiveAssignmentActive,
+			},
+		},
+	}
+	act := &testActivator{result: okResult(t, 2*time.Hour)}
+	svc := app.NewActivationService(store, act, active)
+
+	got, err := svc.Activate(t.Context(), domain.ActivationRequest{
+		ScopeID: "/sub/abc", Role: "Contributor", Reason: "Deploy", Duration: time.Hour,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !act.called {
+		t.Fatal("activation API should be called")
+	}
+	if got.AlreadyActive {
+		t.Fatalf("did not expect already active result: %+v", got)
+	}
+}
+
 func TestActivation_bySubscriptionID(t *testing.T) {
 	store := &inmemory.EligibleAssignments{
 		Assignments: []domain.EligibleAssignment{
