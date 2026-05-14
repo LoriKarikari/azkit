@@ -44,6 +44,10 @@ _Avoid_: Logout, session timeout
 A self-initiated request to end an active assignment before its activation expiry.
 _Avoid_: Logout, cancellation, expiry
 
+**Deactivation request**:
+The Azure request submitted for a deactivation. A successful request means Azure accepted the request; it does not prove the active assignment has disappeared from status yet.
+_Avoid_: Deactivated assignment, confirmed deactivation
+
 **Credential**:
 The Azure identity used by the CLI to call Azure and Microsoft APIs.
 _Avoid_: Session, login state

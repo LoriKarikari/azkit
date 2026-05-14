@@ -9,6 +9,7 @@ import (
 
 const (
 	CodeEligibleNotFound      Code = "eligible_not_found"
+	CodeActiveNotFound        Code = "active_not_found"
 	CodeMissingScope          Code = "missing_scope"
 	CodeMissingRole           Code = "missing_role"
 	CodeMissingReason         Code = "missing_reason"
@@ -21,6 +22,7 @@ const (
 
 var (
 	ErrEligibleNotFound     = &Error{Code: CodeEligibleNotFound, Message: "No matching eligible assignment found."}
+	ErrActiveNotFound       = &Error{Code: CodeActiveNotFound, Message: "No matching active assignment found."}
 	ErrMissingScope         = &Error{Code: CodeMissingScope, Message: "Activation scope is required."}
 	ErrMissingRole          = &Error{Code: CodeMissingRole, Message: "Activation role is required."}
 	ErrMissingReason        = &Error{Code: CodeMissingReason, Message: "Activation reason is required."}

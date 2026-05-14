@@ -15,6 +15,7 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/domain"
 	"github.com/LoriKarikari/pimctl/internal/inmemory"
 	"github.com/LoriKarikari/pimctl/internal/interactive"
+	"github.com/stretchr/testify/assert"
 )
 
 type fakeActivator struct {
@@ -175,6 +176,9 @@ func activateRunner(t *testing.T, f activateRunnerFixture) *cli.Runner {
 				*f.activateCalled = true
 			}
 			return app.NewActivationService(eligibleStore, f.activator), nil
+		},
+		Deactivate: func(*slog.Logger) (*app.DeactivationService, error) {
+			return nil, assert.AnError
 		},
 	}, f.stdout, f.stderr)
 }

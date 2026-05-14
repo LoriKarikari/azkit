@@ -23,9 +23,10 @@ type Streams struct {
 }
 
 type Services struct {
-	List     func(*slog.Logger) (*app.ListService, error)
-	Status   func(*slog.Logger) (*app.StatusService, error)
-	Activate func(*slog.Logger) (*app.ActivationService, error)
+	List       func(*slog.Logger) (*app.ListService, error)
+	Status     func(*slog.Logger) (*app.StatusService, error)
+	Activate   func(*slog.Logger) (*app.ActivationService, error)
+	Deactivate func(*slog.Logger) (*app.DeactivationService, error)
 }
 
 type Runner struct {
@@ -51,6 +52,7 @@ type CLI struct {
 	List       ListCmd       `cmd:"" help:"List eligible PIM role assignments"`
 	Status     StatusCmd     `cmd:"" help:"List active PIM role assignments"`
 	Activate   ActivateCmd   `cmd:"" help:"Activate an eligible PIM role assignment"`
+	Deactivate DeactivateCmd `cmd:"" help:"Deactivate an active PIM role assignment"`
 	Completion CompletionCmd `cmd:"" help:"Generate shell completion script"`
 	Version    VersionCmd    `cmd:"" help:"Show version information"`
 }
@@ -148,6 +150,8 @@ func wantsJSON(model CLI, parsed *kong.Context) bool {
 		return model.Status.JSON
 	case "activate":
 		return model.Activate.JSON
+	case "deactivate":
+		return model.Deactivate.JSON
 	}
 	return false
 }
