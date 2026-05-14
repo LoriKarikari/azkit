@@ -12,6 +12,7 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/cli"
 	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/pimctl/internal/interactive"
 )
 
 func TestRunner_deactivateHuman(t *testing.T) {
@@ -122,6 +123,23 @@ func TestRunner_deactivateAuthError(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "Could not authenticate with Azure") {
 		t.Fatalf("want auth error, got: %s", stderr.String())
+	}
+}
+
+func TestRunner_deactivateNoArgNonInteractive(t *testing.T) {
+	interactive.IsTerminalFn = func() bool { return false }
+	t.Cleanup(func() { interactive.IsTerminalFn = interactive.IsTerminal })
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := deactivateRunner(t, &stdout, &stderr, nil, &fakeDeactivator{})
+
+	code := runner.Run(t.Context(), []string{"deactivate"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "Assignment ID is required") {
+		t.Fatalf("want missing-assignment-id error, got: %s", stderr.String())
 	}
 }
 
