@@ -103,33 +103,14 @@ func (s *ActivationService) findActive(
 		return nil, false, err
 	}
 	for _, assignment := range active {
-		if !matchesActiveAssignment(assignment, target.Assignment) {
+		if !domain.ActiveAssignmentMatchesEligible(assignment, target.Assignment) {
 			continue
 		}
-		duration := assignment.EndTime.Sub(assignment.StartTime)
-		if duration <= 0 {
-			duration = target.Duration
+		result := domain.ActivationResultFromActive(assignment, domain.ActivationAlreadyActive)
+		if result.Duration <= 0 {
+			result.Duration = target.Duration
 		}
-		return &domain.ActivationResult{
-			Role:          assignment.Role,
-			RoleDefID:     assignment.RoleDefID,
-			ScopeID:       assignment.ScopeID,
-			ScopeName:     assignment.ScopeName,
-			Duration:      duration,
-			StartedAt:     assignment.StartTime,
-			ExpiresAt:     assignment.EndTime,
-			AlreadyActive: true,
-		}, true, nil
+		return &result, true, nil
 	}
 	return nil, false, nil
-}
-
-func matchesActiveAssignment(active domain.ActiveAssignment, eligible domain.EligibleAssignment) bool {
-	if active.Status != domain.ActiveAssignmentActive || active.EndTime.IsZero() || !strings.EqualFold(active.ScopeID, eligible.ScopeID) {
-		return false
-	}
-	if eligible.RoleDefID != "" && strings.EqualFold(active.RoleDefID, eligible.RoleDefID) {
-		return true
-	}
-	return active.Role == eligible.Role
 }

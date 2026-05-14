@@ -122,6 +122,7 @@ func (a *ActivationStore) Activate(
 		StartedAt: now,
 		ExpiresAt: now.Add(target.Duration),
 		Reason:    target.Reason,
+		Outcome:   domain.ActivationRequested,
 	}
 	if resp.Properties == nil || resp.Properties.ExpandedProperties == nil {
 		return result, nil

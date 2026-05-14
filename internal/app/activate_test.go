@@ -65,7 +65,7 @@ func TestActivation_skipsAlreadyActiveAssignment(t *testing.T) {
 	if act.called {
 		t.Fatal("activation API should not be called")
 	}
-	if !got.AlreadyActive {
+	if got.Outcome != domain.ActivationAlreadyActive {
 		t.Fatalf("want already active result, got %+v", got)
 	}
 	if got.Duration != 2*time.Hour {
@@ -103,8 +103,8 @@ func TestActivation_ignoresActiveAssignmentWithoutExpiry(t *testing.T) {
 	if !act.called {
 		t.Fatal("activation API should be called")
 	}
-	if got.AlreadyActive {
-		t.Fatalf("did not expect already active result: %+v", got)
+	if got.Outcome == domain.ActivationAlreadyActive {
+		t.Fatalf("did not expect outcome=already_active: %+v", got)
 	}
 }
 
