@@ -212,17 +212,16 @@ func renderActivationResult(streams *Streams, result *domain.ActivationResult, a
 		_, err := io.WriteString(streams.Stdout, renderActivationJSON(result))
 		return err
 	}
-	activatingMsg := fmt.Sprintf(
-		"Activating %s on %s for %s\n",
-		result.Role,
-		result.ScopeName,
-		result.Duration,
-	)
-	if result.AlreadyActive {
-		activatingMsg = fmt.Sprintf("Already active: %s on %s\n", result.Role, result.ScopeName)
-	}
-	if _, err := io.WriteString(streams.Stderr, activatingMsg); err != nil {
-		streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
+	if !result.AlreadyActive {
+		activatingMsg := fmt.Sprintf(
+			"Activating %s on %s for %s\n",
+			result.Role,
+			result.ScopeName,
+			result.Duration,
+		)
+		if _, err := io.WriteString(streams.Stderr, activatingMsg); err != nil {
+			streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
+		}
 	}
 	_, err := io.WriteString(streams.Stdout, renderActivationHuman(result))
 	return err
