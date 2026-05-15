@@ -48,7 +48,7 @@ func Deactivate(
 			return nil, err
 		}
 
-		sp := NewSpinner(os.Stderr, "Deactivating...")
+		sp := NewSpinner(os.Stderr, fmt.Sprintf("Deactivating %s on %s", selected.Role, selected.ScopeName))
 		sp.Start()
 		result, err := svc.Deactivate(ctx, selected.ID, reason)
 		sp.Stop()
