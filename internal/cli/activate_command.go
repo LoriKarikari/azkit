@@ -125,6 +125,10 @@ func (c *ActivateCmd) needsInteractive(streams *Streams) bool {
 }
 
 func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActivation) error {
+	if flow.streams.Config != nil && flow.streams.Config.TenantID != "" {
+		_, _ = io.WriteString(flow.streams.Stderr, "Tenant: "+flow.streams.Config.TenantID+"\n")
+	}
+
 	listSvc, err := flow.services.List(flow.streams.Log)
 	if err != nil {
 		return err

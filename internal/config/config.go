@@ -18,6 +18,7 @@ const envPrefix = "PIMCTL_"
 type Config struct {
 	DefaultDuration time.Duration `koanf:"default_duration"`
 	SubscriptionID  string        `koanf:"subscription_id"`
+	TenantID        string        `koanf:"tenant_id"`
 }
 
 func Load(configPath string) (*Config, error) {
@@ -46,6 +47,7 @@ func Load(configPath string) (*Config, error) {
 	c := &Config{
 		DefaultDuration: defaultDuration,
 		SubscriptionID:  k.String("subscription_id"),
+		TenantID:        k.String("tenant_id"),
 	}
 	return c, nil
 }

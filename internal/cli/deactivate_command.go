@@ -52,6 +52,10 @@ func (c *DeactivateCmd) Run(ctx context.Context, services Services, streams *Str
 }
 
 func (c *DeactivateCmd) runInteractive(ctx context.Context, services Services, streams *Streams) error {
+	if streams.Config != nil && streams.Config.TenantID != "" {
+		_, _ = io.WriteString(streams.Stderr, "Tenant: "+streams.Config.TenantID+"\n")
+	}
+
 	statusSvc, err := services.Status(streams.Log)
 	if err != nil {
 		return err
