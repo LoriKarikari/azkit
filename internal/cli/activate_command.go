@@ -132,7 +132,7 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 
 	var eligible []domain.EligibleAssignment
 	{
-		sp := interactive.NewSpinner(flow.streams.Stderr, "Loading eligible assignments...")
+		sp := interactive.NewSpinner(flow.streams.Stderr, "Loading eligible assignments")
 		if !c.JSON {
 			sp.Start()
 		}
