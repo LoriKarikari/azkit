@@ -42,13 +42,14 @@ func TestLoadFromFile(t *testing.T) {
 func TestLoadEnvOverridesFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
-	contents := "default_duration: 30m\nsubscription_id: sub-file\n"
+	contents := "default_duration: 30m\nsubscription_id: sub-file\ntenant_id: tenant-file\n"
 	if err := os.WriteFile(path, []byte(contents), 0644); err != nil {
 		t.Fatalf("write config: %v", err)
 	}
 
 	t.Setenv("PIMCTL_DEFAULT_DURATION", "1h")
 	t.Setenv("PIMCTL_SUBSCRIPTION_ID", "sub-env")
+	t.Setenv("PIMCTL_TENANT_ID", "1h")
 
 	c, err := config.Load(path)
 	if err != nil {
@@ -59,6 +60,9 @@ func TestLoadEnvOverridesFile(t *testing.T) {
 	}
 	if c.SubscriptionID != "sub-env" {
 		t.Fatalf("want sub-env from env, got %s", c.SubscriptionID)
+	}
+	if c.TenantID != "1h" {
+		t.Fatalf("want tenant id to remain a string, got %q", c.TenantID)
 	}
 }
 

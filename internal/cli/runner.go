@@ -56,10 +56,6 @@ func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
 	}
 }
 
-func (r *Runner) Log() *slog.Logger {
-	return r.log
-}
-
 type CLI struct {
 	Verbose    bool          `short:"v" help:"Enable debug logging to stderr"`
 	ConfigPath string        `name:"config" help:"Path to config file"`

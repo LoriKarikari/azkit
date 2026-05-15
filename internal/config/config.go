@@ -95,8 +95,10 @@ func durationValue(k *koanf.Koanf, key string, fallback time.Duration) (time.Dur
 
 func envMapper(key string, value string) (string, any) {
 	mapKey := strings.ToLower(strings.TrimPrefix(key, envPrefix))
-	if d, err := time.ParseDuration(value); err == nil {
-		return mapKey, d
+	if mapKey == "default_duration" {
+		if d, err := time.ParseDuration(value); err == nil {
+			return mapKey, d
+		}
 	}
 	return mapKey, value
 }
