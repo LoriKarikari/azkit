@@ -135,7 +135,7 @@ func confirmTarget(ctx context.Context, a domain.EligibleAssignment) error {
 	confirmed := false
 	desc := fmt.Sprintf("Role: %s\nScope: %s", a.Role, a.ScopeName)
 	if a.SubscriptionName != "" {
-		desc = fmt.Sprintf("Role: %s\nScope: %s\nSubscription: %s", a.Role, a.ScopeName, a.SubscriptionName)
+		desc += fmt.Sprintf("\nSubscription: %s", a.SubscriptionName)
 	}
 	form := huh.NewForm(huh.NewGroup(
 		huh.NewConfirm().
