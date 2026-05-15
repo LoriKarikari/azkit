@@ -75,7 +75,7 @@ func TestCancelDeactivationInteractive(t *testing.T) {
 		Deactivate: func(_ *slog.Logger) (*app.DeactivationService, error) {
 			return app.NewDeactivationService(&inmemory.ActiveAssignments{}, nil), nil
 		},
-		DeactivateInteractive: func(_ context.Context, _ []domain.ActiveAssignment, _ *app.DeactivationService, _ string, _ bool) (*domain.DeactivationResult, error) {
+		DeactivateInteractive: func(_ context.Context, _ []domain.ActiveAssignment, _ *app.DeactivationService, _ interactive.DeactivationInput) (*domain.DeactivationResult, error) {
 			return nil, interactive.ErrCanceled
 		},
 	}, &stdout, &stderr)

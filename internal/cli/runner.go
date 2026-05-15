@@ -26,7 +26,7 @@ type Streams struct {
 
 type activateInteractiveFunc func(context.Context, []domain.EligibleAssignment, *app.ActivationService, *config.Config, interactive.ActivationInput) (*domain.ActivationResult, error)
 
-type deactivateInteractiveFunc func(context.Context, []domain.ActiveAssignment, *app.DeactivationService, string, bool) (*domain.DeactivationResult, error)
+type deactivateInteractiveFunc func(context.Context, []domain.ActiveAssignment, *app.DeactivationService, interactive.DeactivationInput) (*domain.DeactivationResult, error)
 
 type Services struct {
 	List                  func(*slog.Logger) (*app.ListService, error)

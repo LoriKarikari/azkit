@@ -150,15 +150,20 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		return app.ErrEligibleNotFound
 	}
 
+	input := interactive.ActivationInput{
+		Reason:   c.Reason,
+		Duration: c.Duration,
+	}
+	if !c.JSON {
+		input.Progress = flow.streams.Stderr
+	}
+
 	result, err := flow.services.ActivateInteractive(
 		ctx,
 		eligible,
 		flow.act,
 		flow.streams.Config,
-		interactive.ActivationInput{
-			Reason:   c.Reason,
-			Duration: c.Duration,
-		},
+		input,
 	)
 	if err != nil {
 		if errors.Is(err, interactive.ErrCanceled) {
