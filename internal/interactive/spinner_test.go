@@ -2,6 +2,7 @@ package interactive
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -10,7 +11,7 @@ import (
 func TestSpinnerShowsMessageAfterDelay(t *testing.T) {
 	var buf bytes.Buffer
 	s := NewSpinner(&buf, "Loading eligible assignments...")
-	s.Start()
+	s.Start(context.Background())
 	time.Sleep(150 * time.Millisecond)
 	s.Stop()
 
@@ -22,7 +23,7 @@ func TestSpinnerShowsMessageAfterDelay(t *testing.T) {
 func TestSpinnerClearsLineOnStop(t *testing.T) {
 	var buf bytes.Buffer
 	s := NewSpinner(&buf, "loading...")
-	s.Start()
+	s.Start(context.Background())
 	time.Sleep(150 * time.Millisecond)
 	s.Stop()
 
@@ -35,7 +36,7 @@ func TestSpinnerClearsLineOnStop(t *testing.T) {
 func TestSpinnerSkipsOutputForFastOps(t *testing.T) {
 	var buf bytes.Buffer
 	s := NewSpinner(&buf, "fast op")
-	s.Start()
+	s.Start(context.Background())
 	s.Stop()
 
 	if buf.Len() != 0 {

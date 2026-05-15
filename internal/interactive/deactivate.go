@@ -54,15 +54,15 @@ func Deactivate(
 		}
 	}
 
-	if input.Progress != nil {
-		sp := NewSpinner(input.Progress, fmt.Sprintf("Deactivating %s on %s", selected.Role, selected.ScopeName))
-		sp.Start()
-		result, err := svc.Deactivate(ctx, selected.ID, input.Reason)
-		sp.Stop()
-		return result, err
-	}
-
-	return svc.Deactivate(ctx, selected.ID, input.Reason)
+	return WithSpinner(
+		ctx,
+		input.Progress,
+		fmt.Sprintf("Deactivating %s on %s", selected.Role, selected.ScopeName),
+		input.Progress != nil,
+		func(ctx context.Context) (*domain.DeactivationResult, error) {
+			return svc.Deactivate(ctx, selected.ID, input.Reason)
+		},
+	)
 }
 
 func confirmDeactivation(ctx context.Context, selected domain.ActiveAssignment, reason string) error {

@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/domain"
 	"github.com/LoriKarikari/pimctl/internal/interactive"
@@ -23,6 +21,7 @@ type ActivateCmd struct {
 	Role          string        `help:"Role display name or definition ID"`
 	Reason        string        `help:"Justification for the activation"`
 	Duration      time.Duration `help:"How long the role stays active (default from config)"`
+	Wait          time.Duration `help:"Wait for Azure to report the role active"`
 	JSON          bool          `help:"Output as JSON"`
 }
 
@@ -53,19 +52,8 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		})
 	}
 
-	duration := c.Duration
-	subscription := c.Subscription
-	if streams.Config != nil {
-		if duration == 0 {
-			duration = streams.Config.DefaultDuration
-		}
-		if subscription == "" && c.Scope == "" {
-			subscription = streams.Config.SubscriptionID
-		}
-	}
-	if duration == 0 {
-		duration = 2 * time.Hour
-	}
+	duration := streams.Config.ActivationDuration(c.Duration)
+	subscription := streams.Config.ActivationSubscription(c.Subscription, c.Scope)
 
 	activateCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
@@ -86,8 +74,8 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		return err
 	}
 
-	if result.Outcome != domain.ActivationAlreadyActive {
-		confirmed := waitForActive(ctx, services, result, streams)
+	if c.Wait > 0 && result.Outcome != domain.ActivationAlreadyActive {
+		confirmed := waitForActive(ctx, services, result, streams, c.Wait)
 		if confirmed != nil {
 			result = confirmed
 		} else {
@@ -136,14 +124,15 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 
 	var eligible []domain.EligibleAssignment
 	{
-		sp := interactive.NewSpinner(flow.streams.Stderr, "Loading eligible assignments")
-		if !c.JSON {
-			sp.Start()
-		}
-		eligible, err = listSvc.List(ctx)
-		if !c.JSON {
-			sp.Stop()
-		}
+		eligible, err = interactive.WithSpinner(
+			ctx,
+			flow.streams.Stderr,
+			"Loading eligible assignments",
+			!c.JSON,
+			func(ctx context.Context) ([]domain.EligibleAssignment, error) {
+				return listSvc.List(ctx)
+			},
+		)
 		if err != nil {
 			return err
 		}
@@ -177,8 +166,8 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		return err
 	}
 
-	if result.Outcome != domain.ActivationAlreadyActive {
-		confirmed := waitForActive(ctx, flow.services, result, flow.streams)
+	if c.Wait > 0 && result.Outcome != domain.ActivationAlreadyActive {
+		confirmed := waitForActive(ctx, flow.services, result, flow.streams, c.Wait)
 		if confirmed != nil {
 			result = confirmed
 		} else {
@@ -190,49 +179,12 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 }
 
 func (c *ActivateCmd) filterEligible(eligible []domain.EligibleAssignment) []domain.EligibleAssignment {
-	return lo.Filter(eligible, func(a domain.EligibleAssignment, _ int) bool {
-		return c.matchesEligible(a)
+	return app.FilterEligibleAssignments(eligible, domain.ActivationRequest{
+		ScopeID:       c.Scope,
+		Subscription:  c.Subscription,
+		ResourceGroup: c.ResourceGroup,
+		Role:          c.Role,
 	})
-}
-
-func (c *ActivateCmd) matchesEligible(a domain.EligibleAssignment) bool {
-	role := strings.TrimSpace(c.Role)
-	if role != "" && a.Role != role && a.RoleDefID != role {
-		return false
-	}
-	if c.Scope != "" && a.ScopeID != c.Scope {
-		return false
-	}
-	if c.Subscription != "" && !matchesSubscription(a, c.Subscription) {
-		return false
-	}
-	if c.ResourceGroup != "" && !matchesResourceGroup(a, c.ResourceGroup) {
-		return false
-	}
-	return true
-}
-
-func matchesSubscription(a domain.EligibleAssignment, input string) bool {
-	input = strings.TrimSpace(input)
-	if input == "" {
-		return true
-	}
-	lower := strings.ToLower(input)
-	if a.SubscriptionID == input || strings.EqualFold(a.SubscriptionName, input) {
-		return true
-	}
-	if a.ScopeType == domain.ScopeSubscription && strings.EqualFold(a.ScopeName, input) {
-		return true
-	}
-	return strings.HasPrefix(strings.ToLower(a.ScopeID), "/subscriptions/"+lower)
-}
-
-func matchesResourceGroup(a domain.EligibleAssignment, input string) bool {
-	input = strings.TrimSpace(input)
-	if input == "" {
-		return true
-	}
-	return a.ScopeType == domain.ScopeResourceGroup && strings.EqualFold(a.ScopeName, input)
 }
 
 func renderActivationResult(streams *Streams, result *domain.ActivationResult, asJSON bool) error {
@@ -256,24 +208,23 @@ func renderActivationResult(streams *Streams, result *domain.ActivationResult, a
 	return err
 }
 
-const defaultWaitTimeout = 60 * time.Second
-
 func waitForActive(
 	ctx context.Context,
 	services Services,
 	result *domain.ActivationResult,
 	streams *Streams,
+	wait time.Duration,
 ) *domain.ActivationResult {
 	statusSvc, err := services.Status(streams.Log)
 	if err != nil {
 		return nil
 	}
 
-	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
+	deadline, cancel := context.WithTimeout(ctx, wait)
 	defer cancel()
 
 	sp := interactive.NewSpinner(streams.Stderr, fmt.Sprintf("Activating %s on %s", result.Role, result.ScopeName))
-	sp.Start()
+	sp.Start(deadline)
 
 	streams.Log.Debug(
 		"waiting for activation to propagate",
@@ -288,8 +239,8 @@ func waitForActive(
 		select {
 		case <-deadline.Done():
 			sp.Stop()
-			message := "Activation was accepted, but Azure did not report it active within 60s. " +
-				"Run pimctl status to check again.\n"
+			message := fmt.Sprintf("Activation was accepted, but Azure did not report it active within %s. "+
+				"Run pimctl status to check again.\n", wait)
 			if errors.Is(deadline.Err(), context.Canceled) {
 				message = "Activation wait canceled. Run pimctl status to check whether Azure finished it.\n"
 			}

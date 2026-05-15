@@ -47,6 +47,7 @@ type activateRunnerFixture struct {
 	eligibleErr    error
 	activator      *fakeActivator
 	activateCalled *bool
+	statusCalled   *bool
 }
 
 func TestActivate_missingRoleNonInteractive(t *testing.T) {
@@ -93,11 +94,13 @@ func TestActivate_missingReasonNonInteractive(t *testing.T) {
 func TestActivate_nonInteractiveWithAllFlags(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	statusCalled := false
 	activator := &fakeActivator{}
 	runner := activateRunner(t, activateRunnerFixture{
-		stdout:    &stdout,
-		stderr:    &stderr,
-		activator: activator,
+		stdout:       &stdout,
+		stderr:       &stderr,
+		activator:    activator,
+		statusCalled: &statusCalled,
 	})
 
 	code := runner.Run(t.Context(), []string{
@@ -109,6 +112,33 @@ func TestActivate_nonInteractiveWithAllFlags(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "Contributor") {
 		t.Fatalf("want activation output, got: %s", stdout.String())
+	}
+	if statusCalled {
+		t.Fatal("status should not be polled without --wait")
+	}
+}
+
+func TestActivate_waitPollsStatus(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	statusCalled := false
+	activator := &fakeActivator{}
+	runner := activateRunner(t, activateRunnerFixture{
+		stdout:       &stdout,
+		stderr:       &stderr,
+		activator:    activator,
+		statusCalled: &statusCalled,
+	})
+
+	code := runner.Run(t.Context(), []string{
+		"activate", "--scope", "/subscriptions/abc",
+		"--role", "Contributor", "--reason", "deploy", "--wait", "1s",
+	})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	if !statusCalled {
+		t.Fatal("status should be polled with --wait")
 	}
 }
 
@@ -169,6 +199,9 @@ func activateRunner(t *testing.T, f activateRunnerFixture) *cli.Runner {
 			return app.NewListService(eligibleStore), nil
 		},
 		Status: func(*slog.Logger) (*app.StatusService, error) {
+			if f.statusCalled != nil {
+				*f.statusCalled = true
+			}
 			return app.NewStatusService(activeStore), nil
 		},
 		Activate: func(*slog.Logger) (*app.ActivationService, error) {

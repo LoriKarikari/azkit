@@ -13,12 +13,36 @@ import (
 	"github.com/knadh/koanf/v2"
 )
 
-const envPrefix = "PIMCTL_"
+const (
+	envPrefix = "PIMCTL_"
+
+	// DefaultActivationDuration is the fallback Activation duration when neither flags nor Configuration set one.
+	DefaultActivationDuration = 2 * time.Hour
+)
 
 type Config struct {
 	DefaultDuration time.Duration `koanf:"default_duration"`
 	SubscriptionID  string        `koanf:"subscription_id"`
 	TenantID        string        `koanf:"tenant_id"`
+}
+
+// ActivationDuration applies the configured Activation duration unless the caller supplied one.
+func (c *Config) ActivationDuration(input time.Duration) time.Duration {
+	if input > 0 {
+		return input
+	}
+	if c != nil && c.DefaultDuration > 0 {
+		return c.DefaultDuration
+	}
+	return DefaultActivationDuration
+}
+
+// ActivationSubscription applies the configured Subscription selector unless the caller supplied a selector or Resource scope.
+func (c *Config) ActivationSubscription(input string, scopeID string) string {
+	if input != "" || scopeID != "" || c == nil {
+		return input
+	}
+	return c.SubscriptionID
 }
 
 func Load(configPath string) (*Config, error) {
@@ -40,7 +64,7 @@ func Load(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("env vars: %w", err)
 	}
 
-	defaultDuration, err := durationValue(k, "default_duration", 2*time.Hour)
+	defaultDuration, err := durationValue(k, "default_duration", DefaultActivationDuration)
 	if err != nil {
 		return nil, err
 	}
