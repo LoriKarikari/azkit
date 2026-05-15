@@ -139,7 +139,7 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		return app.ErrEligibleNotFound
 	}
 
-	result, err := interactive.ActivateInteractive(
+	result, err := flow.services.ActivateInteractive(
 		ctx,
 		eligible,
 		flow.act,

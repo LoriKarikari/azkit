@@ -16,12 +16,6 @@ import (
 )
 
 func TestCancelActivationInteractive(t *testing.T) {
-	original := interactive.ActivateInteractive
-	t.Cleanup(func() { interactive.ActivateInteractive = original })
-	interactive.ActivateInteractive = func(_ context.Context, _ []domain.EligibleAssignment, _ *app.ActivationService, _ *config.Config, _ interactive.ActivationInput) (*domain.ActivationResult, error) {
-		return nil, interactive.ErrCanceled
-	}
-
 	originalTerm := interactive.IsTerminalFn
 	t.Cleanup(func() { interactive.IsTerminalFn = originalTerm })
 	interactive.IsTerminalFn = func() bool { return true }
@@ -45,6 +39,9 @@ func TestCancelActivationInteractive(t *testing.T) {
 		Deactivate: func(_ *slog.Logger) (*app.DeactivationService, error) {
 			return nil, nil
 		},
+		ActivateInteractive: func(_ context.Context, _ []domain.EligibleAssignment, _ *app.ActivationService, _ *config.Config, _ interactive.ActivationInput) (*domain.ActivationResult, error) {
+			return nil, interactive.ErrCanceled
+		},
 	}, &stdout, &stderr)
 
 	code := runner.Run(t.Context(), []string{"activate"})
@@ -60,12 +57,6 @@ func TestCancelActivationInteractive(t *testing.T) {
 }
 
 func TestCancelDeactivationInteractive(t *testing.T) {
-	original := interactive.DeactivateInteractive
-	t.Cleanup(func() { interactive.DeactivateInteractive = original })
-	interactive.DeactivateInteractive = func(_ context.Context, _ []domain.ActiveAssignment, _ *app.DeactivationService, _ string, _ bool) (*domain.DeactivationResult, error) {
-		return nil, interactive.ErrCanceled
-	}
-
 	originalTerm := interactive.IsTerminalFn
 	t.Cleanup(func() { interactive.IsTerminalFn = originalTerm })
 	interactive.IsTerminalFn = func() bool { return true }
@@ -83,6 +74,9 @@ func TestCancelDeactivationInteractive(t *testing.T) {
 		},
 		Deactivate: func(_ *slog.Logger) (*app.DeactivationService, error) {
 			return app.NewDeactivationService(&inmemory.ActiveAssignments{}, nil), nil
+		},
+		DeactivateInteractive: func(_ context.Context, _ []domain.ActiveAssignment, _ *app.DeactivationService, _ string, _ bool) (*domain.DeactivationResult, error) {
+			return nil, interactive.ErrCanceled
 		},
 	}, &stdout, &stderr)
 

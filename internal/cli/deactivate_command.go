@@ -66,7 +66,7 @@ func (c *DeactivateCmd) runInteractive(ctx context.Context, services Services, s
 		return err
 	}
 
-	result, err := interactive.DeactivateInteractive(ctx, active, deactivator, c.Reason, false)
+	result, err := services.DeactivateInteractive(ctx, active, deactivator, c.Reason, false)
 	if err != nil {
 		if errors.Is(err, interactive.ErrCanceled) {
 			_, _ = io.WriteString(streams.Stderr, "Deactivation canceled.\n")
