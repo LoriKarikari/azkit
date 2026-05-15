@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 
@@ -37,14 +36,6 @@ type subscriptionSource interface {
 
 type eligibilityScheduleSource interface {
 	ListForSubscription(context.Context, string) ([]domain.EligibleAssignment, error)
-}
-
-func NewEligibleAssignments() (*EligibleAssignments, error) {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		return nil, err
-	}
-	return NewEligibleAssignmentsFromCred(cred, nil), nil
 }
 
 func NewEligibleAssignmentsFromCred(cred azcore.TokenCredential, log *slog.Logger) *EligibleAssignments {

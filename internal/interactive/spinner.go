@@ -11,9 +11,16 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 )
 
+const (
+	defaultSpinnerDelay    = 100 * time.Millisecond
+	defaultSpinnerInterval = 150 * time.Millisecond
+)
+
 type Spinner struct {
 	w        io.Writer
 	msg      string
+	delay    time.Duration
+	interval time.Duration
 	done     chan struct{}
 	stopped  chan struct{}
 	stopOnce sync.Once
@@ -21,11 +28,23 @@ type Spinner struct {
 }
 
 func NewSpinner(w io.Writer, msg string) *Spinner {
+	return newSpinner(w, msg, defaultSpinnerDelay, defaultSpinnerInterval)
+}
+
+func newSpinner(w io.Writer, msg string, delay time.Duration, interval time.Duration) *Spinner {
+	if delay < 0 {
+		delay = 0
+	}
+	if interval <= 0 {
+		interval = defaultSpinnerInterval
+	}
 	return &Spinner{
-		w:       w,
-		msg:     msg,
-		done:    make(chan struct{}),
-		stopped: make(chan struct{}),
+		w:        w,
+		msg:      msg,
+		delay:    delay,
+		interval: interval,
+		done:     make(chan struct{}),
+		stopped:  make(chan struct{}),
 	}
 }
 
@@ -33,15 +52,17 @@ func (s *Spinner) Start(ctx context.Context) {
 	go func() {
 		defer close(s.stopped)
 
-		delay := time.NewTimer(100 * time.Millisecond)
-		defer delay.Stop()
+		if s.delay > 0 {
+			delay := time.NewTimer(s.delay)
+			defer delay.Stop()
 
-		select {
-		case <-s.done:
-			return
-		case <-ctx.Done():
-			return
-		case <-delay.C:
+			select {
+			case <-s.done:
+				return
+			case <-ctx.Done():
+				return
+			case <-delay.C:
+			}
 		}
 		s.run(ctx)
 	}()
@@ -62,7 +83,7 @@ func (s *Spinner) run(ctx context.Context) {
 	sp := spinner.New(spinner.WithSpinner(spinner.Dot))
 	startedAt := time.Now()
 	s.write(sp.View(), 0)
-	ticker := time.NewTicker(150 * time.Millisecond)
+	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
 	for {
 		select {
