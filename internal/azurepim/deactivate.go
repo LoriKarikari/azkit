@@ -57,10 +57,9 @@ func (d *DeactivationStore) Deactivate(
 
 	parameters := armauthorization.RoleAssignmentScheduleRequest{
 		Properties: &armauthorization.RoleAssignmentScheduleRequestProperties{
-			RoleDefinitionID:                       &assignment.RoleDefID,
-			PrincipalID:                            &assignment.PrincipalID,
-			RequestType:                            &reqType,
-			TargetRoleAssignmentScheduleInstanceID: &assignment.ID,
+			RoleDefinitionID: &assignment.RoleDefID,
+			PrincipalID:      &assignment.PrincipalID,
+			RequestType:      &reqType,
 		},
 	}
 	if reason != "" {

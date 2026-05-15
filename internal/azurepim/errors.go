@@ -8,13 +8,29 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
+	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
 func azurePIMOperationError(err error) error {
 	if azurePIMPermissionDenied(err) {
 		return app.PermissionDenied(err)
 	}
+	if activeDurationTooShort(err) {
+		return &app.Error{
+			Code:    domain.CodeAzureAPIError,
+			Message: "Role must be active for at least 5 minutes before deactivating.",
+			Cause:   err,
+		}
+	}
 	return app.AzureAPIError(err)
+}
+
+func activeDurationTooShort(err error) bool {
+	var responseErr *azcore.ResponseError
+	if errors.As(err, &responseErr) {
+		return responseErr.ErrorCode == "ActiveDurationTooShort"
+	}
+	return strings.Contains(err.Error(), "ActiveDurationTooShort")
 }
 
 func azurePIMPermissionDenied(err error) bool {
