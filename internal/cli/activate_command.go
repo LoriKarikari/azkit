@@ -263,7 +263,7 @@ func waitForActive(
 	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
 	defer cancel()
 
-	sp := interactive.NewSpinner(streams.Stderr, fmt.Sprintf("Waiting for %s on %s", result.Role, result.ScopeName))
+	sp := interactive.NewSpinner(streams.Stderr, fmt.Sprintf("Activating %s on %s", result.Role, result.ScopeName))
 	sp.Start()
 
 	streams.Log.Debug(

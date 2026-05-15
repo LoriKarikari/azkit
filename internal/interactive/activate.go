@@ -124,7 +124,7 @@ func Activate(
 	}
 
 	if !input.AutoConfirm {
-		sp := NewSpinner(os.Stderr, "Activating...")
+		sp := NewSpinner(os.Stderr, fmt.Sprintf("Activating %s on %s", selected.Role, selected.ScopeName))
 		sp.Start()
 		result, err := svc.ActivateResolved(ctx, target)
 		sp.Stop()
