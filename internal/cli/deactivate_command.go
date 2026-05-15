@@ -59,7 +59,7 @@ func (c *DeactivateCmd) runInteractive(ctx context.Context, services Services, s
 
 	var active []domain.ActiveAssignment
 	{
-		sp := NewSpinner(streams.Stderr, "Loading active assignments...")
+		sp := interactive.NewSpinner(streams.Stderr, "Loading active assignments...")
 		if !c.JSON {
 			sp.Start()
 		}

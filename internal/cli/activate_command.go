@@ -132,7 +132,7 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 
 	var eligible []domain.EligibleAssignment
 	{
-		sp := NewSpinner(flow.streams.Stderr, "Loading eligible assignments...")
+		sp := interactive.NewSpinner(flow.streams.Stderr, "Loading eligible assignments...")
 		if !c.JSON {
 			sp.Start()
 		}
@@ -263,7 +263,7 @@ func waitForActive(
 	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
 	defer cancel()
 
-	sp := NewSpinner(streams.Stderr, fmt.Sprintf("Waiting for %s on %s", result.Role, result.ScopeName))
+	sp := interactive.NewSpinner(streams.Stderr, fmt.Sprintf("Waiting for %s on %s", result.Role, result.ScopeName))
 	sp.Start()
 
 	streams.Log.Debug(

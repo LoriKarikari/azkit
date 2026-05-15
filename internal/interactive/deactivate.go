@@ -47,7 +47,12 @@ func Deactivate(
 		if err := confirmDeactivation(ctx, selected, reason); err != nil {
 			return nil, err
 		}
-		_, _ = os.Stderr.WriteString("\r\033[KDeactivating...")
+
+		sp := NewSpinner(os.Stderr, "Deactivating...")
+		sp.Start()
+		result, err := svc.Deactivate(ctx, selected.ID, reason)
+		sp.Stop()
+		return result, err
 	}
 
 	return svc.Deactivate(ctx, selected.ID, reason)

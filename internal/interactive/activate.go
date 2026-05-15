@@ -122,9 +122,15 @@ func Activate(
 		Reason:     strings.TrimSpace(reason),
 		Duration:   duration,
 	}
+
 	if !input.AutoConfirm {
-		_, _ = os.Stderr.WriteString("\r\033[KActivating...")
+		sp := NewSpinner(os.Stderr, "Activating...")
+		sp.Start()
+		result, err := svc.ActivateResolved(ctx, target)
+		sp.Stop()
+		return result, err
 	}
+
 	return svc.ActivateResolved(ctx, target)
 }
 
