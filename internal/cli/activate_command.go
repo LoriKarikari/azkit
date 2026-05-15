@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/domain"
 	"github.com/LoriKarikari/pimctl/internal/interactive"
@@ -54,19 +52,8 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		})
 	}
 
-	duration := c.Duration
-	subscription := c.Subscription
-	if streams.Config != nil {
-		if duration == 0 {
-			duration = streams.Config.DefaultDuration
-		}
-		if subscription == "" && c.Scope == "" {
-			subscription = streams.Config.SubscriptionID
-		}
-	}
-	if duration == 0 {
-		duration = 2 * time.Hour
-	}
+	duration := streams.Config.ActivationDuration(c.Duration)
+	subscription := streams.Config.ActivationSubscription(c.Subscription, c.Scope)
 
 	activateCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
@@ -137,14 +124,15 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 
 	var eligible []domain.EligibleAssignment
 	{
-		sp := interactive.NewSpinner(flow.streams.Stderr, "Loading eligible assignments")
-		if !c.JSON {
-			sp.Start()
-		}
-		eligible, err = listSvc.List(ctx)
-		if !c.JSON {
-			sp.Stop()
-		}
+		eligible, err = interactive.WithSpinner(
+			ctx,
+			flow.streams.Stderr,
+			"Loading eligible assignments",
+			!c.JSON,
+			func(ctx context.Context) ([]domain.EligibleAssignment, error) {
+				return listSvc.List(ctx)
+			},
+		)
 		if err != nil {
 			return err
 		}
@@ -191,49 +179,12 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 }
 
 func (c *ActivateCmd) filterEligible(eligible []domain.EligibleAssignment) []domain.EligibleAssignment {
-	return lo.Filter(eligible, func(a domain.EligibleAssignment, _ int) bool {
-		return c.matchesEligible(a)
+	return app.FilterEligibleAssignments(eligible, domain.ActivationRequest{
+		ScopeID:       c.Scope,
+		Subscription:  c.Subscription,
+		ResourceGroup: c.ResourceGroup,
+		Role:          c.Role,
 	})
-}
-
-func (c *ActivateCmd) matchesEligible(a domain.EligibleAssignment) bool {
-	role := strings.TrimSpace(c.Role)
-	if role != "" && a.Role != role && a.RoleDefID != role {
-		return false
-	}
-	if c.Scope != "" && a.ScopeID != c.Scope {
-		return false
-	}
-	if c.Subscription != "" && !matchesSubscription(a, c.Subscription) {
-		return false
-	}
-	if c.ResourceGroup != "" && !matchesResourceGroup(a, c.ResourceGroup) {
-		return false
-	}
-	return true
-}
-
-func matchesSubscription(a domain.EligibleAssignment, input string) bool {
-	input = strings.TrimSpace(input)
-	if input == "" {
-		return true
-	}
-	lower := strings.ToLower(input)
-	if a.SubscriptionID == input || strings.EqualFold(a.SubscriptionName, input) {
-		return true
-	}
-	if a.ScopeType == domain.ScopeSubscription && strings.EqualFold(a.ScopeName, input) {
-		return true
-	}
-	return strings.HasPrefix(strings.ToLower(a.ScopeID), "/subscriptions/"+lower)
-}
-
-func matchesResourceGroup(a domain.EligibleAssignment, input string) bool {
-	input = strings.TrimSpace(input)
-	if input == "" {
-		return true
-	}
-	return a.ScopeType == domain.ScopeResourceGroup && strings.EqualFold(a.ScopeName, input)
 }
 
 func renderActivationResult(streams *Streams, result *domain.ActivationResult, asJSON bool) error {
@@ -273,7 +224,7 @@ func waitForActive(
 	defer cancel()
 
 	sp := interactive.NewSpinner(streams.Stderr, fmt.Sprintf("Activating %s on %s", result.Role, result.ScopeName))
-	sp.Start()
+	sp.Start(deadline)
 
 	streams.Log.Debug(
 		"waiting for activation to propagate",

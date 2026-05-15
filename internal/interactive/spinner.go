@@ -1,8 +1,10 @@
 package interactive
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -10,11 +12,12 @@ import (
 )
 
 type Spinner struct {
-	w       io.Writer
-	msg     string
-	done    chan struct{}
-	stopped chan struct{}
-	shown   atomic.Bool
+	w        io.Writer
+	msg      string
+	done     chan struct{}
+	stopped  chan struct{}
+	stopOnce sync.Once
+	shown    atomic.Bool
 }
 
 func NewSpinner(w io.Writer, msg string) *Spinner {
@@ -26,27 +29,35 @@ func NewSpinner(w io.Writer, msg string) *Spinner {
 	}
 }
 
-func (s *Spinner) Start() {
+func (s *Spinner) Start(ctx context.Context) {
 	go func() {
 		defer close(s.stopped)
+
+		delay := time.NewTimer(100 * time.Millisecond)
+		defer delay.Stop()
+
 		select {
 		case <-s.done:
 			return
-		case <-time.After(100 * time.Millisecond):
+		case <-ctx.Done():
+			return
+		case <-delay.C:
 		}
-		s.run()
+		s.run(ctx)
 	}()
 }
 
 func (s *Spinner) Stop() {
-	close(s.done)
+	s.stopOnce.Do(func() {
+		close(s.done)
+	})
 	<-s.stopped
 	if s.shown.Load() {
 		_, _ = io.WriteString(s.w, "\r\033[K")
 	}
 }
 
-func (s *Spinner) run() {
+func (s *Spinner) run(ctx context.Context) {
 	s.shown.Store(true)
 	sp := spinner.New(spinner.WithSpinner(spinner.Dot))
 	startedAt := time.Now()
@@ -56,6 +67,8 @@ func (s *Spinner) run() {
 	for {
 		select {
 		case <-s.done:
+			return
+		case <-ctx.Done():
 			return
 		case <-ticker.C:
 			sp, _ = sp.Update(sp.Tick())

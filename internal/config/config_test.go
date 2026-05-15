@@ -106,3 +106,30 @@ func TestLoadInvalidDurationFails(t *testing.T) {
 		t.Fatal("want invalid duration error, got nil")
 	}
 }
+
+func TestActivationDefaults(t *testing.T) {
+	c := &config.Config{
+		DefaultDuration: 45 * time.Minute,
+		SubscriptionID:  "sub-default",
+	}
+
+	if got := c.ActivationDuration(10 * time.Minute); got != 10*time.Minute {
+		t.Fatalf("want explicit duration, got %v", got)
+	}
+	if got := c.ActivationDuration(0); got != 45*time.Minute {
+		t.Fatalf("want configured duration, got %v", got)
+	}
+	if got := (*config.Config)(nil).ActivationDuration(0); got != config.DefaultActivationDuration {
+		t.Fatalf("want package default duration, got %v", got)
+	}
+
+	if got := c.ActivationSubscription("sub-explicit", ""); got != "sub-explicit" {
+		t.Fatalf("want explicit subscription, got %q", got)
+	}
+	if got := c.ActivationSubscription("", "/subscriptions/sub-scope"); got != "" {
+		t.Fatalf("want no default when scope is explicit, got %q", got)
+	}
+	if got := c.ActivationSubscription("", ""); got != "sub-default" {
+		t.Fatalf("want configured subscription, got %q", got)
+	}
+}
