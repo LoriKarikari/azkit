@@ -124,15 +124,11 @@ func Activate(
 		Duration:   duration,
 	}
 
-	if input.Progress != nil {
-		sp := NewSpinner(input.Progress, fmt.Sprintf("Activating %s on %s", selected.Role, selected.ScopeName))
-		sp.Start()
-		result, err := svc.ActivateResolved(ctx, target)
-		sp.Stop()
-		return result, err
+	result, err := svc.ActivateResolved(ctx, target)
+	if input.Progress != nil && err == nil {
+		_, _ = io.WriteString(input.Progress, fmt.Sprintf("\r\033[KActivating %s on %s...", selected.Role, selected.ScopeName))
 	}
-
-	return svc.ActivateResolved(ctx, target)
+	return result, err
 }
 
 func fmtAssignment(a domain.EligibleAssignment) string {
