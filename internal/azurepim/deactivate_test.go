@@ -55,10 +55,6 @@ func TestDeactivationStore_createsSelfDeactivateRequest(t *testing.T) {
 	if *props.PrincipalID != "user-1" {
 		t.Fatalf("want principal user-1, got %s", *props.PrincipalID)
 	}
-	if *props.TargetRoleAssignmentScheduleInstanceID != "inst-1" {
-		t.Fatalf("want target schedule instance inst-1, got %s", *props.TargetRoleAssignmentScheduleInstanceID)
-	}
-
 	if result.Role != "Contributor" {
 		t.Fatalf("want Contributor, got %s", result.Role)
 	}

@@ -3,9 +3,7 @@ package cli
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
-	"log/slog"
 	"time"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
@@ -101,11 +99,6 @@ func (c *DeactivateCmd) runInteractive(ctx context.Context, services Services, s
 
 	_, _ = io.WriteString(streams.Stderr, "\r\033[K")
 
-	confirmed := waitForDeactivation(ctx, services, result, streams)
-	if confirmed != nil {
-		result = confirmed
-	}
-
 	if c.JSON {
 		_, err = io.WriteString(streams.Stdout, renderDeactivationJSON(result))
 		return err
@@ -113,80 +106,4 @@ func (c *DeactivateCmd) runInteractive(ctx context.Context, services Services, s
 
 	_, err = io.WriteString(streams.Stdout, renderDeactivationHuman(result))
 	return err
-}
-
-func waitForDeactivation(
-	ctx context.Context,
-	services Services,
-	result *domain.DeactivationResult,
-	streams *Streams,
-) *domain.DeactivationResult {
-	statusSvc, err := services.Status(streams.Log)
-	if err != nil {
-		return nil
-	}
-
-	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
-	defer cancel()
-
-	sp := interactive.NewSpinner(streams.Stderr, fmt.Sprintf("Deactivating %s on %s", result.Role, result.ScopeName))
-	sp.Start()
-
-	streams.Log.Debug(
-		"waiting for deactivation to propagate",
-		slog.String("role", result.Role),
-		slog.String("scope", result.ScopeID),
-		slog.String("assignment", result.AssignmentID),
-	)
-
-	ticker := time.NewTicker(2 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-deadline.Done():
-			sp.Stop()
-			message := "Deactivation was accepted, but Azure did not report it completed within 60s. " +
-				"Run pimctl status to check again.\n"
-			if errors.Is(deadline.Err(), context.Canceled) {
-				message = "Deactivation wait canceled. Run pimctl status to check whether Azure finished it.\n"
-			}
-			_, _ = io.WriteString(streams.Stderr, message)
-			return nil
-		case <-ticker.C:
-			as, err := statusSvc.StatusForScope(deadline, result.ScopeID)
-			if err != nil {
-				streams.Log.Debug(
-					"deactivation status poll failed",
-					slog.String("scope", result.ScopeID),
-					slog.Any("error", err),
-				)
-				continue
-			}
-			streams.Log.Debug(
-				"deactivation poll returned",
-				slog.Int("active_assignments", len(as)),
-				slog.String("target_assignment", result.AssignmentID),
-			)
-			found := false
-			for _, a := range as {
-				if a.ID == result.AssignmentID {
-					found = true
-					break
-				}
-			}
-			if !found {
-				sp.Stop()
-				confirmedMsg := fmt.Sprintf(
-					"✓ Deactivated %s on %s\n",
-					result.Role,
-					result.ScopeName,
-				)
-				_, _ = io.WriteString(streams.Stderr, confirmedMsg)
-				confirmed := *result
-				confirmed.Status = domain.DeactivationConfirmed
-				return &confirmed
-			}
-		}
-	}
 }
