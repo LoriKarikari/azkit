@@ -31,7 +31,12 @@ func renderDeactivationJSON(result *domain.DeactivationResult) string {
 
 func renderDeactivationHuman(result *domain.DeactivationResult) string {
 	var buf bytes.Buffer
-	_, _ = fmt.Fprintf(&buf, "Deactivation requested for %s on %s\n", result.Role, result.ScopeName)
+	switch result.Status {
+	case domain.DeactivationConfirmed:
+		_, _ = fmt.Fprintf(&buf, "✓ Deactivated %s on %s\n", result.Role, result.ScopeName)
+	default:
+		_, _ = fmt.Fprintf(&buf, "Deactivation requested for %s on %s\n", result.Role, result.ScopeName)
+	}
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 	_, _ = fmt.Fprintf(w, "Assignment ID:\t%s\n", result.AssignmentID)
 	_ = w.Flush()
