@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/charmbracelet/huh"
 	"github.com/samber/lo"
@@ -46,6 +47,7 @@ func Deactivate(
 		if err := confirmDeactivation(ctx, selected, reason); err != nil {
 			return nil, err
 		}
+		_, _ = os.Stderr.WriteString("\r\033[KDeactivating...")
 	}
 
 	return svc.Deactivate(ctx, selected.ID, reason)

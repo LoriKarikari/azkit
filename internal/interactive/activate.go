@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -120,6 +121,9 @@ func Activate(
 		Assignment: selected,
 		Reason:     strings.TrimSpace(reason),
 		Duration:   duration,
+	}
+	if !input.AutoConfirm {
+		_, _ = os.Stderr.WriteString("\r\033[KActivating...")
 	}
 	return svc.ActivateResolved(ctx, target)
 }
