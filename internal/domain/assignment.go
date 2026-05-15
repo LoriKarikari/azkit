@@ -21,7 +21,6 @@ const (
 	ActiveAssignmentActive ActiveAssignmentStatus = "active"
 
 	DeactivationRequested DeactivationRequestStatus = "deactivation_requested"
-	DeactivationConfirmed DeactivationRequestStatus = "deactivation_confirmed"
 )
 
 type EligibleAssignment struct {

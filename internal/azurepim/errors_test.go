@@ -29,6 +29,18 @@ func TestAzurePIMOperationError_mapsAuthorizationFailedText(t *testing.T) {
 	}
 }
 
+func TestAzurePIMOperationError_mapsActiveDurationTooShort(t *testing.T) {
+	got := azurePIMOperationError(&azcore.ResponseError{ErrorCode: "ActiveDurationTooShort"})
+
+	var appErr *app.Error
+	if !errors.As(got, &appErr) || appErr.Code != domain.CodeAzureAPIError {
+		t.Fatalf("want azure api error, got %v", got)
+	}
+	if appErr.Message != "Role must be active for at least 5 minutes before deactivating." {
+		t.Fatalf("unexpected message: %q", appErr.Message)
+	}
+}
+
 func TestAzurePIMOperationError_mapsOtherErrors(t *testing.T) {
 	got := azurePIMOperationError(errors.New("boom"))
 
