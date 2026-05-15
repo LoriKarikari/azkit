@@ -41,6 +41,13 @@ func Activate(
 	}
 
 	selected := eligible[0]
+
+	if len(eligible) == 1 && !input.AutoConfirm {
+		if err := confirmTarget(ctx, selected); err != nil {
+			return nil, err
+		}
+	}
+
 	reason := strings.TrimSpace(input.Reason)
 	durationText := defaultDuration.String()
 	groups := make([]*huh.Group, 0, 2)
@@ -122,6 +129,32 @@ func fmtAssignment(a domain.EligibleAssignment) string {
 		return fmt.Sprintf("%s — %s (%s)", a.Role, a.ScopeName, a.SubscriptionName)
 	}
 	return fmt.Sprintf("%s — %s", a.Role, a.ScopeName)
+}
+
+func confirmTarget(ctx context.Context, a domain.EligibleAssignment) error {
+	confirmed := false
+	desc := fmt.Sprintf("Role: %s\nScope: %s", a.Role, a.ScopeName)
+	if a.SubscriptionName != "" {
+		desc += fmt.Sprintf("\nSubscription: %s", a.SubscriptionName)
+	}
+	form := huh.NewForm(huh.NewGroup(
+		huh.NewConfirm().
+			Title("Activate this role?").
+			Description(desc).
+			Affirmative("Continue").
+			Negative("Cancel").
+			Value(&confirmed),
+	))
+	if err := form.RunWithContext(ctx); err != nil {
+		if errors.Is(err, huh.ErrUserAborted) {
+			return ErrCanceled
+		}
+		return err
+	}
+	if !confirmed {
+		return ErrCanceled
+	}
+	return nil
 }
 
 func confirmActivation(ctx context.Context, selected domain.EligibleAssignment, reason string, duration string) error {
