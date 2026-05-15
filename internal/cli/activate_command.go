@@ -307,6 +307,11 @@ func waitForActive(
 				)
 				continue
 			}
+			streams.Log.Debug(
+				"activation poll returned",
+				slog.Int("active_assignments", len(as)),
+				slog.String("role", result.Role),
+			)
 			for _, a := range as {
 				if domain.ActiveAssignmentConfirmsResult(a, result) {
 					sp.Stop()

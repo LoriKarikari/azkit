@@ -163,6 +163,11 @@ func waitForDeactivation(
 				)
 				continue
 			}
+			streams.Log.Debug(
+				"deactivation poll returned",
+				slog.Int("active_assignments", len(as)),
+				slog.String("target_assignment", result.AssignmentID),
+			)
 			found := false
 			for _, a := range as {
 				if a.ID == result.AssignmentID {
