@@ -23,6 +23,7 @@ type ActivateCmd struct {
 	Role          string        `help:"Role display name or definition ID"`
 	Reason        string        `help:"Justification for the activation"`
 	Duration      time.Duration `help:"How long the role stays active (default from config)"`
+	Wait          time.Duration `help:"Wait for Azure to report the role active"`
 	JSON          bool          `help:"Output as JSON"`
 }
 
@@ -86,8 +87,8 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		return err
 	}
 
-	if result.Outcome != domain.ActivationAlreadyActive {
-		confirmed := waitForActive(ctx, services, result, streams)
+	if c.Wait > 0 && result.Outcome != domain.ActivationAlreadyActive {
+		confirmed := waitForActive(ctx, services, result, streams, c.Wait)
 		if confirmed != nil {
 			result = confirmed
 		} else {
@@ -177,8 +178,8 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		return err
 	}
 
-	if result.Outcome != domain.ActivationAlreadyActive {
-		confirmed := waitForActive(ctx, flow.services, result, flow.streams)
+	if c.Wait > 0 && result.Outcome != domain.ActivationAlreadyActive {
+		confirmed := waitForActive(ctx, flow.services, result, flow.streams, c.Wait)
 		if confirmed != nil {
 			result = confirmed
 		} else {
@@ -256,20 +257,19 @@ func renderActivationResult(streams *Streams, result *domain.ActivationResult, a
 	return err
 }
 
-const defaultWaitTimeout = 60 * time.Second
-
 func waitForActive(
 	ctx context.Context,
 	services Services,
 	result *domain.ActivationResult,
 	streams *Streams,
+	wait time.Duration,
 ) *domain.ActivationResult {
 	statusSvc, err := services.Status(streams.Log)
 	if err != nil {
 		return nil
 	}
 
-	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
+	deadline, cancel := context.WithTimeout(ctx, wait)
 	defer cancel()
 
 	sp := interactive.NewSpinner(streams.Stderr, fmt.Sprintf("Activating %s on %s", result.Role, result.ScopeName))
@@ -288,8 +288,8 @@ func waitForActive(
 		select {
 		case <-deadline.Done():
 			sp.Stop()
-			message := "Activation was accepted, but Azure did not report it active within 60s. " +
-				"Run pimctl status to check again.\n"
+			message := fmt.Sprintf("Activation was accepted, but Azure did not report it active within %s. "+
+				"Run pimctl status to check again.\n", wait)
 			if errors.Is(deadline.Err(), context.Canceled) {
 				message = "Activation wait canceled. Run pimctl status to check whether Azure finished it.\n"
 			}
