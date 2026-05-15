@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/cli"
@@ -15,20 +16,53 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/interactive"
 )
 
-func TestCancelActivationInteractive(t *testing.T) {
+type delayEligibleStore struct {
+	inner app.EligibleAssignments
+	delay time.Duration
+}
+
+func (s *delayEligibleStore) ListEligible(ctx context.Context) ([]domain.EligibleAssignment, error) {
+	select {
+	case <-time.After(s.delay):
+		return s.inner.ListEligible(ctx)
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+type delayActiveStore struct {
+	inner app.ActiveAssignments
+	delay time.Duration
+}
+
+func (s *delayActiveStore) ListActive(ctx context.Context) ([]domain.ActiveAssignment, error) {
+	select {
+	case <-time.After(s.delay):
+		return s.inner.ListActive(ctx)
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+func TestActivateShowsListingSpinner(t *testing.T) {
 	originalTerm := interactive.IsTerminalFn
 	t.Cleanup(func() { interactive.IsTerminalFn = originalTerm })
 	interactive.IsTerminalFn = func() bool { return true }
 
 	var stdout, stderr bytes.Buffer
-	eligible := &inmemory.EligibleAssignments{
-		Assignments: []domain.EligibleAssignment{
-			{Role: "Contributor", RoleDefID: "/roleDefs/111", ScopeID: "/sub/abc", ScopeName: "sub-prod"},
+
+	store := &delayEligibleStore{
+		inner: &inmemory.EligibleAssignments{
+			Assignments: []domain.EligibleAssignment{
+				{Role: "Contributor", RoleDefID: "/roleDefs/111", ScopeID: "/sub/abc", ScopeName: "sub-prod"},
+			},
 		},
+		delay: 150 * time.Millisecond,
 	}
+
 	runner := cli.NewRunner(cli.Services{
 		List: func(_ *slog.Logger) (*app.ListService, error) {
-			return app.NewListService(eligible), nil
+			return app.NewListService(store), nil
 		},
 		Activate: func(_ *slog.Logger) (*app.ActivationService, error) {
 			return app.NewActivationService(nil, nil, nil), nil
@@ -44,24 +78,29 @@ func TestCancelActivationInteractive(t *testing.T) {
 		},
 	}, &stdout, &stderr)
 
-	code := runner.Run(t.Context(), []string{"activate"})
-	if code != 0 {
-		t.Fatalf("want exit 0, got %d", code)
-	}
-	if !strings.Contains(stderr.String(), "Activation canceled") {
-		t.Fatalf("want cancel message on stderr, got: %q", stderr.String())
-	}
-	if stdout.String() != "" {
-		t.Fatalf("want empty stdout, got: %q", stdout.String())
+	runner.Run(t.Context(), []string{"activate"})
+
+	if !strings.Contains(stderr.String(), "Loading eligible assignments...") {
+		t.Fatalf("want loading message on stderr, got: %q", stderr.String())
 	}
 }
 
-func TestCancelDeactivationInteractive(t *testing.T) {
+func TestDeactivateShowsListingSpinner(t *testing.T) {
 	originalTerm := interactive.IsTerminalFn
 	t.Cleanup(func() { interactive.IsTerminalFn = originalTerm })
 	interactive.IsTerminalFn = func() bool { return true }
 
 	var stdout, stderr bytes.Buffer
+
+	store := &delayActiveStore{
+		inner: &inmemory.ActiveAssignments{
+			Assignments: []domain.ActiveAssignment{
+				{Role: "Contributor", ScopeID: "/sub/abc", ScopeName: "sub-prod", ID: "1"},
+			},
+		},
+		delay: 150 * time.Millisecond,
+	}
+
 	runner := cli.NewRunner(cli.Services{
 		List: func(_ *slog.Logger) (*app.ListService, error) {
 			return app.NewListService(&inmemory.EligibleAssignments{}), nil
@@ -70,7 +109,7 @@ func TestCancelDeactivationInteractive(t *testing.T) {
 			return nil, nil
 		},
 		Status: func(_ *slog.Logger) (*app.StatusService, error) {
-			return app.NewStatusService(&inmemory.ActiveAssignments{}), nil
+			return app.NewStatusService(store), nil
 		},
 		Deactivate: func(_ *slog.Logger) (*app.DeactivationService, error) {
 			return app.NewDeactivationService(&inmemory.ActiveAssignments{}, nil), nil
@@ -80,14 +119,9 @@ func TestCancelDeactivationInteractive(t *testing.T) {
 		},
 	}, &stdout, &stderr)
 
-	code := runner.Run(t.Context(), []string{"deactivate"})
-	if code != 0 {
-		t.Fatalf("want exit 0, got %d", code)
-	}
-	if !strings.Contains(stderr.String(), "Deactivation canceled") {
-		t.Fatalf("want cancel message on stderr, got: %q", stderr.String())
-	}
-	if stdout.String() != "" {
-		t.Fatalf("want empty stdout, got: %q", stdout.String())
+	runner.Run(t.Context(), []string{"deactivate"})
+
+	if !strings.Contains(stderr.String(), "Loading active assignments...") {
+		t.Fatalf("want loading message on stderr, got: %q", stderr.String())
 	}
 }

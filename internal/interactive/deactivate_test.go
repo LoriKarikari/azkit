@@ -13,7 +13,7 @@ import (
 
 func TestDeactivateReturnsNotFoundForEmptyAssignments(t *testing.T) {
 	svc := app.NewDeactivationService(&inmemory.ActiveAssignments{}, &stubDeactivator{})
-	_, err := interactive.Deactivate(t.Context(), nil, svc, "", true)
+	_, err := interactive.Deactivate(t.Context(), nil, svc, interactive.DeactivationInput{AutoConfirm: true})
 	if !errors.Is(err, app.ErrActiveAssignmentNotFound) {
 		t.Fatalf("want ErrActiveAssignmentNotFound, got %v", err)
 	}
@@ -39,7 +39,10 @@ func TestDeactivateAutoSelectsSingleAssignment(t *testing.T) {
 		&inmemory.ActiveAssignments{Assignments: []domain.ActiveAssignment{assignment}},
 		deactivator,
 	)
-	result, err := interactive.Deactivate(t.Context(), []domain.ActiveAssignment{assignment}, svc, "done", true)
+	result, err := interactive.Deactivate(t.Context(), []domain.ActiveAssignment{assignment}, svc, interactive.DeactivationInput{
+		Reason:      "done",
+		AutoConfirm: true,
+	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

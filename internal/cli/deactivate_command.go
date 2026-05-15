@@ -56,9 +56,20 @@ func (c *DeactivateCmd) runInteractive(ctx context.Context, services Services, s
 	if err != nil {
 		return err
 	}
-	active, err := statusSvc.Status(ctx)
-	if err != nil {
-		return err
+
+	var active []domain.ActiveAssignment
+	{
+		sp := interactive.NewSpinner(streams.Stderr, "Loading active assignments...")
+		if !c.JSON {
+			sp.Start()
+		}
+		active, err = statusSvc.Status(ctx)
+		if !c.JSON {
+			sp.Stop()
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	deactivator, err := services.Deactivate(streams.Log)
@@ -66,7 +77,14 @@ func (c *DeactivateCmd) runInteractive(ctx context.Context, services Services, s
 		return err
 	}
 
-	result, err := services.DeactivateInteractive(ctx, active, deactivator, c.Reason, false)
+	input := interactive.DeactivationInput{
+		Reason: c.Reason,
+	}
+	if !c.JSON {
+		input.Progress = streams.Stderr
+	}
+
+	result, err := services.DeactivateInteractive(ctx, active, deactivator, input)
 	if err != nil {
 		if errors.Is(err, interactive.ErrCanceled) {
 			_, _ = io.WriteString(streams.Stderr, "Deactivation canceled.\n")
@@ -75,6 +93,7 @@ func (c *DeactivateCmd) runInteractive(ctx context.Context, services Services, s
 		return err
 	}
 
+	_, _ = io.WriteString(streams.Stderr, "\r\033[K")
 	if c.JSON {
 		_, err = io.WriteString(streams.Stdout, renderDeactivationJSON(result))
 		return err

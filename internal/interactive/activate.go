@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ type ActivationInput struct {
 	Reason      string
 	Duration    time.Duration
 	AutoConfirm bool
+	Progress    io.Writer
 }
 
 func Activate(
@@ -121,6 +123,15 @@ func Activate(
 		Reason:     strings.TrimSpace(reason),
 		Duration:   duration,
 	}
+
+	if input.Progress != nil {
+		sp := NewSpinner(input.Progress, fmt.Sprintf("Activating %s on %s", selected.Role, selected.ScopeName))
+		sp.Start()
+		result, err := svc.ActivateResolved(ctx, target)
+		sp.Stop()
+		return result, err
+	}
+
 	return svc.ActivateResolved(ctx, target)
 }
 

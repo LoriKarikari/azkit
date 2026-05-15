@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/charmbracelet/huh"
 	"github.com/samber/lo"
@@ -12,12 +13,17 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/domain"
 )
 
+type DeactivationInput struct {
+	Reason      string
+	AutoConfirm bool
+	Progress    io.Writer
+}
+
 func Deactivate(
 	ctx context.Context,
 	active []domain.ActiveAssignment,
 	svc *app.DeactivationService,
-	reason string,
-	autoConfirm bool,
+	input DeactivationInput,
 ) (*domain.DeactivationResult, error) {
 	if len(active) == 0 {
 		return nil, app.ErrActiveAssignmentNotFound
@@ -42,13 +48,21 @@ func Deactivate(
 		}
 	}
 
-	if !autoConfirm {
-		if err := confirmDeactivation(ctx, selected, reason); err != nil {
+	if !input.AutoConfirm {
+		if err := confirmDeactivation(ctx, selected, input.Reason); err != nil {
 			return nil, err
 		}
 	}
 
-	return svc.Deactivate(ctx, selected.ID, reason)
+	if input.Progress != nil {
+		sp := NewSpinner(input.Progress, fmt.Sprintf("Deactivating %s on %s", selected.Role, selected.ScopeName))
+		sp.Start()
+		result, err := svc.Deactivate(ctx, selected.ID, input.Reason)
+		sp.Stop()
+		return result, err
+	}
+
+	return svc.Deactivate(ctx, selected.ID, input.Reason)
 }
 
 func confirmDeactivation(ctx context.Context, selected domain.ActiveAssignment, reason string) error {
