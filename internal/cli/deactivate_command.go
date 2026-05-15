@@ -56,9 +56,20 @@ func (c *DeactivateCmd) runInteractive(ctx context.Context, services Services, s
 	if err != nil {
 		return err
 	}
-	active, err := statusSvc.Status(ctx)
-	if err != nil {
-		return err
+
+	var active []domain.ActiveAssignment
+	{
+		sp := NewSpinner(streams.Stderr, "Loading active assignments...")
+		if !c.JSON {
+			sp.Start()
+		}
+		active, err = statusSvc.Status(ctx)
+		if !c.JSON {
+			sp.Stop()
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	deactivator, err := services.Deactivate(streams.Log)

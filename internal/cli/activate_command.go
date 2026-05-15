@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/samber/lo"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
@@ -125,15 +124,30 @@ func (c *ActivateCmd) needsInteractive(streams *Streams) bool {
 	return !hasScopeSelector || !hasRole || !hasReason
 }
 
+// runInteractive handles the interactive activation flow, including listing
+// eligible assignments, showing the interactive activation form, and waiting
+// for the activation to propagate through Azure.
 func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActivation) error {
 	listSvc, err := flow.services.List(flow.streams.Log)
 	if err != nil {
 		return err
 	}
-	eligible, err := listSvc.List(ctx)
-	if err != nil {
-		return err
+
+	var eligible []domain.EligibleAssignment
+	{
+		sp := NewSpinner(flow.streams.Stderr, "Loading eligible assignments...")
+		if !c.JSON {
+			sp.Start()
+		}
+		eligible, err = listSvc.List(ctx)
+		if !c.JSON {
+			sp.Stop()
+		}
+		if err != nil {
+			return err
+		}
 	}
+
 	eligible = c.filterEligible(eligible)
 	if len(eligible) == 0 {
 		return app.ErrEligibleNotFound
@@ -251,21 +265,8 @@ func waitForActive(
 	deadline, cancel := context.WithTimeout(ctx, defaultWaitTimeout)
 	defer cancel()
 
-	spinnerDone := make(chan struct{})
-	spinnerStopped := make(chan struct{})
-	go func() {
-		defer close(spinnerStopped)
-		spin(
-			streams.Stderr,
-			fmt.Sprintf("Waiting for %s on %s", result.Role, result.ScopeName),
-			spinnerDone,
-			150*time.Millisecond,
-		)
-	}()
-	stopSpinner := func() {
-		close(spinnerDone)
-		<-spinnerStopped
-	}
+	sp := NewSpinner(streams.Stderr, fmt.Sprintf("Waiting for %s on %s", result.Role, result.ScopeName))
+	sp.Start()
 
 	streams.Log.Debug(
 		"waiting for activation to propagate",
@@ -279,8 +280,7 @@ func waitForActive(
 	for {
 		select {
 		case <-deadline.Done():
-			stopSpinner()
-			_, _ = io.WriteString(streams.Stderr, "\r\033[K")
+			sp.Stop()
 			message := "Activation was accepted, but Azure did not report it active within 60s. " +
 				"Run pimctl status to check again.\n"
 			if errors.Is(deadline.Err(), context.Canceled) {
@@ -302,8 +302,7 @@ func waitForActive(
 			}
 			for _, a := range as {
 				if domain.ActiveAssignmentConfirmsResult(a, result) {
-					stopSpinner()
-					_, _ = io.WriteString(streams.Stderr, "\r\033[K")
+					sp.Stop()
 					confirmedMsg := fmt.Sprintf(
 						"✓ %s is active on %s\n",
 						result.Role,
@@ -320,25 +319,4 @@ func waitForActive(
 			}
 		}
 	}
-}
-
-func spin(w io.Writer, msg string, done <-chan struct{}, interval time.Duration) {
-	s := spinner.New(spinner.WithSpinner(spinner.Dot))
-	startedAt := time.Now()
-	writeSpin(w, s.View(), msg, 0)
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-done:
-			return
-		case <-ticker.C:
-			s, _ = s.Update(s.Tick())
-			writeSpin(w, s.View(), msg, time.Since(startedAt))
-		}
-	}
-}
-
-func writeSpin(w io.Writer, frame, msg string, elapsed time.Duration) {
-	_, _ = io.WriteString(w, fmt.Sprintf("\r%s %s... %s", frame, msg, elapsed.Round(time.Second)))
 }
