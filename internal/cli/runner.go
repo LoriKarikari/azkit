@@ -24,17 +24,17 @@ type Streams struct {
 	Config *config.Config
 }
 
-type ActivateInteractiveFunc func(context.Context, []domain.EligibleAssignment, *app.ActivationService, *config.Config, interactive.ActivationInput) (*domain.ActivationResult, error)
+type activateInteractiveFunc func(context.Context, []domain.EligibleAssignment, *app.ActivationService, *config.Config, interactive.ActivationInput) (*domain.ActivationResult, error)
 
-type DeactivateInteractiveFunc func(context.Context, []domain.ActiveAssignment, *app.DeactivationService, string, bool) (*domain.DeactivationResult, error)
+type deactivateInteractiveFunc func(context.Context, []domain.ActiveAssignment, *app.DeactivationService, string, bool) (*domain.DeactivationResult, error)
 
 type Services struct {
 	List                  func(*slog.Logger) (*app.ListService, error)
 	Status                func(*slog.Logger) (*app.StatusService, error)
 	Activate              func(*slog.Logger) (*app.ActivationService, error)
 	Deactivate            func(*slog.Logger) (*app.DeactivationService, error)
-	ActivateInteractive   ActivateInteractiveFunc
-	DeactivateInteractive DeactivateInteractiveFunc
+	ActivateInteractive   activateInteractiveFunc
+	DeactivateInteractive deactivateInteractiveFunc
 }
 
 type Runner struct {
