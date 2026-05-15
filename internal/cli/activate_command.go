@@ -124,9 +124,6 @@ func (c *ActivateCmd) needsInteractive(streams *Streams) bool {
 	return !hasScopeSelector || !hasRole || !hasReason
 }
 
-// runInteractive handles the interactive activation flow, including listing
-// eligible assignments, showing the interactive activation form, and waiting
-// for the activation to propagate through Azure.
 func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActivation) error {
 	listSvc, err := flow.services.List(flow.streams.Log)
 	if err != nil {
