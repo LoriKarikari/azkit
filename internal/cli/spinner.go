@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"io"
+	"sync/atomic"
 	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -13,6 +14,7 @@ type Spinner struct {
 	msg     string
 	done    chan struct{}
 	stopped chan struct{}
+	shown   atomic.Bool
 }
 
 func NewSpinner(w io.Writer, msg string) *Spinner {
@@ -27,6 +29,11 @@ func NewSpinner(w io.Writer, msg string) *Spinner {
 func (s *Spinner) Start() {
 	go func() {
 		defer close(s.stopped)
+		select {
+		case <-s.done:
+			return
+		case <-time.After(100 * time.Millisecond):
+		}
 		s.run()
 	}()
 }
@@ -34,10 +41,13 @@ func (s *Spinner) Start() {
 func (s *Spinner) Stop() {
 	close(s.done)
 	<-s.stopped
-	_, _ = io.WriteString(s.w, "\r\033[K")
+	if s.shown.Load() {
+		_, _ = io.WriteString(s.w, "\r\033[K")
+	}
 }
 
 func (s *Spinner) run() {
+	s.shown.Store(true)
 	sp := spinner.New(spinner.WithSpinner(spinner.Dot))
 	startedAt := time.Now()
 	s.write(sp.View(), 0)

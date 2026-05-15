@@ -57,7 +57,7 @@ func TestActivateShowsListingSpinner(t *testing.T) {
 				{Role: "Contributor", RoleDefID: "/roleDefs/111", ScopeID: "/sub/abc", ScopeName: "sub-prod"},
 			},
 		},
-		delay: 50 * time.Millisecond,
+		delay: 150 * time.Millisecond,
 	}
 
 	runner := cli.NewRunner(cli.Services{
@@ -98,7 +98,7 @@ func TestDeactivateShowsListingSpinner(t *testing.T) {
 				{Role: "Contributor", ScopeID: "/sub/abc", ScopeName: "sub-prod", ID: "1"},
 			},
 		},
-		delay: 50 * time.Millisecond,
+		delay: 150 * time.Millisecond,
 	}
 
 	runner := cli.NewRunner(cli.Services{
