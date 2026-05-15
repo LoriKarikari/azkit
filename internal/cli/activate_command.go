@@ -227,6 +227,7 @@ func matchesResourceGroup(a domain.EligibleAssignment, input string) bool {
 }
 
 func renderActivationResult(streams *Streams, result *domain.ActivationResult, asJSON bool) error {
+	_, _ = io.WriteString(streams.Stderr, "\r\033[K")
 	if asJSON {
 		_, err := io.WriteString(streams.Stdout, renderActivationJSON(result))
 		return err
