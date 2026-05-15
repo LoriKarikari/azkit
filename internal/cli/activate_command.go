@@ -80,6 +80,10 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		Duration:      duration,
 	})
 	if err != nil {
+		if errors.Is(err, interactive.ErrCanceled) {
+			_, _ = io.WriteString(streams.Stderr, "Activation canceled.\n")
+			return nil
+		}
 		return err
 	}
 
@@ -135,7 +139,7 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		return app.ErrEligibleNotFound
 	}
 
-	result, err := interactive.Activate(
+	result, err := flow.services.ActivateInteractive(
 		ctx,
 		eligible,
 		flow.act,
@@ -146,6 +150,10 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		},
 	)
 	if err != nil {
+		if errors.Is(err, interactive.ErrCanceled) {
+			_, _ = io.WriteString(flow.streams.Stderr, "Activation canceled.\n")
+			return nil
+		}
 		return err
 	}
 

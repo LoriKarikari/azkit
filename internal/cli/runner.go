@@ -13,6 +13,8 @@ import (
 
 	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/config"
+	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/pimctl/internal/interactive"
 )
 
 type Streams struct {
@@ -22,11 +24,17 @@ type Streams struct {
 	Config *config.Config
 }
 
+type activateInteractiveFunc func(context.Context, []domain.EligibleAssignment, *app.ActivationService, *config.Config, interactive.ActivationInput) (*domain.ActivationResult, error)
+
+type deactivateInteractiveFunc func(context.Context, []domain.ActiveAssignment, *app.DeactivationService, string, bool) (*domain.DeactivationResult, error)
+
 type Services struct {
-	List       func(*slog.Logger) (*app.ListService, error)
-	Status     func(*slog.Logger) (*app.StatusService, error)
-	Activate   func(*slog.Logger) (*app.ActivationService, error)
-	Deactivate func(*slog.Logger) (*app.DeactivationService, error)
+	List                  func(*slog.Logger) (*app.ListService, error)
+	Status                func(*slog.Logger) (*app.StatusService, error)
+	Activate              func(*slog.Logger) (*app.ActivationService, error)
+	Deactivate            func(*slog.Logger) (*app.DeactivationService, error)
+	ActivateInteractive   activateInteractiveFunc
+	DeactivateInteractive deactivateInteractiveFunc
 }
 
 type Runner struct {
@@ -36,6 +44,12 @@ type Runner struct {
 }
 
 func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
+	if services.ActivateInteractive == nil {
+		services.ActivateInteractive = interactive.Activate
+	}
+	if services.DeactivateInteractive == nil {
+		services.DeactivateInteractive = interactive.Deactivate
+	}
 	return &Runner{
 		services: services,
 		streams:  &Streams{Stdout: stdout, Stderr: stderr},

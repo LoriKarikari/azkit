@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/huh"
+	"github.com/samber/lo"
 
 	"github.com/LoriKarikari/pimctl/internal/app"
 	"github.com/LoriKarikari/pimctl/internal/config"
@@ -45,11 +46,9 @@ func Activate(
 	groups := make([]*huh.Group, 0, 2)
 
 	if len(eligible) > 1 {
-		options := make([]huh.Option[domain.EligibleAssignment], len(eligible))
-		for i, a := range eligible {
-			label := fmtAssignment(a)
-			options[i] = huh.NewOption(label, a)
-		}
+		options := lo.Map(eligible, func(a domain.EligibleAssignment, _ int) huh.Option[domain.EligibleAssignment] {
+			return huh.NewOption(fmtAssignment(a), a)
+		})
 		groups = append(groups, huh.NewGroup(
 			huh.NewSelect[domain.EligibleAssignment]().
 				Title("Select an eligible assignment").
@@ -92,6 +91,9 @@ func Activate(
 	if len(groups) > 0 {
 		form := huh.NewForm(groups...)
 		if err := form.RunWithContext(ctx); err != nil {
+			if errors.Is(err, huh.ErrUserAborted) {
+				return nil, ErrCanceled
+			}
 			return nil, err
 		}
 	}
@@ -133,10 +135,13 @@ func confirmActivation(ctx context.Context, selected domain.EligibleAssignment, 
 			Value(&confirmed),
 	))
 	if err := form.RunWithContext(ctx); err != nil {
+		if errors.Is(err, huh.ErrUserAborted) {
+			return ErrCanceled
+		}
 		return err
 	}
 	if !confirmed {
-		return errors.New("activation canceled")
+		return ErrCanceled
 	}
 	return nil
 }
