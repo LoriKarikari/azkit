@@ -4,6 +4,7 @@
 [![CI](https://github.com/LoriKarikari/pimctl/actions/workflows/ci.yml/badge.svg)](https://github.com/LoriKarikari/pimctl/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/LoriKarikari/pimctl)](https://goreportcard.com/report/github.com/LoriKarikari/pimctl)
 [![License](https://img.shields.io/github/license/LoriKarikari/pimctl)](./LICENSE)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLoriKarikari%2Fpimctl.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FLoriKarikari%2Fpimctl?ref=badge_shield)
 
 `pimctl` manages Azure PIM resource roles. It lists eligible assignments, activates roles, deactivates active assignments, and shows what is active now.
 
@@ -93,3 +94,6 @@ export PIMCTL_SUBSCRIPTION_ID=00000000-0000-0000-0000-000000000000
 ## License
 
 MIT
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FLoriKarikari%2Fpimctl.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FLoriKarikari%2Fpimctl?ref=badge_large)
