@@ -47,7 +47,7 @@ func Deactivate(
 		if err := confirmDeactivation(ctx, selected, reason); err != nil {
 			return nil, err
 		}
-		_, _ = os.Stderr.WriteString("\r\033[KDeactivating...")
+		_, _ = os.Stderr.WriteString("Deactivating...\n")
 	}
 
 	return svc.Deactivate(ctx, selected.ID, reason)

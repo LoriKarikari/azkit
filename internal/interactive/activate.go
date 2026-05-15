@@ -123,7 +123,7 @@ func Activate(
 		Duration:   duration,
 	}
 	if !input.AutoConfirm {
-		_, _ = os.Stderr.WriteString("\r\033[KActivating...")
+		_, _ = os.Stderr.WriteString("Activating...\n")
 	}
 	return svc.ActivateResolved(ctx, target)
 }
