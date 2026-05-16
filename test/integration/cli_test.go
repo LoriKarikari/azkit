@@ -75,7 +75,7 @@ func buildPimctl(t *testing.T) string {
 	t.Helper()
 
 	bin := filepath.Join(t.TempDir(), "pimctl")
-	cmd := exec.Command("go", "build", "-o", bin, "./cmd/pimctl")
+	cmd := exec.CommandContext(t.Context(), "go", "build", "-o", bin, "./cmd/pimctl")
 	cmd.Dir = repoRoot(t)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -87,7 +87,7 @@ func buildPimctl(t *testing.T) string {
 func runPimctl(t *testing.T, bin string, args ...string) (string, string, int) {
 	t.Helper()
 
-	cmd := exec.Command(bin, args...)
+	cmd := exec.CommandContext(t.Context(), bin, args...)
 	cmd.Env = append(os.Environ(),
 		"NO_COLOR=1",
 		"XDG_CONFIG_HOME="+t.TempDir(),
