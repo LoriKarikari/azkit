@@ -74,7 +74,7 @@ func (s *Spinner) Stop() {
 	})
 	<-s.stopped
 	if s.shown.Load() {
-		_, _ = io.WriteString(s.w, "\r\033[K")
+		ClearProgress(s.w)
 	}
 }
 

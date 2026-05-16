@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -17,10 +16,11 @@ import (
 )
 
 type ActivationInput struct {
-	Reason      string
-	Duration    time.Duration
-	AutoConfirm bool
-	Progress    io.Writer
+	Reason       string
+	Duration     time.Duration
+	AutoConfirm  bool
+	Progress     *Activity
+	KeepProgress bool
 }
 
 func Activate(
@@ -118,9 +118,17 @@ func Activate(
 		Duration:   duration,
 	}
 
+	if input.Progress != nil {
+		progressMsg := fmt.Sprintf("Activating %s on %s", selected.Role, selected.ScopeName)
+		input.Progress.Start(ctx, progressMsg)
+		if !input.KeepProgress {
+			defer input.Progress.Stop()
+		}
+	}
+
 	result, err := svc.ActivateResolved(ctx, target)
-	if input.Progress != nil && err == nil {
-		_, _ = io.WriteString(input.Progress, fmt.Sprintf("\r\033[KActivating %s on %s...", selected.Role, selected.ScopeName))
+	if err != nil && input.KeepProgress && input.Progress != nil {
+		input.Progress.Stop()
 	}
 	return result, err
 }
