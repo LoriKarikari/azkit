@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0](https://github.com/LoriKarikari/pimctl/compare/v0.2.0...v0.3.0) (2026-05-16)
+
+
+### Features
+
+* add interactive progress spinners ([2120039](https://github.com/LoriKarikari/pimctl/commit/21200391f9af947c685c3b2214e8e8ddd8dd11a0))
+* add release install script ([#76](https://github.com/LoriKarikari/pimctl/issues/76)) ([e6d1842](https://github.com/LoriKarikari/pimctl/commit/e6d1842350aab72da1fa488f72063ccab48f7cac))
+* clean interactive cancellation ([859a9c9](https://github.com/LoriKarikari/pimctl/commit/859a9c9fd2f5dd94d72fdc84064906b5b621cc07))
+* make activation wait configurable ([ca0bc3f](https://github.com/LoriKarikari/pimctl/commit/ca0bc3f7f00ed1fdac75d8385c644df7228cc064))
+* show single assignment before activation details ([dbfaaf9](https://github.com/LoriKarikari/pimctl/commit/dbfaaf99d473acd9df4c580c9c2745416b57799d))
+* tenant header in interactive forms ([a82f491](https://github.com/LoriKarikari/pimctl/commit/a82f49113bff7fc15d1636091190887c2134926e))
+
+
+### Bug Fixes
+
+* align deactivation request with Azure PIM ([41e8029](https://github.com/LoriKarikari/pimctl/commit/41e8029f273219ef88cd98067ed58529c34d71f0))
+* consistent activating spinner across submit and wait ([27ad157](https://github.com/LoriKarikari/pimctl/commit/27ad157efa63a092d20ef5f64d0b81a1d7af2113))
+* respect release note sections ([#77](https://github.com/LoriKarikari/pimctl/issues/77)) ([0321a09](https://github.com/LoriKarikari/pimctl/commit/0321a097a820ee3d3b6c29859926eccd9f219413))
+
 ## 0.2.0 (2026-05-14)
 
 ## What's Changed
