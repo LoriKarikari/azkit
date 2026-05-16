@@ -56,31 +56,20 @@ func newActiveAssignments(
 }
 
 func (a *ActiveAssignments) ListActive(ctx context.Context) ([]domain.ActiveAssignment, error) {
-	subs, err := a.subscriptions.ListSubscriptions(ctx)
-	if err != nil {
-		return nil, app.AuthFailed(err)
-	}
-
-	a.log.Debug("listed subscriptions", slog.Int("count", len(subs)))
-
-	all := []domain.ActiveAssignment{}
-	for _, sub := range subs {
-		if sub.ID == "" {
-			continue
-		}
-		scope := fmt.Sprintf("/subscriptions/%s", sub.ID)
-		a.log.Debug("listing active assignment instances", slog.String("scope", scope))
-		assignments, err := a.ListActiveForScope(ctx, scope)
-		if err != nil {
-			return nil, err
-		}
-		for i := range assignments {
-			assignments[i].SubscriptionID = sub.ID
-			assignments[i].SubscriptionName = sub.Name
-		}
-		all = append(all, assignments...)
-	}
-	return all, nil
+	return listAcrossSubscriptions(
+		ctx,
+		a.subscriptions,
+		a.log,
+		"listing active assignment instances",
+		func(ctx context.Context, sub subscription) ([]domain.ActiveAssignment, error) {
+			scope := fmt.Sprintf("/subscriptions/%s", sub.ID)
+			return a.ListActiveForScope(ctx, scope)
+		},
+		func(assignment *domain.ActiveAssignment, sub subscription) {
+			assignment.SubscriptionID = sub.ID
+			assignment.SubscriptionName = sub.Name
+		},
+	)
 }
 
 func (a *ActiveAssignments) ListActiveForScope(ctx context.Context, scope string) ([]domain.ActiveAssignment, error) {

@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"log/slog"
+	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -11,18 +12,24 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/cli"
 )
 
-type Runtime struct{}
+type Runtime struct {
+	credentialOnce  sync.Once
+	credentialValue azcore.TokenCredential
+	credentialErr   error
+}
 
 func New() *Runtime {
 	return &Runtime{}
 }
 
 func (r *Runtime) credential() (azcore.TokenCredential, error) {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		return nil, app.AuthFailed(err)
-	}
-	return cred, nil
+	r.credentialOnce.Do(func() {
+		r.credentialValue, r.credentialErr = azidentity.NewDefaultAzureCredential(nil)
+		if r.credentialErr != nil {
+			r.credentialErr = app.AuthFailed(r.credentialErr)
+		}
+	})
+	return r.credentialValue, r.credentialErr
 }
 
 func (r *Runtime) Services() cli.Services {

@@ -59,40 +59,19 @@ func newEligibleAssignments(
 }
 
 func (a *EligibleAssignments) ListEligible(ctx context.Context) ([]domain.EligibleAssignment, error) {
-	subs, err := a.subscriptions.ListSubscriptions(ctx)
-	if err != nil {
-		return nil, app.AuthFailed(err)
-	}
-
-	a.log.Debug("listed subscriptions", slog.Int("count", len(subs)))
-
-	all := []domain.EligibleAssignment{}
-	for _, sub := range subs {
-		if sub.ID == "" {
-			continue
-		}
-		a.log.Debug("listing eligible assignments", slog.String("subscription_id", sub.ID))
-		as, err := a.schedules.ListForSubscription(ctx, sub.ID)
-		if err != nil {
-			a.log.Debug(
-				"eligible assignment listing failed",
-				slog.String("subscription_id", sub.ID),
-				slog.Any("error", err),
-			)
-			return nil, err
-		}
-		a.log.Debug(
-			"listed eligible assignments",
-			slog.String("subscription_id", sub.ID),
-			slog.Int("count", len(as)),
-		)
-		for i := range as {
-			as[i].SubscriptionID = sub.ID
-			as[i].SubscriptionName = sub.Name
-		}
-		all = append(all, as...)
-	}
-	return all, nil
+	return listAcrossSubscriptions(
+		ctx,
+		a.subscriptions,
+		a.log,
+		"listing eligible assignments",
+		func(ctx context.Context, sub subscription) ([]domain.EligibleAssignment, error) {
+			return a.schedules.ListForSubscription(ctx, sub.ID)
+		},
+		func(assignment *domain.EligibleAssignment, sub subscription) {
+			assignment.SubscriptionID = sub.ID
+			assignment.SubscriptionName = sub.Name
+		},
+	)
 }
 
 type azureSubscriptions struct {
