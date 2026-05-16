@@ -177,7 +177,7 @@ func (c *ActivateCmd) finishActivation(
 		} else {
 			result.Outcome = domain.ActivationPending
 		}
-	} else {
+	} else if activity != nil {
 		activity.Stop()
 	}
 
@@ -224,7 +224,9 @@ func waitForActive(
 ) *domain.ActivationResult {
 	statusSvc, err := services.Status(streams.Log)
 	if err != nil {
-		activity.Stop()
+		if activity != nil {
+			activity.Stop()
+		}
 		return nil
 	}
 

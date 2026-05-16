@@ -118,14 +118,16 @@ func Activate(
 		Duration:   duration,
 	}
 
-	progressMsg := fmt.Sprintf("Activating %s on %s", selected.Role, selected.ScopeName)
-	input.Progress.Start(ctx, progressMsg)
-	if !input.KeepProgress {
-		defer input.Progress.Stop()
+	if input.Progress != nil {
+		progressMsg := fmt.Sprintf("Activating %s on %s", selected.Role, selected.ScopeName)
+		input.Progress.Start(ctx, progressMsg)
+		if !input.KeepProgress {
+			defer input.Progress.Stop()
+		}
 	}
 
 	result, err := svc.ActivateResolved(ctx, target)
-	if err != nil && input.KeepProgress {
+	if err != nil && input.KeepProgress && input.Progress != nil {
 		input.Progress.Stop()
 	}
 	return result, err
