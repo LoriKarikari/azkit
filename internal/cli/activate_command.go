@@ -74,16 +74,7 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 		return err
 	}
 
-	if c.Wait > 0 && result.Outcome != domain.ActivationAlreadyActive {
-		confirmed := waitForActive(ctx, services, result, streams, c.Wait)
-		if confirmed != nil {
-			result = confirmed
-		} else {
-			result.Outcome = domain.ActivationPending
-		}
-	}
-
-	return renderActivationResult(streams, result, c.JSON)
+	return c.finishActivation(ctx, services, streams, result, nil)
 }
 
 func (c *ActivateCmd) validateNonInteractive() error {
@@ -147,8 +138,11 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		Reason:   c.Reason,
 		Duration: c.Duration,
 	}
+	var activity *interactive.Activity
 	if !c.JSON {
-		input.Progress = flow.streams.Stderr
+		activity = interactive.NewActivity(flow.streams.Stderr)
+		input.Progress = activity
+		input.KeepProgress = c.Wait > 0
 	}
 
 	result, err := flow.services.ActivateInteractive(
@@ -166,16 +160,28 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 		return err
 	}
 
+	return c.finishActivation(ctx, flow.services, flow.streams, result, activity)
+}
+
+func (c *ActivateCmd) finishActivation(
+	ctx context.Context,
+	services Services,
+	streams *Streams,
+	result *domain.ActivationResult,
+	activity *interactive.Activity,
+) error {
 	if c.Wait > 0 && result.Outcome != domain.ActivationAlreadyActive {
-		confirmed := waitForActive(ctx, flow.services, result, flow.streams, c.Wait)
+		confirmed := waitForActive(ctx, services, result, streams, c.Wait, activity)
 		if confirmed != nil {
 			result = confirmed
 		} else {
 			result.Outcome = domain.ActivationPending
 		}
+	} else {
+		activity.Stop()
 	}
 
-	return renderActivationResult(flow.streams, result, c.JSON)
+	return renderActivationResult(streams, result, c.JSON)
 }
 
 func (c *ActivateCmd) filterEligible(eligible []domain.EligibleAssignment) []domain.EligibleAssignment {
@@ -188,7 +194,7 @@ func (c *ActivateCmd) filterEligible(eligible []domain.EligibleAssignment) []dom
 }
 
 func renderActivationResult(streams *Streams, result *domain.ActivationResult, asJSON bool) error {
-	_, _ = io.WriteString(streams.Stderr, "\r\033[K")
+	interactive.ClearProgress(streams.Stderr)
 	if asJSON {
 		_, err := io.WriteString(streams.Stdout, renderActivationJSON(result))
 		return err
@@ -214,17 +220,21 @@ func waitForActive(
 	result *domain.ActivationResult,
 	streams *Streams,
 	wait time.Duration,
+	activity *interactive.Activity,
 ) *domain.ActivationResult {
 	statusSvc, err := services.Status(streams.Log)
 	if err != nil {
+		activity.Stop()
 		return nil
 	}
 
 	deadline, cancel := context.WithTimeout(ctx, wait)
 	defer cancel()
 
-	sp := interactive.NewSpinner(streams.Stderr, fmt.Sprintf("Activating %s on %s", result.Role, result.ScopeName))
-	sp.Start(deadline)
+	if activity == nil {
+		activity = interactive.NewActivity(streams.Stderr)
+	}
+	activity.Start(deadline, fmt.Sprintf("Activating %s on %s", result.Role, result.ScopeName))
 
 	streams.Log.Debug(
 		"waiting for activation to propagate",
@@ -238,7 +248,7 @@ func waitForActive(
 	for {
 		select {
 		case <-deadline.Done():
-			sp.Stop()
+			activity.Stop()
 			message := fmt.Sprintf("Activation was accepted, but Azure did not report it active within %s. "+
 				"Run pimctl status to check again.\n", wait)
 			if errors.Is(deadline.Err(), context.Canceled) {
@@ -265,7 +275,7 @@ func waitForActive(
 			)
 			for _, a := range as {
 				if domain.ActiveAssignmentConfirmsResult(a, result) {
-					sp.Stop()
+					activity.Stop()
 					confirmedMsg := fmt.Sprintf(
 						"✓ %s is active on %s\n",
 						result.Role,

@@ -98,7 +98,7 @@ func (c *DeactivateCmd) runInteractive(ctx context.Context, services Services, s
 		return err
 	}
 
-	_, _ = io.WriteString(streams.Stderr, "\r\033[K")
+	interactive.ClearProgress(streams.Stderr)
 
 	if c.JSON {
 		_, err = io.WriteString(streams.Stdout, renderDeactivationJSON(result))
