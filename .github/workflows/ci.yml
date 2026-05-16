@@ -12,6 +12,7 @@ jobs:
   test:
     name: Test, vet, lint
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -26,8 +27,25 @@ jobs:
       - name: Download modules
         run: go mod download
 
+      - name: Check go.mod is tidy
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+
       - name: Test
-        run: go test -race -shuffle=on ./...
+        run: go test -race -shuffle=on -coverprofile=coverage.out ./...
+
+      - name: Binary integration test
+        run: go test -tags=integration -count=1 ./test/integration
+
+      - name: Show coverage summary
+        run: go tool cover -func=coverage.out
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
 
       - name: Vet
         run: go vet ./...
@@ -38,8 +56,11 @@ jobs:
       - name: Lint
         run: golangci-lint run
 
+      - name: Security scan
+        run: go run github.com/securego/gosec/v2/cmd/gosec@v2.26.1 ./...
+
       - name: Vulnerability scan
-        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.3.0 ./...
 
       - name: Check GoReleaser config
         uses: goreleaser/goreleaser-action@v6

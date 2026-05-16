@@ -106,6 +106,7 @@ func envMapper(key string, value string) (string, any) {
 func defaultConfigPath() string {
 	if dir := os.Getenv("XDG_CONFIG_HOME"); dir != "" {
 		p := filepath.Join(dir, "pimctl", "config.yaml")
+		// #nosec G703 -- XDG_CONFIG_HOME is the standard user-controlled config root.
 		if _, err := os.Stat(p); err == nil {
 			return p
 		}
