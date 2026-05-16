@@ -11,6 +11,21 @@
 
 `pimctl` supports Azure resource role PIM. It does not manage Entra roles or PIM for Groups.
 
+## Install
+
+Install the latest release on macOS or Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/LoriKarikari/pimctl/main/install.sh | sh
+```
+
+Install a specific version or directory:
+
+```bash
+PIMCTL_INSTALL_VERSION=v0.3.0 PIMCTL_INSTALL_DIR=/usr/local/bin \
+  curl -fsSL https://raw.githubusercontent.com/LoriKarikari/pimctl/main/install.sh | sh
+```
+
 ## Quickstart
 
 List roles you can activate:
