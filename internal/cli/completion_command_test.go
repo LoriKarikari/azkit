@@ -10,110 +10,35 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/cli"
 )
 
-func TestCompletionBash(t *testing.T) {
+func TestCompletionUsesKongplete(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
+
+	code := runner.Run(t.Context(), []string{"completion"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "complete -C ") {
+		t.Fatalf("want kongplete completion script, got: %s", got)
+	}
+	if !strings.Contains(got, "pimctl") {
+		t.Fatalf("want script referencing pimctl, got: %s", got)
+	}
+}
+
+func TestCompletionRejectsShellArgument(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
 
 	code := runner.Run(t.Context(), []string{"completion", "bash"})
-	if code != 0 {
-		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	if code != 2 {
+		t.Fatalf("want exit 2, got %d", code)
 	}
-	got := stdout.String()
-	if got == "" {
-		t.Fatal("want non-empty bash script, got empty")
-	}
-	if !strings.Contains(got, "pimctl") {
-		t.Fatal("want script referencing pimctl")
-	}
-	if !strings.Contains(got, "complete -C pimctl pimctl") {
-		t.Fatal("want bash complete registration")
-	}
-}
-
-func TestCompletionZsh(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
-
-	code := runner.Run(t.Context(), []string{"completion", "zsh"})
-	if code != 0 {
-		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
-	}
-	got := stdout.String()
-	if !strings.Contains(got, "pimctl") {
-		t.Fatal("want script referencing pimctl")
-	}
-	if !strings.Contains(got, "bashcompinit") {
-		t.Fatal("want zsh bash completion bridge")
-	}
-}
-
-func TestCompletionFish(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
-
-	code := runner.Run(t.Context(), []string{"completion", "fish"})
-	if code != 0 {
-		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
-	}
-	got := stdout.String()
-	if !strings.Contains(got, "pimctl") {
-		t.Fatal("want script referencing pimctl")
-	}
-	if !strings.Contains(got, "__complete_pimctl") {
-		t.Fatal("want fish completion function")
-	}
-}
-
-func TestCompletionPowerShell(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
-
-	code := runner.Run(t.Context(), []string{"completion", "powershell"})
-	if code != 0 {
-		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
-	}
-	got := stdout.String()
-	if !strings.Contains(got, "pimctl") {
-		t.Fatal("want script referencing pimctl")
-	}
-	if !strings.Contains(got, "Register-ArgumentCompleter") {
-		t.Fatal("want PowerShell argument completer")
-	}
-}
-
-func TestCompletionIgnoresInvalidConfig(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
-	configPath := filepath.Join(t.TempDir(), "config.yaml")
-	if err := os.WriteFile(configPath, []byte("invalid: [unclosed"), 0644); err != nil {
-		t.Fatalf("write config: %v", err)
-	}
-
-	code := runner.Run(t.Context(), []string{"--config", configPath, "completion", "bash"})
-	if code != 0 {
-		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
-	}
-	if !strings.Contains(stdout.String(), "pimctl") {
-		t.Fatal("want script referencing pimctl")
-	}
-}
-
-func TestCompletionUnknownShell(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
-
-	code := runner.Run(t.Context(), []string{"completion", "nushell"})
-	if code == 0 {
-		t.Fatal("want error for unknown shell")
-	}
-	if !strings.Contains(stderr.String(), "unknown shell") {
-		t.Fatalf("want unknown shell error, got: %s", stderr.String())
+	if !strings.Contains(stderr.String(), "unexpected argument bash") {
+		t.Fatalf("want unexpected argument error, got: %s", stderr.String())
 	}
 }
 
@@ -131,5 +56,37 @@ func TestKongpleteCompletesCommands(t *testing.T) {
 	got := stdout.String()
 	if !strings.Contains(got, "activate") || !strings.Contains(got, "completion") {
 		t.Fatalf("want command completions, got: %s", got)
+	}
+}
+
+func TestCompletionHelpDoesNotExposeUnsupportedUninstallFlag(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
+
+	code := runner.Run(t.Context(), []string{"completion", "--help"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	if strings.Contains(stdout.String(), "--uninstall") {
+		t.Fatalf("unsupported uninstall flag should be hidden, got: %s", stdout.String())
+	}
+}
+
+func TestCompletionIgnoresInvalidConfig(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(configPath, []byte("invalid: [unclosed"), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	code := runner.Run(t.Context(), []string{"--config", configPath, "completion"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "complete -C ") {
+		t.Fatalf("want completion script, got: %s", stdout.String())
 	}
 }
