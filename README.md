@@ -68,6 +68,28 @@ pimctl status --json
 pimctl deactivate <assignment-id> --json
 ```
 
+## Shell completion
+
+Generate completion for your login shell:
+
+```bash
+pimctl completion
+```
+
+For bash or zsh, load it in the current shell with:
+
+```bash
+eval "$(pimctl completion)"
+```
+
+Completion is registered for the command name `pimctl`. If you are testing a local build with `./pimctl`, add an alias first:
+
+```bash
+go build -o pimctl ./cmd/pimctl
+alias pimctl="$PWD/pimctl"
+eval "$(pimctl completion)"
+```
+
 ## Configuration
 
 Config is optional. By default, `pimctl` reads:
