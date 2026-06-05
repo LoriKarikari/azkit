@@ -146,7 +146,7 @@ func TestRunner_version(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}
-	if !strings.Contains(stdout.String(), "pimctl dev") {
+	if !strings.Contains(stdout.String(), "azkit dev") {
 		t.Fatalf("missing version output:\n%s", stdout.String())
 	}
 	if stderr.String() != "" {
@@ -164,7 +164,7 @@ func TestRunner_versionIgnoresInvalidConfig(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "pimctl dev") {
+	if !strings.Contains(stdout.String(), "azkit dev") {
 		t.Fatalf("missing version output:\n%s", stdout.String())
 	}
 }

@@ -87,7 +87,7 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 	model := CLI{}
 	parser, err := kong.New(
 		&model,
-		kong.Name("pimctl"),
+		kong.Name("azkit"),
 		kong.Writers(r.streams.Stdout, r.streams.Stderr),
 		kong.Exit(func(code int) { panic(kongExit(code)) }),
 		kong.BindTo(ctx, (*context.Context)(nil)),
