@@ -18,12 +18,12 @@ import (
 	"github.com/LoriKarikari/pimctl/internal/inmemory"
 )
 
-func TestRunner_listHuman(t *testing.T) {
+func TestRunner_pimListHuman(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, nil)
 
-	if code := runner.Run(t.Context(), []string{"list"}); code != 0 {
+	if code := runner.Run(t.Context(), []string{"pim", "list"}); code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}
 
