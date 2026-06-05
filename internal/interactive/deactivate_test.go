@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
-	"github.com/LoriKarikari/pimctl/internal/domain"
-	"github.com/LoriKarikari/pimctl/internal/inmemory"
-	"github.com/LoriKarikari/pimctl/internal/interactive"
+	"github.com/LoriKarikari/azkit/internal/app"
+	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/inmemory"
+	"github.com/LoriKarikari/azkit/internal/interactive"
 )
 
 func TestDeactivateReturnsNotFoundForEmptyAssignments(t *testing.T) {

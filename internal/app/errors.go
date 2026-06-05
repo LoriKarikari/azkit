@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 type Error struct {

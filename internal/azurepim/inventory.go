@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
+	"github.com/LoriKarikari/azkit/internal/app"
 )
 
 func listAcrossSubscriptions[T any](

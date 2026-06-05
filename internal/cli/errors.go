@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
+	"github.com/LoriKarikari/azkit/internal/app"
 )
 
 type errorBody struct {

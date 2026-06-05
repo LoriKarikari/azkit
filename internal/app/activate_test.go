@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
-	"github.com/LoriKarikari/pimctl/internal/domain"
-	"github.com/LoriKarikari/pimctl/internal/inmemory"
+	"github.com/LoriKarikari/azkit/internal/app"
+	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/inmemory"
 )
 
 func TestActivation_byScopeID(t *testing.T) {

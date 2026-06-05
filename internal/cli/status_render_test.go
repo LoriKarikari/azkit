@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/LoriKarikari/pimctl/internal/cli"
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/cli"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 func TestRenderStatusHuman_populated(t *testing.T) {

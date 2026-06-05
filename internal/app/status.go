@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 type ActiveAssignments interface {

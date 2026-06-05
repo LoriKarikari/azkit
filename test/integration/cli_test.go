@@ -27,7 +27,7 @@ func TestPimctlBinary(t *testing.T) {
 			name:       "version",
 			args:       []string{"version"},
 			wantCode:   0,
-			wantStdout: "pimctl dev",
+			wantStdout: "azkit dev",
 		},
 		{
 			name:         "usage error exits two",
@@ -74,12 +74,12 @@ func TestPimctlBinary(t *testing.T) {
 func buildPimctl(t *testing.T) string {
 	t.Helper()
 
-	bin := filepath.Join(t.TempDir(), "pimctl")
-	cmd := exec.CommandContext(t.Context(), "go", "build", "-o", bin, "./cmd/pimctl")
+	bin := filepath.Join(t.TempDir(), "azkit")
+	cmd := exec.CommandContext(t.Context(), "go", "build", "-o", bin, "./cmd/azkit")
 	cmd.Dir = repoRoot(t)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("build pimctl: %v\n%s", err, output)
+		t.Fatalf("build azkit: %v\n%s", err, output)
 	}
 	return bin
 }
@@ -107,7 +107,7 @@ func runPimctl(t *testing.T, bin string, args ...string) (string, string, int) {
 	if errors.As(err, &exitErr) {
 		return stdout.String(), stderr.String(), exitErr.ExitCode()
 	}
-	t.Fatalf("run pimctl %v: %v", args, err)
+	t.Fatalf("run azkit %v: %v", args, err)
 	return "", "", 0
 }
 

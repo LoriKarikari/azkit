@@ -1,4 +1,4 @@
-module github.com/LoriKarikari/pimctl
+module github.com/LoriKarikari/azkit
 
 go 1.26.3
 

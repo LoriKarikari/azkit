@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
-	"github.com/LoriKarikari/pimctl/internal/domain"
-	"github.com/LoriKarikari/pimctl/internal/interactive"
+	"github.com/LoriKarikari/azkit/internal/app"
+	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/interactive"
 )
 
 type ActivateCmd struct {
@@ -252,9 +252,9 @@ func waitForActive(
 		case <-deadline.Done():
 			activity.Stop()
 			message := fmt.Sprintf("Activation was accepted, but Azure did not report it active within %s. "+
-				"Run pimctl status to check again.\n", wait)
+				"Run azkit pim status to check again.\n", wait)
 			if errors.Is(deadline.Err(), context.Canceled) {
-				message = "Activation wait canceled. Run pimctl status to check whether Azure finished it.\n"
+				message = "Activation wait canceled. Run azkit pim status to check whether Azure finished it.\n"
 			}
 			if _, err := io.WriteString(streams.Stderr, message); err != nil {
 				streams.Log.Debug("failed to write to stderr", slog.Any("error", err))
