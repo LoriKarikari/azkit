@@ -61,7 +61,7 @@ func TestActivate_missingRoleNonInteractive(t *testing.T) {
 		activateCalled: &activateCalled,
 	})
 
-	code := runner.Run(t.Context(), []string{"activate", "--scope", "/sub/abc", "--reason", "deploy"})
+	code := runner.Run(t.Context(), []string{"pim", "activate", "--scope", "/sub/abc", "--reason", "deploy"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -82,7 +82,7 @@ func TestActivate_missingReasonNonInteractive(t *testing.T) {
 		activator: &fakeActivator{},
 	})
 
-	code := runner.Run(t.Context(), []string{"activate", "--scope", "/sub/abc", "--role", "Contributor"})
+	code := runner.Run(t.Context(), []string{"pim", "activate", "--scope", "/sub/abc", "--role", "Contributor"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -104,7 +104,7 @@ func TestActivate_nonInteractiveWithAllFlags(t *testing.T) {
 	})
 
 	code := runner.Run(t.Context(), []string{
-		"activate", "--scope", "/subscriptions/abc",
+		"pim", "activate", "--scope", "/subscriptions/abc",
 		"--role", "Contributor", "--reason", "deploy",
 	})
 	if code != 0 {
@@ -131,7 +131,7 @@ func TestActivate_waitPollsStatus(t *testing.T) {
 	})
 
 	code := runner.Run(t.Context(), []string{
-		"activate", "--scope", "/subscriptions/abc",
+		"pim", "activate", "--scope", "/subscriptions/abc",
 		"--role", "Contributor", "--reason", "deploy", "--wait", "1s",
 	})
 	if code != 0 {
@@ -155,7 +155,7 @@ func TestActivate_configDefaultDuration(t *testing.T) {
 
 	code := runner.Run(t.Context(), []string{
 		"--config", configPath,
-		"activate", "--scope", "/subscriptions/abc",
+		"pim", "activate", "--scope", "/subscriptions/abc",
 		"--role", "Contributor", "--reason", "deploy",
 	})
 	if code != 0 {

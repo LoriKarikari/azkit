@@ -78,7 +78,7 @@ func TestActivateShowsListingSpinner(t *testing.T) {
 		},
 	}, &stdout, &stderr)
 
-	runner.Run(t.Context(), []string{"activate"})
+	runner.Run(t.Context(), []string{"pim", "activate"})
 
 	if !strings.Contains(stderr.String(), "Loading eligible assignments...") {
 		t.Fatalf("want loading message on stderr, got: %q", stderr.String())
