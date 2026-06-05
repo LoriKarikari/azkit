@@ -80,7 +80,7 @@ func TestCancelDeactivationInteractive(t *testing.T) {
 		},
 	}, &stdout, &stderr)
 
-	code := runner.Run(t.Context(), []string{"deactivate"})
+	code := runner.Run(t.Context(), []string{"pim", "deactivate"})
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}

@@ -29,7 +29,7 @@ func TestRunner_deactivateHuman(t *testing.T) {
 		},
 	})
 
-	code := runner.Run(t.Context(), []string{"deactivate", "inst-1"})
+	code := runner.Run(t.Context(), []string{"pim", "deactivate", "inst-1"})
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
 	}
@@ -59,7 +59,7 @@ func TestRunner_deactivateJSON(t *testing.T) {
 		},
 	})
 
-	code := runner.Run(t.Context(), []string{"deactivate", "inst-1", "--json"})
+	code := runner.Run(t.Context(), []string{"pim", "deactivate", "inst-1", "--json"})
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
 	}
@@ -89,7 +89,7 @@ func TestRunner_deactivateWithReason(t *testing.T) {
 	}
 	runner := deactivateRunner(t, &stdout, &stderr, nil, deactivator)
 
-	code := runner.Run(t.Context(), []string{"deactivate", "inst-1", "--reason", "incident resolved"})
+	code := runner.Run(t.Context(), []string{"pim", "deactivate", "inst-1", "--reason", "incident resolved"})
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
 	}
@@ -103,7 +103,7 @@ func TestRunner_deactivateAssignmentNotFound(t *testing.T) {
 	var stderr bytes.Buffer
 	runner := deactivateRunner(t, &stdout, &stderr, nil, &fakeDeactivator{})
 
-	code := runner.Run(t.Context(), []string{"deactivate", "nonexistent-id"})
+	code := runner.Run(t.Context(), []string{"pim", "deactivate", "nonexistent-id"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -117,7 +117,7 @@ func TestRunner_deactivateAuthError(t *testing.T) {
 	var stderr bytes.Buffer
 	runner := deactivateRunner(t, &stdout, &stderr, app.AuthFailed(assert.AnError), &fakeDeactivator{})
 
-	code := runner.Run(t.Context(), []string{"deactivate", "inst-1"})
+	code := runner.Run(t.Context(), []string{"pim", "deactivate", "inst-1"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -134,7 +134,7 @@ func TestRunner_deactivateNoArgNonInteractive(t *testing.T) {
 	var stderr bytes.Buffer
 	runner := deactivateRunner(t, &stdout, &stderr, nil, &fakeDeactivator{})
 
-	code := runner.Run(t.Context(), []string{"deactivate"})
+	code := runner.Run(t.Context(), []string{"pim", "deactivate"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
