@@ -51,20 +51,25 @@ func TestRunner_pimListJSON(t *testing.T) {
 	}
 }
 
-func TestRunner_rootListRejected(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	runner := newRunner(&stdout, &stderr, nil)
+func TestRunner_rootPimCommandsRejected(t *testing.T) {
+	commands := []string{"list", "activate", "status", "deactivate"}
+	for _, command := range commands {
+		t.Run(command, func(t *testing.T) {
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
+			runner := newRunner(&stdout, &stderr, nil)
 
-	code := runner.Run(t.Context(), []string{"list"})
-	if code != 2 {
-		t.Fatalf("want exit 2, got %d", code)
-	}
-	if stdout.String() != "" {
-		t.Fatalf("want empty stdout, got: %q", stdout.String())
-	}
-	if !strings.Contains(stderr.String(), "unexpected argument list") {
-		t.Fatalf("want parse error on stderr, got: %s", stderr.String())
+			code := runner.Run(t.Context(), []string{command})
+			if code != 2 {
+				t.Fatalf("want exit 2, got %d", code)
+			}
+			if stdout.String() != "" {
+				t.Fatalf("want empty stdout, got: %q", stdout.String())
+			}
+			if !strings.Contains(stderr.String(), "unexpected argument "+command) {
+				t.Fatalf("want parse error on stderr, got: %s", stderr.String())
+			}
+		})
 	}
 }
 
