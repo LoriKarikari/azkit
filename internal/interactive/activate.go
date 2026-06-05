@@ -10,9 +10,9 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/samber/lo"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
-	"github.com/LoriKarikari/pimctl/internal/config"
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/app"
+	"github.com/LoriKarikari/azkit/internal/config"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 type ActivationInput struct {

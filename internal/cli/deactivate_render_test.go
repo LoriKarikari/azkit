@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 func TestRenderDeactivationJSON(t *testing.T) {

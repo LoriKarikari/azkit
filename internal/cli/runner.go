@@ -11,10 +11,10 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/willabides/kongplete"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
-	"github.com/LoriKarikari/pimctl/internal/config"
-	"github.com/LoriKarikari/pimctl/internal/domain"
-	"github.com/LoriKarikari/pimctl/internal/interactive"
+	"github.com/LoriKarikari/azkit/internal/app"
+	"github.com/LoriKarikari/azkit/internal/config"
+	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/interactive"
 )
 
 type Streams struct {

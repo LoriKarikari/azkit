@@ -8,8 +8,8 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/app"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 func TestActiveAssignments_listsCurrentActiveInstancesAcrossSubscriptions(t *testing.T) {

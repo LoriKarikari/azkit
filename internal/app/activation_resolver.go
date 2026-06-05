@@ -8,7 +8,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 var guidRE = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)

@@ -6,8 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/LoriKarikari/pimctl/internal/cli"
-	"github.com/LoriKarikari/pimctl/internal/runtime"
+	"github.com/LoriKarikari/azkit/internal/cli"
+	"github.com/LoriKarikari/azkit/internal/runtime"
 )
 
 func main() {

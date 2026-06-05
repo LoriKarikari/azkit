@@ -3,7 +3,7 @@ package inmemory
 import (
 	"context"
 
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 type EligibleAssignments struct {

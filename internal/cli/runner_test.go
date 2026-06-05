@@ -12,10 +12,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
-	"github.com/LoriKarikari/pimctl/internal/cli"
-	"github.com/LoriKarikari/pimctl/internal/domain"
-	"github.com/LoriKarikari/pimctl/internal/inmemory"
+	"github.com/LoriKarikari/azkit/internal/app"
+	"github.com/LoriKarikari/azkit/internal/cli"
+	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/inmemory"
 )
 
 func TestRunner_pimListHuman(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/LoriKarikari/pimctl/internal/cli"
+	"github.com/LoriKarikari/azkit/internal/cli"
 )
 
 func TestCompletionUsesKongplete(t *testing.T) {
