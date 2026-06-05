@@ -36,18 +36,20 @@ func TestRunner_pimListHuman(t *testing.T) {
 	}
 }
 
-func TestRunner_listJSON(t *testing.T) {
+func TestRunner_rootListRejected(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, nil)
 
-	if code := runner.Run(t.Context(), []string{"list", "--json"}); code != 0 {
-		t.Fatalf("want exit 0, got %d", code)
+	code := runner.Run(t.Context(), []string{"list"})
+	if code != 2 {
+		t.Fatalf("want exit 2, got %d", code)
 	}
-
-	got := stdout.String()
-	if !strings.Contains(got, `"assignment_id": "a1"`) {
-		t.Fatalf("missing JSON assignment ID:\n%s", got)
+	if stdout.String() != "" {
+		t.Fatalf("want empty stdout, got: %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "unexpected argument list") {
+		t.Fatalf("want parse error on stderr, got: %s", stderr.String())
 	}
 }
 
