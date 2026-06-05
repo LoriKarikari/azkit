@@ -89,6 +89,7 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 		&model,
 		kong.Name("azkit"),
 		kong.Writers(r.streams.Stdout, r.streams.Stderr),
+		kong.Help(azkitHelp),
 		kong.Exit(func(code int) { panic(kongExit(code)) }),
 		kong.BindTo(ctx, (*context.Context)(nil)),
 		kong.Bind(r.services),
@@ -142,6 +143,17 @@ func (r *Runner) handleParseError(err error) int {
 	}
 	_, _ = io.WriteString(r.streams.Stderr, err.Error()+"\n")
 	return 2
+}
+
+func azkitHelp(options kong.HelpOptions, ctx *kong.Context) error {
+	if ctx.Selected() == nil {
+		options.Compact = true
+		options.NoExpandSubcommands = true
+		return kong.DefaultHelpPrinter(options, ctx)
+	}
+
+	options.Tree = true
+	return kong.DefaultHelpPrinter(options, ctx)
 }
 
 func commandNeedsConfig(parsed *kong.Context) bool {

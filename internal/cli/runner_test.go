@@ -218,6 +218,42 @@ func TestRunner_helpDoesNotBuildListService(t *testing.T) {
 	}
 }
 
+func TestRunner_rootHelpListsOnlyTopLevelCommands(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"--help"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "pim") {
+		t.Fatalf("missing pim command:\n%s", got)
+	}
+	if strings.Contains(got, "pim list") {
+		t.Fatalf("root help should not expand PIM commands:\n%s", got)
+	}
+}
+
+func TestRunner_pimHelpListsChildCommandsWithoutParentPrefix(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"pim", "--help"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "list") || !strings.Contains(got, "activate") {
+		t.Fatalf("missing PIM child commands:\n%s", got)
+	}
+	if strings.Contains(got, "pim list") || strings.Contains(got, "pim activate") {
+		t.Fatalf("pim help should list child commands without parent prefix:\n%s", got)
+	}
+}
+
 func newRunner(stdout *bytes.Buffer, stderr *bytes.Buffer, err error) *cli.Runner {
 	eligibleStore := &inmemory.EligibleAssignments{
 		Assignments: []domain.EligibleAssignment{
