@@ -36,6 +36,21 @@ func TestRunner_pimListHuman(t *testing.T) {
 	}
 }
 
+func TestRunner_pimListJSON(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	if code := runner.Run(t.Context(), []string{"pim", "list", "--json"}); code != 0 {
+		t.Fatalf("want exit 0, got %d", code)
+	}
+
+	got := stdout.String()
+	if !strings.Contains(got, `"assignment_id": "a1"`) {
+		t.Fatalf("missing JSON assignment ID:\n%s", got)
+	}
+}
+
 func TestRunner_rootListRejected(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -53,12 +68,12 @@ func TestRunner_rootListRejected(t *testing.T) {
 	}
 }
 
-func TestRunner_listErrorHuman(t *testing.T) {
+func TestRunner_pimListErrorHuman(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
 
-	code := runner.Run(t.Context(), []string{"list"})
+	code := runner.Run(t.Context(), []string{"pim", "list"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -70,12 +85,12 @@ func TestRunner_listErrorHuman(t *testing.T) {
 	}
 }
 
-func TestRunner_listErrorJSON(t *testing.T) {
+func TestRunner_pimListErrorJSON(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
 
-	code := runner.Run(t.Context(), []string{"list", "--json"})
+	code := runner.Run(t.Context(), []string{"pim", "list", "--json"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -87,12 +102,12 @@ func TestRunner_listErrorJSON(t *testing.T) {
 	}
 }
 
-func TestRunner_statusHuman(t *testing.T) {
+func TestRunner_pimStatusHuman(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, nil)
 
-	if code := runner.Run(t.Context(), []string{"status"}); code != 0 {
+	if code := runner.Run(t.Context(), []string{"pim", "status"}); code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}
 
@@ -105,12 +120,12 @@ func TestRunner_statusHuman(t *testing.T) {
 	}
 }
 
-func TestRunner_statusErrorJSON(t *testing.T) {
+func TestRunner_pimStatusErrorJSON(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
 
-	code := runner.Run(t.Context(), []string{"status", "--json"})
+	code := runner.Run(t.Context(), []string{"pim", "status", "--json"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
