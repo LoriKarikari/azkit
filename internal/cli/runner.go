@@ -59,12 +59,12 @@ func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
 type CLI struct {
 	Verbose    bool          `short:"v" help:"Enable debug logging to stderr"`
 	ConfigPath string        `name:"config" help:"Path to config file"`
-	Pim        PimCmd        `cmd:"" help:"Manage Azure resource-role PIM workflows"`
+	Pim        pimCmd        `cmd:"" help:"Manage Azure resource-role PIM workflows"`
 	Completion CompletionCmd `cmd:"" help:"Generate shell completion script"`
 	Version    VersionCmd    `cmd:"" help:"Show version information"`
 }
 
-type PimCmd struct {
+type pimCmd struct {
 	List       ListCmd       `cmd:"" help:"List eligible PIM role assignments"`
 	Status     StatusCmd     `cmd:"" help:"List active PIM role assignments"`
 	Activate   ActivateCmd   `cmd:"" help:"Activate an eligible PIM role assignment"`
