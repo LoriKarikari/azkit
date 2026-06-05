@@ -60,10 +60,6 @@ type CLI struct {
 	Verbose    bool          `short:"v" help:"Enable debug logging to stderr"`
 	ConfigPath string        `name:"config" help:"Path to config file"`
 	Pim        PimCmd        `cmd:"" help:"Manage Azure resource-role PIM workflows"`
-	List       ListCmd       `cmd:"" help:"List eligible PIM role assignments"`
-	Status     StatusCmd     `cmd:"" help:"List active PIM role assignments"`
-	Activate   ActivateCmd   `cmd:"" help:"Activate an eligible PIM role assignment"`
-	Deactivate DeactivateCmd `cmd:"" help:"Deactivate an active PIM role assignment"`
 	Completion CompletionCmd `cmd:"" help:"Generate shell completion script"`
 	Version    VersionCmd    `cmd:"" help:"Show version information"`
 }
@@ -162,14 +158,14 @@ func commandNeedsConfig(parsed *kong.Context) bool {
 
 func wantsJSON(model CLI, parsed *kong.Context) bool {
 	switch parsed.Command() {
-	case "list":
-		return model.List.JSON
-	case "status":
-		return model.Status.JSON
-	case "activate":
-		return model.Activate.JSON
-	case "deactivate":
-		return model.Deactivate.JSON
+	case "pim list":
+		return model.Pim.List.JSON
+	case "pim status":
+		return model.Pim.Status.JSON
+	case "pim activate":
+		return model.Pim.Activate.JSON
+	case "pim deactivate":
+		return model.Pim.Deactivate.JSON
 	}
 	return false
 }
