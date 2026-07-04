@@ -1,10 +1,10 @@
 version: 2
 
 builds:
-  - main: ./cmd/pimctl
-    binary: pimctl
+  - main: ./cmd/azkit
+    binary: azkit
     ldflags:
-      - -s -w -X github.com/LoriKarikari/pimctl/internal/cli.version={{.Version}} -X github.com/LoriKarikari/pimctl/internal/cli.commit={{.Commit}} -X github.com/LoriKarikari/pimctl/internal/cli.date={{.Date}}
+      - -s -w -X github.com/LoriKarikari/azkit/internal/cli.version={{.Version}} -X github.com/LoriKarikari/azkit/internal/cli.commit={{.Commit}} -X github.com/LoriKarikari/azkit/internal/cli.date={{.Date}}
     goos:
       - linux
       - darwin
