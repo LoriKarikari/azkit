@@ -3,14 +3,12 @@ package cli
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"text/tabwriter"
 
 	"github.com/LoriKarikari/azkit/internal/app"
 	"github.com/LoriKarikari/azkit/internal/domain"
-	"github.com/LoriKarikari/azkit/internal/subscriptionstore"
 )
 
 type SubCmd struct {
@@ -19,20 +17,17 @@ type SubCmd struct {
 }
 
 func (c *SubCmd) Run(ctx context.Context, services Services, streams *Streams) error {
+	if !c.List && !c.Refresh {
+		return app.MissingSubscriptionCommand()
+	}
 	active, err := activeTenantContext(ctx, streams)
 	if err != nil {
 		return err
 	}
-	svc := app.NewSubscriptionService(
-		subscriptionstore.New(),
-		func() (app.SubscriptionSource, error) {
-			if services.SubscriptionSource == nil {
-				return nil, app.AuthFailed(errors.New("subscription source is not configured"))
-			}
-			return services.SubscriptionSource(streams.Log)
-		},
-		services.Now,
-	)
+	svc, err := services.Subscriptions(streams.Log)
+	if err != nil {
+		return err
+	}
 	subscriptions, err := svc.List(ctx, active, c.Refresh)
 	if err != nil {
 		return err

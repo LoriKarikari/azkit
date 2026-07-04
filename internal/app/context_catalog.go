@@ -143,6 +143,13 @@ func MissingActiveContext() *Error {
 	}
 }
 
+func MissingSubscriptionCommand() *Error {
+	return &Error{
+		Code:    domain.CodeMissingSubscriptionCmd,
+		Message: "Subscription command is required. Run `azkit sub -l` to list subscriptions.",
+	}
+}
+
 func ContextNeedsLogin(ctx domain.TenantContext) *Error {
 	return &Error{
 		Code: domain.CodeContextNeedsLogin,
@@ -150,6 +157,17 @@ func ContextNeedsLogin(ctx domain.TenantContext) *Error {
 			"Context %q needs Azure login. Run `az login --tenant %s`.",
 			ctx.Name,
 			ctx.TenantID,
+		),
+	}
+}
+
+func ContextEnvironmentMismatch(ctx domain.TenantContext) *Error {
+	return &Error{
+		Code: domain.CodeContextEnvMismatch,
+		Message: fmt.Sprintf(
+			"Context %q is not applied to this shell. Run `azkit ctx %s` first.",
+			ctx.Name,
+			ctx.Name,
 		),
 	}
 }

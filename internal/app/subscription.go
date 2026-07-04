@@ -13,7 +13,7 @@ type SubscriptionSource interface {
 	ListSubscriptions(context.Context) ([]domain.Subscription, error)
 }
 
-type SubscriptionSourceFactory func() (SubscriptionSource, error)
+type SubscriptionSourceFactory func(domain.TenantContext) (SubscriptionSource, error)
 
 type SubscriptionCache interface {
 	Load(context.Context, domain.TenantContext) (domain.SubscriptionCache, bool, error)
@@ -61,18 +61,18 @@ func (s *SubscriptionService) List(
 	if active.Status != domain.ContextReady {
 		return nil, ContextNeedsLogin(active)
 	}
-	if refresh {
-		if err := s.cache.Invalidate(ctx, active); err != nil {
-			return nil, err
-		}
-	}
-	source, err := s.source()
+	source, err := s.source(active)
 	if err != nil {
 		return nil, err
 	}
 	subscriptions, err := source.ListSubscriptions(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if refresh {
+		if err := s.cache.Invalidate(ctx, active); err != nil {
+			return nil, err
+		}
 	}
 	cached := domain.SubscriptionCache{
 		FetchedAt:     s.now().UTC(),

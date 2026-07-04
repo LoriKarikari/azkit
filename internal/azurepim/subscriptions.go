@@ -19,10 +19,17 @@ func NewSubscriptionSourceFromCred(cred azcore.TokenCredential) *SubscriptionSou
 	return &SubscriptionSource{subscriptions: azureSubscriptions{cred: cred}}
 }
 
+func azureSubscriptionOperationError(err error) error {
+	if azurePIMPermissionDenied(err) {
+		return app.AzurePermissionDenied(err)
+	}
+	return app.AzureAPIError(err)
+}
+
 func (s *SubscriptionSource) ListSubscriptions(ctx context.Context) ([]domain.Subscription, error) {
 	subs, err := s.subscriptions.ListSubscriptions(ctx)
 	if err != nil {
-		return nil, azurePIMOperationError(err)
+		return nil, azureSubscriptionOperationError(err)
 	}
 	out := make([]domain.Subscription, 0, len(subs))
 	for _, sub := range subs {

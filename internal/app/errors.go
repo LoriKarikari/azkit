@@ -47,6 +47,14 @@ func PermissionDenied(err error) *Error {
 	}
 }
 
+func AzurePermissionDenied(err error) *Error {
+	return &Error{
+		Code:    domain.CodePermissionDenied,
+		Message: "Insufficient permissions for Azure operations.",
+		Cause:   err,
+	}
+}
+
 func ShellIntegrationRequired(command string) *Error {
 	return &Error{
 		Code: domain.CodeShellIntegrationRequired,

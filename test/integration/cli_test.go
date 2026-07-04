@@ -48,6 +48,20 @@ func TestAzkitBinary(t *testing.T) {
 			wantStdout: "No contexts.",
 		},
 		{
+			name:         "sub list requires active context",
+			args:         []string{"sub", "-l"},
+			wantCode:     1,
+			wantStderr:   "No active context.",
+			wantNoStdout: true,
+		},
+		{
+			name:         "sub shell env bare command has no stdout",
+			args:         []string{"--shell-env", "sub"},
+			wantCode:     1,
+			wantStderr:   "azkit sub -l",
+			wantNoStdout: true,
+		},
+		{
 			name:         "usage error exits two",
 			args:         []string{"not-a-command"},
 			wantCode:     2,

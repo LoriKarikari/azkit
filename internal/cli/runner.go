@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/willabides/kongplete"
@@ -41,11 +40,10 @@ type Services struct {
 	Status                func(*slog.Logger) (*app.StatusService, error)
 	Activate              func(*slog.Logger) (*app.ActivationService, error)
 	Deactivate            func(*slog.Logger) (*app.DeactivationService, error)
-	SubscriptionSource    func(*slog.Logger) (app.SubscriptionSource, error)
+	Subscriptions         func(*slog.Logger) (*app.SubscriptionService, error)
 	ActivateInteractive   activateInteractiveFunc
 	DeactivateInteractive deactivateInteractiveFunc
 	PickContext           contextPickerFunc
-	Now                   func() time.Time
 }
 
 type Runner struct {
@@ -63,9 +61,6 @@ func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
 	}
 	if services.PickContext == nil {
 		services.PickContext = interactive.PickContext
-	}
-	if services.Now == nil {
-		services.Now = time.Now
 	}
 	return &Runner{
 		services: services,

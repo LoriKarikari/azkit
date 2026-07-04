@@ -50,7 +50,7 @@ func (c *Cache) Load(
 	}
 	var data cacheFile
 	if err := json.Unmarshal(contents, &data); err != nil {
-		return domain.SubscriptionCache{}, false, fmt.Errorf("parsing subscription cache: %w", err)
+		return domain.SubscriptionCache{}, false, nil
 	}
 	return domain.SubscriptionCache{
 		FetchedAt:     data.FetchedAt,
@@ -78,7 +78,7 @@ func (c *Cache) Save(
 		return fmt.Errorf("encoding subscription cache: %w", err)
 	}
 	contents = append(contents, '\n')
-	if err := os.WriteFile(cachePath(active), contents, 0600); err != nil {
+	if err := writeFileAtomic(active.Dir, cachePath(active), contents); err != nil {
 		return fmt.Errorf("writing subscription cache: %w", err)
 	}
 	return nil
@@ -96,6 +96,28 @@ func (c *Cache) Invalidate(ctx context.Context, active domain.TenantContext) err
 
 func cachePath(active domain.TenantContext) string {
 	return filepath.Join(active.Dir, cacheFileName)
+}
+
+func writeFileAtomic(dir string, target string, contents []byte) error {
+	tmp, err := os.CreateTemp(dir, cacheFileName+".*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	defer func() { _ = os.Remove(tmpName) }()
+
+	if _, err := tmp.Write(contents); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Chmod(0600); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmpName, target)
 }
 
 func toDomain(records []subscriptionRecord) []domain.Subscription {
