@@ -13,6 +13,7 @@ const (
 	CodeMissingReason            Code = "missing_reason"
 	CodeInvalidDuration          Code = "invalid_duration"
 	CodeConflictingSelectors     Code = "conflicting_selectors"
+	CodeShellIntegrationRequired Code = "shell_integration_required"
 	CodeUnknownSubscription      Code = "unknown_subscription"
 	CodeAmbiguousSubscription    Code = "ambiguous_subscription"
 	CodeUnknownResourceGroup     Code = "unknown_resource_group"

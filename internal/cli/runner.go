@@ -17,10 +17,12 @@ import (
 )
 
 type Streams struct {
-	Stdout io.Writer
-	Stderr io.Writer
-	Log    *slog.Logger
-	Config *config.Config
+	Stdout   io.Writer
+	Stderr   io.Writer
+	Log      *slog.Logger
+	Config   *config.Config
+	ShellEnv bool
+	Shell    string
 }
 
 type activateInteractiveFunc func(context.Context, []domain.EligibleAssignment, *app.ActivationService, *config.Config, interactive.ActivationInput) (*domain.ActivationResult, error)
@@ -62,8 +64,10 @@ func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
 type CLI struct {
 	Verbose     bool             `short:"v" help:"Enable debug logging to stderr"`
 	VersionFlag kong.VersionFlag `name:"version" help:"Show version information and exit"`
+	ShellEnv    bool             `name:"shell-env" hidden:"" help:"Emit shell environment changes for shell integration"`
 	ConfigPath  string           `name:"config" help:"Path to config file"`
 	Pim         pimCmd           `cmd:"" help:"Manage Azure resource-role PIM workflows"`
+	ShellInit   ShellInitCmd     `cmd:"" name:"shell-init" help:"Print shell integration script"`
 	Completion  CompletionCmd    `cmd:"" help:"Generate shell completion script"`
 	Version     VersionCmd       `cmd:"" help:"Show version information"`
 }
@@ -119,6 +123,8 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 	}
 	r.log = slog.New(slog.NewTextHandler(r.streams.Stderr, &slog.HandlerOptions{Level: level}))
 	r.streams.Log = r.log
+	r.streams.ShellEnv = model.ShellEnv
+	r.streams.Shell = os.Getenv("AZKIT_SHELL")
 
 	if commandNeedsConfig(parsed) {
 		cfg, err := config.Load(model.ConfigPath)
@@ -170,7 +176,7 @@ func commandNeedsConfig(parsed *kong.Context) bool {
 		return true
 	}
 	switch selected.Name {
-	case "completion", "version":
+	case "completion", "shell-init", "version":
 		return false
 	}
 	return true

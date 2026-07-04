@@ -36,6 +36,12 @@ func TestAzkitBinary(t *testing.T) {
 			wantStdout: "azkit dev",
 		},
 		{
+			name:       "shell init bash",
+			args:       []string{"shell-init", "bash"},
+			wantCode:   0,
+			wantStdout: "azkit() {",
+		},
+		{
 			name:         "usage error exits two",
 			args:         []string{"not-a-command"},
 			wantCode:     2,
