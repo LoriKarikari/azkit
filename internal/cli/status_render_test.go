@@ -40,7 +40,7 @@ func TestRenderStatusHuman_extended(t *testing.T) {
 
 func TestRenderStatusJSON_populated(t *testing.T) {
 	as := []domain.ActiveAssignment{
-		{ID: "s1", Role: "Contributor", ScopeType: domain.ScopeSubscription, ScopeID: "/subscriptions/abc", ScopeName: "sub-prod", StartTime: at("2026-05-07T18:00:00Z"), EndTime: at("2026-05-07T20:00:00Z"), Status: domain.ActiveAssignmentActive},
+		{ID: "s1", Role: "Contributor", ScopeType: domain.ScopeSubscription, ScopeID: "/subscriptions/abc", ScopeName: "sub-prod", SubscriptionID: "abc", SubscriptionName: "sub-prod", StartTime: at("2026-05-07T18:00:00Z"), EndTime: at("2026-05-07T20:00:00Z"), Status: domain.ActiveAssignmentActive},
 	}
 	got := cli.RenderStatusJSON(as)
 	var decoded []map[string]any
@@ -51,14 +51,16 @@ func TestRenderStatusJSON_populated(t *testing.T) {
 		t.Fatalf("want 1 assignment, got %d", len(decoded))
 	}
 	want := map[string]any{
-		"role":          "Contributor",
-		"scope_type":    "subscription",
-		"scope_id":      "/subscriptions/abc",
-		"scope_name":    "sub-prod",
-		"status":        "active",
-		"started_at":    "2026-05-07T18:00:00Z",
-		"expires_at":    "2026-05-07T20:00:00Z",
-		"assignment_id": "s1",
+		"role":              "Contributor",
+		"scope_type":        "subscription",
+		"scope_id":          "/subscriptions/abc",
+		"scope_name":        "sub-prod",
+		"subscription_id":   "abc",
+		"subscription_name": "sub-prod",
+		"status":            "active",
+		"started_at":        "2026-05-07T18:00:00Z",
+		"expires_at":        "2026-05-07T20:00:00Z",
+		"assignment_id":     "s1",
 	}
 	for key, value := range want {
 		if decoded[0][key] != value {

@@ -11,12 +11,14 @@ import (
 )
 
 type assignmentJSON struct {
-	Role          string `json:"role"`
-	ScopeType     string `json:"scope_type"`
-	ScopeID       string `json:"scope_id"`
-	ScopeName     string `json:"scope_name"`
-	EligibleUntil string `json:"eligible_until"`
-	AssignmentID  string `json:"assignment_id"`
+	Role             string `json:"role"`
+	ScopeType        string `json:"scope_type"`
+	ScopeID          string `json:"scope_id"`
+	ScopeName        string `json:"scope_name"`
+	SubscriptionID   string `json:"subscription_id"`
+	SubscriptionName string `json:"subscription_name"`
+	EligibleUntil    string `json:"eligible_until"`
+	AssignmentID     string `json:"assignment_id"`
 }
 
 func RenderJSON(as []domain.EligibleAssignment) string {
@@ -26,12 +28,14 @@ func RenderJSON(as []domain.EligibleAssignment) string {
 	out := make([]assignmentJSON, len(as))
 	for i, a := range as {
 		out[i] = assignmentJSON{
-			Role:          a.Role,
-			ScopeType:     string(a.ScopeType),
-			ScopeID:       a.ScopeID,
-			ScopeName:     a.ScopeName,
-			EligibleUntil: jsonTime(a.EligibleUntil),
-			AssignmentID:  a.ID,
+			Role:             a.Role,
+			ScopeType:        string(a.ScopeType),
+			ScopeID:          a.ScopeID,
+			ScopeName:        a.ScopeName,
+			SubscriptionID:   a.SubscriptionID,
+			SubscriptionName: a.SubscriptionName,
+			EligibleUntil:    jsonTime(a.EligibleUntil),
+			AssignmentID:     a.ID,
 		}
 	}
 	return marshalJSON(out)
