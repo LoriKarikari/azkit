@@ -44,7 +44,11 @@ func assignmentFromExpanded(expanded *armauthorization.ExpandedProperties) assig
 }
 
 func scopeTypeFromAzure(typeStr string) domain.ScopeType {
-	if strings.Contains(typeStr, "resourceGroup") || strings.Contains(typeStr, "resourceGroups") {
+	lower := strings.ToLower(typeStr)
+	if strings.Contains(lower, "managementgroup") || strings.Contains(lower, "managementgroups") {
+		return domain.ScopeManagementGroup
+	}
+	if strings.Contains(lower, "resourcegroup") || strings.Contains(lower, "resourcegroups") {
 		return domain.ScopeResourceGroup
 	}
 	return domain.ScopeSubscription

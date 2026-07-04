@@ -71,6 +71,9 @@ func (a *EligibleAssignments) ListEligible(ctx context.Context) ([]domain.Eligib
 			assignment.SubscriptionID = sub.ID
 			assignment.SubscriptionName = sub.Name
 		},
+		func(assignment domain.EligibleAssignment) string {
+			return assignment.ID
+		},
 	)
 }
 

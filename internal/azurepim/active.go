@@ -69,6 +69,9 @@ func (a *ActiveAssignments) ListActive(ctx context.Context) ([]domain.ActiveAssi
 			assignment.SubscriptionID = sub.ID
 			assignment.SubscriptionName = sub.Name
 		},
+		func(assignment domain.ActiveAssignment) string {
+			return assignment.ID
+		},
 	)
 }
 

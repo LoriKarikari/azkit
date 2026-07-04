@@ -111,6 +111,28 @@ func TestEligibleAssignments_skipsBlankSubscriptionID(t *testing.T) {
 	}
 }
 
+func TestEligibleAssignments_deduplicatesInheritedAssignments(t *testing.T) {
+	adapter := newEligibleAssignments(
+		fakeSubscriptions{subs: []subscription{{ID: "sub-a", Name: "Sub A"}, {ID: "sub-b", Name: "Sub B"}}},
+		fakeSchedules{assignments: map[string][]domain.EligibleAssignment{
+			"sub-a": {{ID: "mg-assignment", Role: "Reader", ScopeType: domain.ScopeManagementGroup}},
+			"sub-b": {{ID: "mg-assignment", Role: "Reader", ScopeType: domain.ScopeManagementGroup}},
+		}},
+		nil,
+	)
+
+	got, err := adapter.ListEligible(t.Context())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("want 1 assignment, got %d: %+v", len(got), got)
+	}
+	if got[0].SubscriptionName != "Sub A" {
+		t.Fatalf("want first subscription enrichment kept, got %+v", got[0])
+	}
+}
+
 func TestToDomain_mapsFields(t *testing.T) {
 	displayName := "Contributor"
 	roleDefID := "/subscriptions/abc/providers/Microsoft.Authorization/roleDefinitions/111"
@@ -161,7 +183,7 @@ func TestToDomain_mapsFields(t *testing.T) {
 }
 
 func TestToDomain_resourceGroupScope(t *testing.T) {
-	scopeType := "Microsoft.Authorization/roleEligibilitySchedules/resourceGroups"
+	scopeType := "resourcegroup"
 
 	sched := &armauthorization.RoleEligibilitySchedule{
 		Properties: &armauthorization.RoleEligibilityScheduleProperties{
