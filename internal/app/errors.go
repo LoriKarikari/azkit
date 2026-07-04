@@ -46,3 +46,13 @@ func PermissionDenied(err error) *Error {
 		Cause:   err,
 	}
 }
+
+func ShellIntegrationRequired(command string) *Error {
+	return &Error{
+		Code: domain.CodeShellIntegrationRequired,
+		Message: fmt.Sprintf(
+			"%s changes your current shell. Enable shell integration with `azkit shell-init <shell>` first.",
+			command,
+		),
+	}
+}
