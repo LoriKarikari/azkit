@@ -10,6 +10,10 @@ type StatusCmd struct {
 	Extended bool `help:"Show more details"`
 }
 
+func (c *StatusCmd) jsonOutput() bool {
+	return c.JSON
+}
+
 func (c *StatusCmd) Run(ctx context.Context, services Services, streams *Streams) error {
 	service, err := services.Status(streams.Log)
 	if err != nil {

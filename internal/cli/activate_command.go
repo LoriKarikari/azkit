@@ -31,8 +31,12 @@ type interactiveActivation struct {
 	act      *app.ActivationService
 }
 
+func (c *ActivateCmd) jsonOutput() bool {
+	return c.JSON
+}
+
 func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Streams) error {
-	needsInteractive := c.needsInteractive(streams) && interactive.IsTerminalFn()
+	needsInteractive := !c.JSON && c.needsInteractive(streams) && interactive.IsTerminalFn()
 	if !needsInteractive {
 		if err := c.validateNonInteractive(); err != nil {
 			return err
