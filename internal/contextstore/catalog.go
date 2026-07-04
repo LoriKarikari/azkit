@@ -123,7 +123,7 @@ func (c *Catalog) ContextDir(name string) string {
 
 func (c *Catalog) load() (catalogFile, error) {
 	path := c.catalogPath()
-	contents, err := os.ReadFile(path)
+	contents, err := os.ReadFile(path) // #nosec G304 -- fixed catalog file under the user-controlled azkit config root.
 	if errors.Is(err, os.ErrNotExist) {
 		return catalogFile{Contexts: []catalogRecord{}}, nil
 	}
