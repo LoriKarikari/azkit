@@ -59,7 +59,7 @@ __azkit_needs_shell() {
       ;;
     sub)
       case "${2-}" in
-        -l|--list|--refresh|--help|-h) return 1 ;;
+        alias|unalias|current|-l|--list|--refresh|--help|-h) return 1 ;;
         *) return 0 ;;
       esac
       ;;
@@ -121,6 +121,9 @@ function global:Test-AzkitShellSwitch {
     "sub" {
       if ($AzkitArgs.Count -eq 1) { return $true }
       switch ($AzkitArgs[1]) {
+        "alias" { return $false }
+        "unalias" { return $false }
+        "current" { return $false }
         "-l" { return $false }
         "--list" { return $false }
         "--refresh" { return $false }

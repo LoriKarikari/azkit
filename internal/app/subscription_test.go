@@ -20,7 +20,7 @@ func TestSubscriptionService_usesFreshCache(t *testing.T) {
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{}
-	svc := app.NewSubscriptionService(cache, func(active domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, nil, func(active domain.TenantContext) (app.SubscriptionSource, error) {
 		if active.Name != "prod" {
 			t.Fatalf("unexpected active context: %+v", active)
 		}
@@ -49,7 +49,7 @@ func TestSubscriptionService_refreshOverwritesCache(t *testing.T) {
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-live", Name: "Live"}}}
-	svc := app.NewSubscriptionService(cache, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -78,7 +78,7 @@ func TestSubscriptionService_refreshKeepsCacheWhenFetchFails(t *testing.T) {
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{err: errors.New("network down")}
-	svc := app.NewSubscriptionService(cache, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -101,7 +101,7 @@ func TestSubscriptionService_fetchesWhenCacheExpired(t *testing.T) {
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-live", Name: "Live"}}}
-	svc := app.NewSubscriptionService(cache, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -127,7 +127,7 @@ func TestSubscriptionService_treatsExactlyTTLAsStale(t *testing.T) {
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-live", Name: "Live"}}}
-	svc := app.NewSubscriptionService(cache, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -150,7 +150,7 @@ func TestSubscriptionService_servesFreshCacheEvenWhenContextNeedsLogin(t *testin
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-live", Name: "Live"}}}
-	svc := app.NewSubscriptionService(cache, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -174,7 +174,7 @@ func TestSubscriptionService_needsLoginWithoutFreshCache(t *testing.T) {
 	now := time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC)
 	cache := &fakeSubscriptionCache{}
 	source := &fakeSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-live", Name: "Live"}}}
-	svc := app.NewSubscriptionService(cache, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -215,4 +215,149 @@ type fakeSubscriptionSource struct {
 func (f *fakeSubscriptionSource) ListSubscriptions(context.Context) ([]domain.Subscription, error) {
 	f.calls++
 	return f.subscriptions, f.err
+}
+
+func TestSubscriptionService_resolvePrefersAliasThenIDThenName(t *testing.T) {
+	now := time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC)
+	cache := &fakeSubscriptionCache{
+		cached: domain.SubscriptionCache{
+			FetchedAt: now.Add(-time.Hour),
+			Subscriptions: []domain.Subscription{
+				{ID: "sub-1", Name: "Production"},
+				{ID: "sub-2", Name: "Development"},
+			},
+		},
+		hasCached: true,
+	}
+	aliases := &fakeAliasStore{aliases: map[string]domain.Subscription{
+		"prod": {ID: "sub-1", Name: "Production"},
+	}}
+	svc := app.NewSubscriptionService(cache, aliases, sourceFactory(nil), func() time.Time { return now })
+
+	got, err := svc.Resolve(t.Context(), readyContext(), "prod")
+	if err != nil {
+		t.Fatalf("resolve alias: %v", err)
+	}
+	if got.ID != "sub-1" {
+		t.Fatalf("want alias sub-1, got %+v", got)
+	}
+
+	got, err = svc.Resolve(t.Context(), readyContext(), "sub-2")
+	if err != nil {
+		t.Fatalf("resolve id: %v", err)
+	}
+	if got.ID != "sub-2" {
+		t.Fatalf("want id sub-2, got %+v", got)
+	}
+
+	got, err = svc.Resolve(t.Context(), readyContext(), "Development")
+	if err != nil {
+		t.Fatalf("resolve name: %v", err)
+	}
+	if got.ID != "sub-2" {
+		t.Fatalf("want name Development -> sub-2, got %+v", got)
+	}
+}
+
+func TestSubscriptionService_resolveUnknownOrAmbiguous(t *testing.T) {
+	now := time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC)
+	cache := &fakeSubscriptionCache{
+		cached: domain.SubscriptionCache{
+			FetchedAt: now.Add(-time.Hour),
+			Subscriptions: []domain.Subscription{
+				{ID: "sub-1", Name: "Team A"},
+				{ID: "sub-2", Name: "Team A"},
+			},
+		},
+		hasCached: true,
+	}
+	svc := app.NewSubscriptionService(cache, nil, sourceFactory(nil), func() time.Time { return now })
+
+	_, err := svc.Resolve(t.Context(), readyContext(), "missing")
+	if err == nil {
+		t.Fatal("want unknown subscription error")
+	}
+	_, err = svc.Resolve(t.Context(), readyContext(), "Team A")
+	if err == nil {
+		t.Fatal("want ambiguous subscription error")
+	}
+}
+
+func TestSubscriptionService_createAlias(t *testing.T) {
+	now := time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC)
+	cache := &fakeSubscriptionCache{
+		cached: domain.SubscriptionCache{
+			FetchedAt:     now.Add(-time.Hour),
+			Subscriptions: []domain.Subscription{{ID: "sub-1", Name: "Production"}},
+		},
+		hasCached: true,
+	}
+	aliases := &fakeAliasStore{aliases: map[string]domain.Subscription{}}
+	svc := app.NewSubscriptionService(cache, aliases, sourceFactory(nil), func() time.Time { return now })
+
+	if err := svc.CreateAlias(t.Context(), readyContext(), "prod", "sub-1"); err != nil {
+		t.Fatalf("create alias: %v", err)
+	}
+	if aliases.aliases["prod"].ID != "sub-1" {
+		t.Fatalf("alias not saved: %+v", aliases.aliases)
+	}
+
+	if err := svc.CreateAlias(t.Context(), readyContext(), "prod", "sub-1"); err == nil {
+		t.Fatal("want duplicate alias error")
+	}
+	if err := svc.CreateAlias(t.Context(), readyContext(), "Production", "sub-1"); err == nil {
+		t.Fatal("want collision with subscription name")
+	}
+}
+
+func TestSubscriptionService_removeAlias(t *testing.T) {
+	now := time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC)
+	cache := &fakeSubscriptionCache{hasCached: true, cached: domain.SubscriptionCache{FetchedAt: now.Add(-time.Hour)}}
+	aliases := &fakeAliasStore{aliases: map[string]domain.Subscription{
+		"prod": {ID: "sub-1", Name: "Production"},
+	}}
+	svc := app.NewSubscriptionService(cache, aliases, sourceFactory(nil), func() time.Time { return now })
+
+	if err := svc.RemoveAlias(t.Context(), readyContext(), "prod"); err != nil {
+		t.Fatalf("remove alias: %v", err)
+	}
+	if len(aliases.aliases) != 0 {
+		t.Fatalf("want alias removed, got %+v", aliases.aliases)
+	}
+	if err := svc.RemoveAlias(t.Context(), readyContext(), "prod"); err == nil {
+		t.Fatal("want alias not found")
+	}
+}
+
+func sourceFactory(source *fakeSubscriptionSource) func(domain.TenantContext) (app.SubscriptionSource, error) {
+	return func(domain.TenantContext) (app.SubscriptionSource, error) {
+		if source == nil {
+			return &fakeSubscriptionSource{}, nil
+		}
+		return source, nil
+	}
+}
+
+type fakeAliasStore struct {
+	aliases map[string]domain.Subscription
+}
+
+func (f *fakeAliasStore) Load(context.Context, domain.TenantContext) (map[string]domain.Subscription, error) {
+	return mapsClone(f.aliases), nil
+}
+
+func (f *fakeAliasStore) Save(_ context.Context, _ domain.TenantContext, aliases map[string]domain.Subscription) error {
+	f.aliases = mapsClone(aliases)
+	return nil
+}
+
+func mapsClone(m map[string]domain.Subscription) map[string]domain.Subscription {
+	if m == nil {
+		return map[string]domain.Subscription{}
+	}
+	out := make(map[string]domain.Subscription, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
 }

@@ -77,6 +77,7 @@ func (r *Runtime) Services() cli.Services {
 		Subscriptions: func(*slog.Logger) (*app.SubscriptionService, error) {
 			return app.NewSubscriptionService(
 				subscriptionstore.New(),
+				subscriptionstore.NewAliases(),
 				func(active domain.TenantContext) (app.SubscriptionSource, error) {
 					if !strings.EqualFold(os.Getenv("AZURE_TENANT_ID"), active.TenantID) {
 						return nil, app.ContextEnvironmentMismatch(active)
