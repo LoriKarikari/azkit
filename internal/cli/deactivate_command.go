@@ -17,8 +17,12 @@ type DeactivateCmd struct {
 	JSON         bool   `help:"Output as JSON"`
 }
 
+func (c *DeactivateCmd) jsonOutput() bool {
+	return c.JSON
+}
+
 func (c *DeactivateCmd) Run(ctx context.Context, services Services, streams *Streams) error {
-	if c.AssignmentID == "" && interactive.IsTerminalFn() {
+	if c.AssignmentID == "" && !c.JSON && interactive.IsTerminalFn() {
 		return c.runInteractive(ctx, services, streams)
 	}
 

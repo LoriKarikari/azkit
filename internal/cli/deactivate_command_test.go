@@ -143,6 +143,26 @@ func TestRunner_deactivateNoArgNonInteractive(t *testing.T) {
 	}
 }
 
+func TestRunner_deactivateJSONNoArgDoesNotOpenInteractive(t *testing.T) {
+	interactive.IsTerminalFn = func() bool { return true }
+	t.Cleanup(func() { interactive.IsTerminalFn = interactive.IsTerminal })
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := deactivateRunner(t, &stdout, &stderr, nil, &fakeDeactivator{})
+
+	code := runner.Run(t.Context(), []string{"pim", "deactivate", "--json"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("want empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `"code": "active_assignment_not_found"`) {
+		t.Fatalf("want JSON missing-assignment-id error, got: %s", stderr.String())
+	}
+}
+
 func deactivateRunner(
 	t *testing.T,
 	stdout *bytes.Buffer,

@@ -11,6 +11,10 @@ type ListCmd struct {
 	Extended bool `help:"Show resource IDs and assignment IDs"`
 }
 
+func (c *ListCmd) jsonOutput() bool {
+	return c.JSON
+}
+
 func (c *ListCmd) Run(ctx context.Context, services Services, streams *Streams) error {
 	service, err := services.List(streams.Log)
 	if err != nil {

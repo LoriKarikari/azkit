@@ -6,7 +6,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"strings"
 
 	"github.com/alecthomas/kong"
 	"github.com/willabides/kongplete"
@@ -27,6 +26,10 @@ type Streams struct {
 type activateInteractiveFunc func(context.Context, []domain.EligibleAssignment, *app.ActivationService, *config.Config, interactive.ActivationInput) (*domain.ActivationResult, error)
 
 type deactivateInteractiveFunc func(context.Context, []domain.ActiveAssignment, *app.DeactivationService, interactive.DeactivationInput) (*domain.DeactivationResult, error)
+
+type jsonCommand interface {
+	jsonOutput() bool
+}
 
 type Services struct {
 	List                  func(*slog.Logger) (*app.ListService, error)
@@ -157,27 +160,31 @@ func azkitHelp(options kong.HelpOptions, ctx *kong.Context) error {
 }
 
 func commandNeedsConfig(parsed *kong.Context) bool {
-	command := strings.Fields(parsed.Command())
-	if len(command) == 0 {
+	selected := parsed.Selected()
+	if selected == nil {
 		return true
 	}
-	switch command[0] {
+	switch selected.Name {
 	case "completion", "version":
 		return false
 	}
 	return true
 }
 
-func wantsJSON(model CLI, parsed *kong.Context) bool {
-	switch parsed.Command() {
-	case "pim list":
-		return model.Pim.List.JSON
-	case "pim status":
-		return model.Pim.Status.JSON
-	case "pim activate":
-		return model.Pim.Activate.JSON
-	case "pim deactivate":
-		return model.Pim.Deactivate.JSON
+func wantsJSON(_ CLI, parsed *kong.Context) bool {
+	selected := parsed.Selected()
+	if selected == nil || !selected.Target.IsValid() {
+		return false
+	}
+	if selected.Target.CanInterface() {
+		cmd, ok := selected.Target.Interface().(jsonCommand)
+		if ok {
+			return cmd.jsonOutput()
+		}
+	}
+	if selected.Target.CanAddr() {
+		cmd, ok := selected.Target.Addr().Interface().(jsonCommand)
+		return ok && cmd.jsonOutput()
 	}
 	return false
 }
