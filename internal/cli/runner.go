@@ -130,6 +130,9 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 	}
 
 	if err := parsed.Run(); err != nil {
+		if errors.Is(err, interactive.ErrCanceled) {
+			return 130
+		}
 		_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(model, parsed)))
 		return 1
 	}
