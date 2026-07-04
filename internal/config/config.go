@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	envPrefix = "PIMCTL_"
+	envPrefix = "AZKIT_"
 
 	// DefaultActivationDuration is the fallback Activation duration when neither flags nor Configuration set one.
 	DefaultActivationDuration = 2 * time.Hour
@@ -64,14 +64,14 @@ func Load(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("env vars: %w", err)
 	}
 
-	defaultDuration, err := durationValue(k, "default_duration", DefaultActivationDuration)
+	defaultDuration, err := durationValue(k, "pim.default_duration", DefaultActivationDuration)
 	if err != nil {
 		return nil, err
 	}
 	c := &Config{
 		DefaultDuration: defaultDuration,
-		SubscriptionID:  k.String("subscription_id"),
-		TenantID:        k.String("tenant_id"),
+		SubscriptionID:  k.String("pim.subscription_id"),
+		TenantID:        k.String("pim.tenant_id"),
 	}
 	return c, nil
 }
@@ -95,29 +95,28 @@ func durationValue(k *koanf.Koanf, key string, fallback time.Duration) (time.Dur
 
 func envMapper(key string, value string) (string, any) {
 	mapKey := strings.ToLower(strings.TrimPrefix(key, envPrefix))
-	if mapKey == "default_duration" {
+	switch mapKey {
+	case "pim_default_duration":
 		if d, err := time.ParseDuration(value); err == nil {
-			return mapKey, d
+			return "pim.default_duration", d
 		}
+		return "pim.default_duration", value
+	case "pim_subscription_id":
+		return "pim.subscription_id", value
+	case "pim_tenant_id":
+		return "pim.tenant_id", value
+	default:
+		return strings.ReplaceAll(mapKey, "_", "."), value
 	}
-	return mapKey, value
 }
 
 func defaultConfigPath() string {
 	if dir := os.Getenv("XDG_CONFIG_HOME"); dir != "" {
-		p := filepath.Join(dir, "pimctl", "config.yaml")
-		// #nosec G703 -- XDG_CONFIG_HOME is the standard user-controlled config root.
-		if _, err := os.Stat(p); err == nil {
-			return p
-		}
+		return filepath.Join(dir, "azkit", "config.yaml")
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return ""
 	}
-	p := filepath.Join(home, ".config", "pimctl", "config.yaml")
-	if _, err := os.Stat(p); err == nil {
-		return p
-	}
-	return ""
+	return filepath.Join(home, ".config", "azkit", "config.yaml")
 }

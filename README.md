@@ -107,24 +107,25 @@ eval "$(pimctl completion)"
 
 ## Configuration
 
-Config is optional. By default, `pimctl` reads:
+Config is optional. By default, `azkit` reads:
 
 ```text
-~/.config/pimctl/config.yaml
+~/.config/azkit/config.yaml
 ```
 
 Example:
 
 ```yaml
-default_duration: 2h
-subscription_id: 00000000-0000-0000-0000-000000000000
+pim:
+  default_duration: 2h
+  subscription_id: 00000000-0000-0000-0000-000000000000
 ```
 
-Environment variables use the `PIMCTL_` prefix:
+Environment variables use the `AZKIT_` prefix:
 
 ```bash
-export PIMCTL_DEFAULT_DURATION=2h
-export PIMCTL_SUBSCRIPTION_ID=00000000-0000-0000-0000-000000000000
+export AZKIT_PIM_DEFAULT_DURATION=2h
+export AZKIT_PIM_SUBSCRIPTION_ID=00000000-0000-0000-0000-000000000000
 ```
 
 ## License

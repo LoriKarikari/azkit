@@ -151,7 +151,7 @@ func TestActivate_configDefaultDuration(t *testing.T) {
 		stderr:    &stderr,
 		activator: activator,
 	})
-	configPath := writeConfig(t, "default_duration: 30m\n")
+	configPath := writeConfig(t, "pim:\n  default_duration: 30m\n")
 
 	code := runner.Run(t.Context(), []string{
 		"--config", configPath,
