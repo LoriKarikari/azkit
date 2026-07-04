@@ -40,14 +40,14 @@ func RenderStatusJSON(as []domain.ActiveAssignment) string {
 	return marshalJSON(out)
 }
 
-func RenderStatusHuman(as []domain.ActiveAssignment, verbose bool) string {
+func RenderStatusHuman(as []domain.ActiveAssignment, extended bool) string {
 	if len(as) == 0 {
 		return "No active assignments.\n"
 	}
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 
-	if verbose {
+	if extended {
 		_, _ = fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tSTATUS\tSTARTED\tEXPIRES\tASSIGNMENT ID\tSCOPE ID")
 		for _, a := range as {
 			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",

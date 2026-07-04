@@ -42,14 +42,14 @@ func marshalJSON(v any) string {
 	return string(b) + "\n"
 }
 
-func RenderHuman(as []domain.EligibleAssignment, verbose bool) string {
+func RenderHuman(as []domain.EligibleAssignment, extended bool) string {
 	if len(as) == 0 {
 		return "No eligible assignments.\n"
 	}
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 2, ' ', 0)
 
-	if verbose {
+	if extended {
 		_, _ = fmt.Fprintln(w, "ROLE\tTYPE\tNAME\tELIGIBLE UNTIL\tASSIGNMENT ID\tSCOPE ID")
 		for _, a := range as {
 			_, _ = fmt.Fprintf(
