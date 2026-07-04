@@ -22,7 +22,7 @@ func FilterEligibleAssignments(
 
 func eligibleAssignmentMatches(a domain.EligibleAssignment, req domain.ActivationRequest) bool {
 	role := strings.TrimSpace(req.Role)
-	if role != "" && a.Role != role && a.RoleDefID != role {
+	if role != "" && !strings.EqualFold(a.Role, role) && a.RoleDefID != role {
 		return false
 	}
 	if req.ScopeID != "" && a.ScopeID != req.ScopeID {

@@ -39,7 +39,7 @@ func TestFilterEligibleAssignments(t *testing.T) {
 		{
 			name: "role display name",
 			req: domain.ActivationRequest{
-				Role: "Reader",
+				Role: "reader",
 			},
 			expected: []string{"Reader"},
 		},

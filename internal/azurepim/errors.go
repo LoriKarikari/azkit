@@ -38,6 +38,5 @@ func azurePIMPermissionDenied(err error) bool {
 	if errors.As(err, &responseErr) {
 		return responseErr.StatusCode == http.StatusForbidden || responseErr.ErrorCode == "AuthorizationFailed"
 	}
-	message := err.Error()
-	return strings.Contains(message, "AuthorizationFailed") || strings.Contains(message, "403")
+	return strings.Contains(err.Error(), "AuthorizationFailed")
 }
