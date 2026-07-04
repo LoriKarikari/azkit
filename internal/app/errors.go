@@ -87,7 +87,7 @@ func AliasNameCollision(alias string, sub domain.Subscription) *Error {
 
 func AliasAlreadyExists(alias string) *Error {
 	return &Error{
-		Code:    domain.CodeAliasNotFound,
+		Code:    domain.CodeAliasAlreadyExists,
 		Message: fmt.Sprintf("Alias %q already exists. Remove it first or choose a different name.", alias),
 	}
 }

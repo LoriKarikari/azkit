@@ -5,6 +5,7 @@ type Code string
 const (
 	CodeActiveAssignmentNotFound     Code = "active_assignment_not_found"
 	CodeActiveContextRemoval         Code = "active_context_removal"
+	CodeAliasAlreadyExists           Code = "alias_already_exists"
 	CodeAliasNameCollision           Code = "alias_name_collision"
 	CodeAliasNotFound                Code = "alias_not_found"
 	CodeAmbiguousSubscription        Code = "ambiguous_subscription"
