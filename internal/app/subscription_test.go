@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"errors"
+	"maps"
 	"testing"
 	"time"
 
@@ -355,9 +356,5 @@ func mapsClone(m map[string]domain.Subscription) map[string]domain.Subscription 
 	if m == nil {
 		return map[string]domain.Subscription{}
 	}
-	out := make(map[string]domain.Subscription, len(m))
-	for k, v := range m {
-		out[k] = v
-	}
-	return out
+	return maps.Clone(m)
 }
