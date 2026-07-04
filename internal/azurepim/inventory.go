@@ -14,6 +14,7 @@ func listAcrossSubscriptions[T any](
 	operation string,
 	list func(context.Context, subscription) ([]T, error),
 	enrich func(*T, subscription),
+	key func(T) string,
 ) ([]T, error) {
 	subs, err := subscriptions.ListSubscriptions(ctx)
 	if err != nil {
@@ -23,6 +24,7 @@ func listAcrossSubscriptions[T any](
 	log.Debug("listed subscriptions", slog.Int("count", len(subs)))
 
 	all := []T{}
+	seen := map[string]struct{}{}
 	for _, sub := range subs {
 		if sub.ID == "" {
 			continue
@@ -44,8 +46,15 @@ func listAcrossSubscriptions[T any](
 		)
 		for i := range items {
 			enrich(&items[i], sub)
+			itemKey := key(items[i])
+			if itemKey != "" {
+				if _, ok := seen[itemKey]; ok {
+					continue
+				}
+				seen[itemKey] = struct{}{}
+			}
+			all = append(all, items[i])
 		}
-		all = append(all, items...)
 	}
 	return all, nil
 }

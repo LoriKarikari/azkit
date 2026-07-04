@@ -62,6 +62,40 @@ func TestActiveAssignments_returnsInstanceError(t *testing.T) {
 	}
 }
 
+func TestActiveAssignments_deduplicatesInheritedAssignments(t *testing.T) {
+	now := activeTime("2026-05-07T18:00:00Z")
+	duplicate := activeInstance(
+		"mg-active",
+		"Reader",
+		"/roleDefs/reader",
+		"/providers/Microsoft.Management/managementGroups/platform",
+		"platform",
+		armauthorization.StatusProvisioned,
+		"2026-05-07T17:00:00Z",
+		"2026-05-07T19:00:00Z",
+	)
+	adapter := newActiveAssignments(
+		fakeSubscriptions{subs: []subscription{{ID: "sub-a", Name: "Sub A"}, {ID: "sub-b", Name: "Sub B"}}},
+		fakeActiveInstances{instances: map[string][]*armauthorization.RoleAssignmentScheduleInstance{
+			"/subscriptions/sub-a": {duplicate},
+			"/subscriptions/sub-b": {duplicate},
+		}},
+		func() time.Time { return now },
+		nil,
+	)
+
+	got, err := adapter.ListActive(t.Context())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("want 1 assignment, got %d: %+v", len(got), got)
+	}
+	if got[0].SubscriptionName != "Sub A" {
+		t.Fatalf("want first subscription enrichment kept, got %+v", got[0])
+	}
+}
+
 type fakeActiveInstances struct {
 	instances map[string][]*armauthorization.RoleAssignmentScheduleInstance
 	err       error
