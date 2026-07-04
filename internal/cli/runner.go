@@ -42,6 +42,7 @@ type Services struct {
 	Deactivate            func(*slog.Logger) (*app.DeactivationService, error)
 	ActivateInteractive   activateInteractiveFunc
 	DeactivateInteractive deactivateInteractiveFunc
+	PickContext           contextPickerFunc
 }
 
 type Runner struct {
@@ -56,6 +57,9 @@ func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
 	}
 	if services.DeactivateInteractive == nil {
 		services.DeactivateInteractive = interactive.Deactivate
+	}
+	if services.PickContext == nil {
+		services.PickContext = interactive.PickContext
 	}
 	return &Runner{
 		services: services,

@@ -62,6 +62,35 @@ func (s *ContextService) List(ctx context.Context) ([]domain.TenantContext, erro
 	return contexts, nil
 }
 
+func (s *ContextService) Get(ctx context.Context, name string) (domain.TenantContext, error) {
+	name = strings.TrimSpace(name)
+	if err := validateContextName(name); err != nil {
+		return domain.TenantContext{}, err
+	}
+	contexts, err := s.List(ctx)
+	if err != nil {
+		return domain.TenantContext{}, err
+	}
+	for _, item := range contexts {
+		if item.Name == name {
+			return item, nil
+		}
+	}
+	return domain.TenantContext{}, ContextNotFound(name)
+}
+
+func (s *ContextService) Current(ctx context.Context) (domain.TenantContext, bool, error) {
+	name := strings.TrimSpace(s.activeName())
+	if name == "" {
+		return domain.TenantContext{}, false, nil
+	}
+	item, err := s.Get(ctx, name)
+	if err != nil {
+		return domain.TenantContext{}, false, err
+	}
+	return item, true, nil
+}
+
 func (s *ContextService) Remove(ctx context.Context, name string, force bool) error {
 	name = strings.TrimSpace(name)
 	if err := validateContextName(name); err != nil {
@@ -100,10 +129,24 @@ func MissingTenantID() *Error {
 	}
 }
 
+func MissingContextName() *Error {
+	return &Error{
+		Code:    domain.CodeMissingContext,
+		Message: "Context name is required outside an interactive terminal.",
+	}
+}
+
 func ContextNotFound(name string) *Error {
 	return &Error{
 		Code:    domain.CodeContextNotFound,
 		Message: fmt.Sprintf("Context %q was not found.", name),
+	}
+}
+
+func PreviousContextNotFound() *Error {
+	return &Error{
+		Code:    domain.CodePreviousContextNotFound,
+		Message: "Previous context is not set in this shell.",
 	}
 }
 
