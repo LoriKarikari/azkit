@@ -27,7 +27,7 @@ func TestRenderStatusHuman_empty(t *testing.T) {
 	}
 }
 
-func TestRenderStatusHuman_verbose(t *testing.T) {
+func TestRenderStatusHuman_extended(t *testing.T) {
 	as := []domain.ActiveAssignment{
 		{ID: "s1", Role: "Contributor", ScopeType: domain.ScopeSubscription, ScopeName: "sub-prod", ScopeID: "/subscriptions/abc", StartTime: at("2026-05-07T18:00:00Z"), EndTime: at("2026-05-07T20:00:00Z"), Status: domain.ActiveAssignmentActive},
 	}

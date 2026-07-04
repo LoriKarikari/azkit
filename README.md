@@ -53,11 +53,11 @@ pimctl status
 Find the `assignment_id` for an active assignment:
 
 ```bash
-pimctl status --verbose
+pimctl status --extended
 pimctl status --json
 ```
 
-Default status output stays short. Use `--verbose` or `--json` when you need the ID for a script or deactivation.
+Default status output stays short. Use `--extended` or `--json` when you need the ID for a script or deactivation.
 
 Deactivate an active assignment:
 

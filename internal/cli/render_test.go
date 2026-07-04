@@ -28,7 +28,7 @@ func TestRenderHuman_empty(t *testing.T) {
 	}
 }
 
-func TestRenderHuman_verbose(t *testing.T) {
+func TestRenderHuman_extended(t *testing.T) {
 	as := []domain.EligibleAssignment{
 		{ID: "a1", Role: "Contributor", ScopeType: domain.ScopeSubscription, ScopeName: "sub-prod", ScopeID: "/subscriptions/abc", EligibleUntil: at("2026-05-07T20:00:00Z")},
 	}

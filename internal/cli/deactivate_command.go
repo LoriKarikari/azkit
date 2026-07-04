@@ -29,7 +29,7 @@ func (c *DeactivateCmd) Run(ctx context.Context, services Services, streams *Str
 	if c.AssignmentID == "" {
 		return &app.Error{
 			Code:    domain.CodeActiveAssignmentNotFound,
-			Message: "Assignment ID is required. Run azkit pim status --verbose to find it.",
+			Message: "Assignment ID is required. Run azkit pim status --extended to find it.",
 		}
 	}
 
