@@ -13,7 +13,7 @@ jobs:
     name: Azure PIM live tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    if: ${{ vars.PIMCTL_LIVE_TESTS == '1' }}
+    if: ${{ vars.AZKIT_LIVE_TESTS == '1' }}
 
     steps:
       - name: Checkout
@@ -27,8 +27,8 @@ jobs:
 
       - name: Run live tests
         env:
-          PIMCTL_LIVE_TESTS: ${{ vars.PIMCTL_LIVE_TESTS }}
-          PIMCTL_LIVE_SUBSCRIPTION: ${{ secrets.PIMCTL_LIVE_SUBSCRIPTION }}
+          AZKIT_LIVE_TESTS: ${{ vars.AZKIT_LIVE_TESTS }}
+          AZKIT_LIVE_SUBSCRIPTION: ${{ secrets.AZKIT_LIVE_SUBSCRIPTION }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
