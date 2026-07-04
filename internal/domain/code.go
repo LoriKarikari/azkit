@@ -13,6 +13,8 @@ const (
 	CodeMissingReason            Code = "missing_reason"
 	CodeMissingTenant            Code = "missing_tenant"
 	CodeMissingContext           Code = "missing_context"
+	CodeMissingActiveContext     Code = "missing_active_context"
+	CodeContextNeedsLogin        Code = "context_needs_login"
 	CodeInvalidDuration          Code = "invalid_duration"
 	CodeInvalidContextName       Code = "invalid_context_name"
 	CodeConflictingSelectors     Code = "conflicting_selectors"

@@ -136,6 +136,24 @@ func MissingContextName() *Error {
 	}
 }
 
+func MissingActiveContext() *Error {
+	return &Error{
+		Code:    domain.CodeMissingActiveContext,
+		Message: "No active context. Run `azkit ctx <name>` first.",
+	}
+}
+
+func ContextNeedsLogin(ctx domain.TenantContext) *Error {
+	return &Error{
+		Code: domain.CodeContextNeedsLogin,
+		Message: fmt.Sprintf(
+			"Context %q needs Azure login. Run `az login --tenant %s`.",
+			ctx.Name,
+			ctx.TenantID,
+		),
+	}
+}
+
 func ContextNotFound(name string) *Error {
 	return &Error{
 		Code:    domain.CodeContextNotFound,

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/willabides/kongplete"
@@ -40,9 +41,11 @@ type Services struct {
 	Status                func(*slog.Logger) (*app.StatusService, error)
 	Activate              func(*slog.Logger) (*app.ActivationService, error)
 	Deactivate            func(*slog.Logger) (*app.DeactivationService, error)
+	SubscriptionSource    func(*slog.Logger) (app.SubscriptionSource, error)
 	ActivateInteractive   activateInteractiveFunc
 	DeactivateInteractive deactivateInteractiveFunc
 	PickContext           contextPickerFunc
+	Now                   func() time.Time
 }
 
 type Runner struct {
@@ -61,6 +64,9 @@ func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
 	if services.PickContext == nil {
 		services.PickContext = interactive.PickContext
 	}
+	if services.Now == nil {
+		services.Now = time.Now
+	}
 	return &Runner{
 		services: services,
 		streams:  &Streams{Stdout: stdout, Stderr: stderr},
@@ -74,6 +80,7 @@ type CLI struct {
 	ConfigPath  string           `name:"config" help:"Path to config file"`
 	Pim         pimCmd           `cmd:"" help:"Manage Azure resource-role PIM workflows"`
 	Ctx         CtxCmd           `cmd:"" name:"ctx" help:"Manage tenant contexts"`
+	Sub         SubCmd           `cmd:"" name:"sub" help:"Manage subscriptions in the active context"`
 	ShellInit   ShellInitCmd     `cmd:"" name:"shell-init" help:"Print shell integration script"`
 	Completion  CompletionCmd    `cmd:"" help:"Generate shell completion script"`
 	Version     VersionCmd       `cmd:"" help:"Show version information"`
@@ -184,7 +191,7 @@ func commandNeedsConfig(parsed *kong.Context) bool {
 		return true
 	}
 	switch command[0] {
-	case "completion", "ctx", "shell-init", "version":
+	case "completion", "ctx", "shell-init", "sub", "version":
 		return false
 	}
 	return true

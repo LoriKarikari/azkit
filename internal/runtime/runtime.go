@@ -69,5 +69,12 @@ func (r *Runtime) Services() cli.Services {
 			deactivator := azurepim.NewDeactivationStore(cred, log)
 			return app.NewDeactivationService(active, deactivator), nil
 		},
+		SubscriptionSource: func(*slog.Logger) (app.SubscriptionSource, error) {
+			cred, err := r.credential()
+			if err != nil {
+				return nil, err
+			}
+			return azurepim.NewSubscriptionSourceFromCred(cred), nil
+		},
 	}
 }
