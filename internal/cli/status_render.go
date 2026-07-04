@@ -10,14 +10,16 @@ import (
 )
 
 type statusEntryJSON struct {
-	Role         string `json:"role"`
-	ScopeType    string `json:"scope_type"`
-	ScopeID      string `json:"scope_id"`
-	ScopeName    string `json:"scope_name"`
-	Status       string `json:"status"`
-	StartedAt    string `json:"started_at"`
-	ExpiresAt    string `json:"expires_at"`
-	AssignmentID string `json:"assignment_id"`
+	Role             string `json:"role"`
+	ScopeType        string `json:"scope_type"`
+	ScopeID          string `json:"scope_id"`
+	ScopeName        string `json:"scope_name"`
+	SubscriptionID   string `json:"subscription_id"`
+	SubscriptionName string `json:"subscription_name"`
+	Status           string `json:"status"`
+	StartedAt        string `json:"started_at"`
+	ExpiresAt        string `json:"expires_at"`
+	AssignmentID     string `json:"assignment_id"`
 }
 
 func RenderStatusJSON(as []domain.ActiveAssignment) string {
@@ -27,14 +29,16 @@ func RenderStatusJSON(as []domain.ActiveAssignment) string {
 	out := make([]statusEntryJSON, len(as))
 	for i, a := range as {
 		out[i] = statusEntryJSON{
-			Role:         a.Role,
-			ScopeType:    string(a.ScopeType),
-			ScopeID:      a.ScopeID,
-			ScopeName:    a.ScopeName,
-			Status:       string(a.Status),
-			StartedAt:    jsonTime(a.StartTime),
-			ExpiresAt:    jsonTime(a.EndTime),
-			AssignmentID: a.ID,
+			Role:             a.Role,
+			ScopeType:        string(a.ScopeType),
+			ScopeID:          a.ScopeID,
+			ScopeName:        a.ScopeName,
+			SubscriptionID:   a.SubscriptionID,
+			SubscriptionName: a.SubscriptionName,
+			Status:           string(a.Status),
+			StartedAt:        jsonTime(a.StartTime),
+			ExpiresAt:        jsonTime(a.EndTime),
+			AssignmentID:     a.ID,
 		}
 	}
 	return marshalJSON(out)

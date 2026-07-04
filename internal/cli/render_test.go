@@ -41,7 +41,7 @@ func TestRenderHuman_extended(t *testing.T) {
 
 func TestRenderJSON_populated(t *testing.T) {
 	as := []domain.EligibleAssignment{
-		{ID: "a1", Role: "Contributor", ScopeType: domain.ScopeSubscription, ScopeName: "sub-prod", ScopeID: "/subscriptions/abc", EligibleUntil: at("2026-05-07T20:00:00Z")},
+		{ID: "a1", Role: "Contributor", ScopeType: domain.ScopeSubscription, ScopeName: "sub-prod", ScopeID: "/subscriptions/abc", SubscriptionID: "abc", SubscriptionName: "sub-prod", EligibleUntil: at("2026-05-07T20:00:00Z")},
 	}
 	got := cli.RenderJSON(as)
 	var decoded []map[string]any
@@ -52,12 +52,14 @@ func TestRenderJSON_populated(t *testing.T) {
 		t.Fatalf("want 1 assignment, got %d", len(decoded))
 	}
 	want := map[string]any{
-		"role":           "Contributor",
-		"scope_type":     "subscription",
-		"scope_id":       "/subscriptions/abc",
-		"scope_name":     "sub-prod",
-		"eligible_until": "2026-05-07T20:00:00Z",
-		"assignment_id":  "a1",
+		"role":              "Contributor",
+		"scope_type":        "subscription",
+		"scope_id":          "/subscriptions/abc",
+		"scope_name":        "sub-prod",
+		"subscription_id":   "abc",
+		"subscription_name": "sub-prod",
+		"eligible_until":    "2026-05-07T20:00:00Z",
+		"assignment_id":     "a1",
 	}
 	for key, value := range want {
 		if decoded[0][key] != value {
