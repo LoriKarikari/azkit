@@ -114,7 +114,7 @@ func ActiveMatchesRoleScope(active ActiveAssignment, role, roleDefID, scopeID st
 	if roleDefID != "" && strings.EqualFold(active.RoleDefID, roleDefID) {
 		return true
 	}
-	return active.Role == role
+	return strings.EqualFold(active.Role, role)
 }
 
 func ActivationResultFromActive(active ActiveAssignment, outcome ActivationOutcome) ActivationResult {

@@ -37,9 +37,9 @@ func TestEligibleAssignments_listsAcrossSubscriptions(t *testing.T) {
 	}
 }
 
-func TestEligibleAssignments_wrapsSubscriptionError(t *testing.T) {
+func TestEligibleAssignments_wrapsSubscriptionErrorAsAzureAPIError(t *testing.T) {
 	adapter := newEligibleAssignments(
-		fakeSubscriptions{err: errors.New("token failed")},
+		fakeSubscriptions{err: errors.New("network failed")},
 		fakeSchedules{},
 		nil,
 	)
@@ -49,8 +49,8 @@ func TestEligibleAssignments_wrapsSubscriptionError(t *testing.T) {
 	if !errors.As(err, &appErr) {
 		t.Fatalf("want app error, got %T", err)
 	}
-	if appErr.Code != domain.CodeAuthFailed {
-		t.Fatalf("want %s, got %s", domain.CodeAuthFailed, appErr.Code)
+	if appErr.Code != domain.CodeAzureAPIError {
+		t.Fatalf("want %s, got %s", domain.CodeAzureAPIError, appErr.Code)
 	}
 }
 

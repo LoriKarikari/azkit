@@ -35,7 +35,7 @@ func (activationResolver) Resolve(req domain.ActivationRequest, eligible []domai
 
 func findMatch(eligible []domain.EligibleAssignment, scopeID, role string) (domain.EligibleAssignment, bool) {
 	return lo.Find(eligible, func(a domain.EligibleAssignment) bool {
-		return a.ScopeID == scopeID && (a.Role == role || a.RoleDefID == role)
+		return a.ScopeID == scopeID && (strings.EqualFold(a.Role, role) || a.RoleDefID == role)
 	})
 }
 
@@ -126,7 +126,10 @@ func resolveByName(name string, eligible []domain.EligibleAssignment) (string, e
 	for id := range seen {
 		return id, nil
 	}
-	return "", nil
+	return "", &Error{
+		Code:    domain.CodeUnknownSubscription,
+		Message: fmt.Sprintf("Subscription %q not found among your eligible assignments.%s", name, selectorSuggestions(subscriptionSuggestions(eligible))),
+	}
 }
 
 func subscriptionIDFromScope(scopeID string) string {

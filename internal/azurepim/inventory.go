@@ -3,8 +3,6 @@ package azurepim
 import (
 	"context"
 	"log/slog"
-
-	"github.com/LoriKarikari/azkit/internal/app"
 )
 
 func listAcrossSubscriptions[T any](
@@ -18,7 +16,7 @@ func listAcrossSubscriptions[T any](
 ) ([]T, error) {
 	subs, err := subscriptions.ListSubscriptions(ctx)
 	if err != nil {
-		return nil, app.AuthFailed(err)
+		return nil, azurePIMOperationError(err)
 	}
 
 	log.Debug("listed subscriptions", slog.Int("count", len(subs)))

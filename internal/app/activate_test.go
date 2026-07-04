@@ -22,7 +22,7 @@ func TestActivation_byScopeID(t *testing.T) {
 	svc := app.NewActivationService(store, nil, act)
 
 	got, err := svc.Activate(t.Context(), domain.ActivationRequest{
-		ScopeID: "/sub/abc", Role: "Contributor", Reason: "Deploy", Duration: 2 * time.Hour,
+		ScopeID: "/sub/abc", Role: "contributor", Reason: "Deploy", Duration: 2 * time.Hour,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
