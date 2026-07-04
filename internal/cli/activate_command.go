@@ -73,7 +73,7 @@ func (c *ActivateCmd) Run(ctx context.Context, services Services, streams *Strea
 	if err != nil {
 		if errors.Is(err, interactive.ErrCanceled) {
 			_, _ = io.WriteString(streams.Stderr, "Activation canceled.\n")
-			return nil
+			return err
 		}
 		return err
 	}
@@ -159,7 +159,7 @@ func (c *ActivateCmd) runInteractive(ctx context.Context, flow interactiveActiva
 	if err != nil {
 		if errors.Is(err, interactive.ErrCanceled) {
 			_, _ = io.WriteString(flow.streams.Stderr, "Activation canceled.\n")
-			return nil
+			return err
 		}
 		return err
 	}

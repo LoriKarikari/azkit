@@ -45,8 +45,8 @@ func TestCancelActivationInteractive(t *testing.T) {
 	}, &stdout, &stderr)
 
 	code := runner.Run(t.Context(), []string{"pim", "activate"})
-	if code != 0 {
-		t.Fatalf("want exit 0, got %d", code)
+	if code != 130 {
+		t.Fatalf("want exit 130, got %d", code)
 	}
 	if !strings.Contains(stderr.String(), "Activation canceled") {
 		t.Fatalf("want cancel message on stderr, got: %q", stderr.String())
@@ -81,8 +81,8 @@ func TestCancelDeactivationInteractive(t *testing.T) {
 	}, &stdout, &stderr)
 
 	code := runner.Run(t.Context(), []string{"pim", "deactivate"})
-	if code != 0 {
-		t.Fatalf("want exit 0, got %d", code)
+	if code != 130 {
+		t.Fatalf("want exit 130, got %d", code)
 	}
 	if !strings.Contains(stderr.String(), "Deactivation canceled") {
 		t.Fatalf("want cancel message on stderr, got: %q", stderr.String())
