@@ -42,6 +42,12 @@ func TestAzkitBinary(t *testing.T) {
 			wantStdout: "azkit() {",
 		},
 		{
+			name:       "ctx list empty",
+			args:       []string{"ctx", "-l"},
+			wantCode:   0,
+			wantStdout: "No contexts.",
+		},
+		{
 			name:         "usage error exits two",
 			args:         []string{"not-a-command"},
 			wantCode:     2,
@@ -103,6 +109,7 @@ func runAzkit(t *testing.T, bin string, args ...string) (string, string, int) {
 	cmd.Env = append(os.Environ(),
 		"NO_COLOR=1",
 		"XDG_CONFIG_HOME="+t.TempDir(),
+		"XDG_STATE_HOME="+t.TempDir(),
 	)
 
 	var stdout bytes.Buffer
