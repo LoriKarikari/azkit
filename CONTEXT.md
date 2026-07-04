@@ -68,6 +68,10 @@ _Avoid_: Config directory, token store
 The tenant context selected for the current shell.
 _Avoid_: Default tenant, current account
 
+**Previous context**:
+The tenant context that was active before the last context switch in the current shell.
+_Avoid_: Backup context, fallback tenant
+
 **Interactive activation**:
 A guided terminal flow for choosing and activating an eligible assignment.
 _Avoid_: Wizard, dashboard
