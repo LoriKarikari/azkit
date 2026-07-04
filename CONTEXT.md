@@ -52,6 +52,22 @@ _Avoid_: Deactivated assignment, confirmed deactivation
 The Azure identity used by the CLI to call Azure and Microsoft APIs.
 _Avoid_: Session, login state
 
+**Tenant context**:
+A user-named binding to an Azure tenant. A tenant context owns a local credential cache directory for that tenant.
+_Avoid_: Profile, environment
+
+**Context catalog**:
+The local list of saved tenant contexts. Listing the catalog is a local operation and does not call Azure.
+_Avoid_: Account list, tenant registry
+
+**Context credential cache**:
+The local directory used as the Azure credential cache for one tenant context.
+_Avoid_: Config directory, token store
+
+**Active context**:
+The tenant context selected for the current shell.
+_Avoid_: Default tenant, current account
+
 **Interactive activation**:
 A guided terminal flow for choosing and activating an eligible assignment.
 _Avoid_: Wizard, dashboard

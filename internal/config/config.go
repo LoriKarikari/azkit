@@ -110,13 +110,35 @@ func envMapper(key string, value string) (string, any) {
 	}
 }
 
-func defaultConfigPath() string {
+func ConfigDir(configPath string) (string, error) {
+	if configPath != "" {
+		return filepath.Dir(configPath), nil
+	}
 	if dir := os.Getenv("XDG_CONFIG_HOME"); dir != "" {
-		return filepath.Join(dir, "azkit", "config.yaml")
+		return filepath.Join(dir, "azkit"), nil
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".config", "azkit"), nil
+}
+
+func StateDir() (string, error) {
+	if dir := os.Getenv("XDG_STATE_HOME"); dir != "" {
+		return filepath.Join(dir, "azkit"), nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".local", "state", "azkit"), nil
+}
+
+func defaultConfigPath() string {
+	dir, err := ConfigDir("")
+	if err != nil {
 		return ""
 	}
-	return filepath.Join(home, ".config", "azkit", "config.yaml")
+	return filepath.Join(dir, "config.yaml")
 }

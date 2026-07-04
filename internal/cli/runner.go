@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/alecthomas/kong"
 	"github.com/willabides/kongplete"
@@ -17,12 +18,13 @@ import (
 )
 
 type Streams struct {
-	Stdout   io.Writer
-	Stderr   io.Writer
-	Log      *slog.Logger
-	Config   *config.Config
-	ShellEnv bool
-	Shell    string
+	Stdout     io.Writer
+	Stderr     io.Writer
+	Log        *slog.Logger
+	Config     *config.Config
+	ConfigPath string
+	ShellEnv   bool
+	Shell      string
 }
 
 type activateInteractiveFunc func(context.Context, []domain.EligibleAssignment, *app.ActivationService, *config.Config, interactive.ActivationInput) (*domain.ActivationResult, error)
@@ -67,6 +69,7 @@ type CLI struct {
 	ShellEnv    bool             `name:"shell-env" hidden:"" help:"Emit shell environment changes for shell integration"`
 	ConfigPath  string           `name:"config" help:"Path to config file"`
 	Pim         pimCmd           `cmd:"" help:"Manage Azure resource-role PIM workflows"`
+	Ctx         CtxCmd           `cmd:"" name:"ctx" help:"Manage tenant contexts"`
 	ShellInit   ShellInitCmd     `cmd:"" name:"shell-init" help:"Print shell integration script"`
 	Completion  CompletionCmd    `cmd:"" help:"Generate shell completion script"`
 	Version     VersionCmd       `cmd:"" help:"Show version information"`
@@ -123,6 +126,7 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 	}
 	r.log = slog.New(slog.NewTextHandler(r.streams.Stderr, &slog.HandlerOptions{Level: level}))
 	r.streams.Log = r.log
+	r.streams.ConfigPath = model.ConfigPath
 	r.streams.ShellEnv = model.ShellEnv
 	r.streams.Shell = os.Getenv("AZKIT_SHELL")
 
@@ -171,12 +175,12 @@ func azkitHelp(options kong.HelpOptions, ctx *kong.Context) error {
 }
 
 func commandNeedsConfig(parsed *kong.Context) bool {
-	selected := parsed.Selected()
-	if selected == nil {
+	command := strings.Fields(parsed.Command())
+	if len(command) == 0 {
 		return true
 	}
-	switch selected.Name {
-	case "completion", "shell-init", "version":
+	switch command[0] {
+	case "completion", "ctx", "shell-init", "version":
 		return false
 	}
 	return true
