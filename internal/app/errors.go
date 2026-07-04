@@ -39,18 +39,10 @@ func AzureAPIError(err error) *Error {
 	}
 }
 
-func PermissionDenied(err error) *Error {
+func PermissionDenied(err error, operation string) *Error {
 	return &Error{
 		Code:    domain.CodePermissionDenied,
-		Message: "Insufficient permissions for PIM operations.",
-		Cause:   err,
-	}
-}
-
-func AzurePermissionDenied(err error) *Error {
-	return &Error{
-		Code:    domain.CodePermissionDenied,
-		Message: "Insufficient permissions for Azure operations.",
+		Message: fmt.Sprintf("Insufficient permissions for %s operations.", operation),
 		Cause:   err,
 	}
 }

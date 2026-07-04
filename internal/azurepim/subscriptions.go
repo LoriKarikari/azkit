@@ -21,7 +21,7 @@ func NewSubscriptionSourceFromCred(cred azcore.TokenCredential) *SubscriptionSou
 
 func azureSubscriptionOperationError(err error) error {
 	if azurePIMPermissionDenied(err) {
-		return app.AzurePermissionDenied(err)
+		return app.PermissionDenied(err, "Azure")
 	}
 	return app.AzureAPIError(err)
 }

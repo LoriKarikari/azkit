@@ -139,7 +139,7 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 	if commandNeedsConfig(parsed) {
 		cfg, err := config.Load(model.ConfigPath)
 		if err != nil {
-			_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(model, parsed)))
+			_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(parsed)))
 			return 1
 		}
 		r.streams.Config = cfg
@@ -149,7 +149,7 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 		if errors.Is(err, interactive.ErrCanceled) {
 			return 130
 		}
-		_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(model, parsed)))
+		_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(parsed)))
 		return 1
 	}
 	return 0
@@ -185,14 +185,10 @@ func commandNeedsConfig(parsed *kong.Context) bool {
 	if len(command) == 0 {
 		return true
 	}
-	switch command[0] {
-	case "completion", "ctx", "shell-init", "sub", "version":
-		return false
-	}
-	return true
+	return command[0] == "pim"
 }
 
-func wantsJSON(_ CLI, parsed *kong.Context) bool {
+func wantsJSON(parsed *kong.Context) bool {
 	selected := parsed.Selected()
 	if selected == nil || !selected.Target.IsValid() {
 		return false

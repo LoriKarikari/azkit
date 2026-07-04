@@ -39,7 +39,7 @@ func TestSubscriptionService_usesFreshCache(t *testing.T) {
 	}
 }
 
-func TestSubscriptionService_refreshInvalidatesCacheAfterFetch(t *testing.T) {
+func TestSubscriptionService_refreshOverwritesCache(t *testing.T) {
 	now := time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC)
 	cache := &fakeSubscriptionCache{
 		cached: domain.SubscriptionCache{
@@ -62,9 +62,6 @@ func TestSubscriptionService_refreshInvalidatesCacheAfterFetch(t *testing.T) {
 	}
 	if source.calls != 1 {
 		t.Fatalf("want one source call, got %d", source.calls)
-	}
-	if !cache.invalidated {
-		t.Fatal("cache should be invalidated after a successful refresh fetch")
 	}
 	if !cache.saved.FetchedAt.Equal(now) || cache.saved.Subscriptions[0].ID != "sub-live" {
 		t.Fatalf("unexpected saved cache: %+v", cache.saved)
@@ -89,8 +86,8 @@ func TestSubscriptionService_refreshKeepsCacheWhenFetchFails(t *testing.T) {
 	if err == nil {
 		t.Fatal("want refresh fetch error")
 	}
-	if cache.invalidated {
-		t.Fatal("cache should not be invalidated when refresh fetch fails")
+	if cache.saved.Subscriptions != nil {
+		t.Fatal("cache should not be saved when refresh fetch fails")
 	}
 }
 
@@ -195,10 +192,9 @@ func readyContext() domain.TenantContext {
 }
 
 type fakeSubscriptionCache struct {
-	cached      domain.SubscriptionCache
-	saved       domain.SubscriptionCache
-	hasCached   bool
-	invalidated bool
+	cached    domain.SubscriptionCache
+	saved     domain.SubscriptionCache
+	hasCached bool
 }
 
 func (f *fakeSubscriptionCache) Load(context.Context, domain.TenantContext) (domain.SubscriptionCache, bool, error) {
@@ -207,12 +203,6 @@ func (f *fakeSubscriptionCache) Load(context.Context, domain.TenantContext) (dom
 
 func (f *fakeSubscriptionCache) Save(_ context.Context, _ domain.TenantContext, cache domain.SubscriptionCache) error {
 	f.saved = cache
-	return nil
-}
-
-func (f *fakeSubscriptionCache) Invalidate(context.Context, domain.TenantContext) error {
-	f.invalidated = true
-	f.hasCached = false
 	return nil
 }
 

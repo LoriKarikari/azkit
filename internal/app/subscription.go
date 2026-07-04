@@ -18,7 +18,6 @@ type SubscriptionSourceFactory func(domain.TenantContext) (SubscriptionSource, e
 type SubscriptionCache interface {
 	Load(context.Context, domain.TenantContext) (domain.SubscriptionCache, bool, error)
 	Save(context.Context, domain.TenantContext, domain.SubscriptionCache) error
-	Invalidate(context.Context, domain.TenantContext) error
 }
 
 type SubscriptionService struct {
@@ -68,11 +67,6 @@ func (s *SubscriptionService) List(
 	subscriptions, err := source.ListSubscriptions(ctx)
 	if err != nil {
 		return nil, err
-	}
-	if refresh {
-		if err := s.cache.Invalidate(ctx, active); err != nil {
-			return nil, err
-		}
 	}
 	cached := domain.SubscriptionCache{
 		FetchedAt:     s.now().UTC(),

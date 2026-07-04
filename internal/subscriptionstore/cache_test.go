@@ -10,7 +10,7 @@ import (
 	"github.com/LoriKarikari/azkit/internal/subscriptionstore"
 )
 
-func TestCache_SaveLoadAndInvalidate(t *testing.T) {
+func TestCache_SaveAndLoadRoundTrip(t *testing.T) {
 	cache := subscriptionstore.New()
 	active := domain.TenantContext{Name: "prod", TenantID: "tenant", Dir: t.TempDir()}
 	fetchedAt := time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC)
@@ -39,16 +39,30 @@ func TestCache_SaveLoadAndInvalidate(t *testing.T) {
 	if gotMode := info.Mode().Perm(); gotMode != 0600 {
 		t.Fatalf("want 0600 cache file, got %v", gotMode)
 	}
+}
 
-	if err := cache.Invalidate(t.Context(), active); err != nil {
-		t.Fatalf("invalidate cache: %v", err)
+func TestCache_SaveOverwritesPreviousCache(t *testing.T) {
+	cache := subscriptionstore.New()
+	active := domain.TenantContext{Name: "prod", TenantID: "tenant", Dir: t.TempDir()}
+
+	if err := cache.Save(t.Context(), active, domain.SubscriptionCache{
+		FetchedAt:     time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC),
+		Subscriptions: []domain.Subscription{{ID: "sub-old", Name: "Old"}},
+	}); err != nil {
+		t.Fatalf("save old cache: %v", err)
 	}
-	_, ok, err = cache.Load(t.Context(), active)
+	if err := cache.Save(t.Context(), active, domain.SubscriptionCache{
+		FetchedAt:     time.Date(2026, 7, 4, 13, 0, 0, 0, time.UTC),
+		Subscriptions: []domain.Subscription{{ID: "sub-new", Name: "New"}},
+	}); err != nil {
+		t.Fatalf("save new cache: %v", err)
+	}
+	got, ok, err := cache.Load(t.Context(), active)
 	if err != nil {
-		t.Fatalf("load after invalidate: %v", err)
+		t.Fatalf("load cache: %v", err)
 	}
-	if ok {
-		t.Fatal("want cache miss after invalidate")
+	if !ok || len(got.Subscriptions) != 1 || got.Subscriptions[0].ID != "sub-new" {
+		t.Fatalf("want overwritten cache, got %+v", got)
 	}
 }
 
@@ -73,14 +87,5 @@ func TestCache_MissingAndCorruptFilesAreMisses(t *testing.T) {
 	}
 	if ok {
 		t.Fatal("corrupt cache should be a miss")
-	}
-}
-
-func TestCache_InvalidateMissingFileSucceeds(t *testing.T) {
-	cache := subscriptionstore.New()
-	active := domain.TenantContext{Name: "prod", TenantID: "tenant", Dir: t.TempDir()}
-
-	if err := cache.Invalidate(t.Context(), active); err != nil {
-		t.Fatalf("invalidate missing cache: %v", err)
 	}
 }

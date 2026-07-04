@@ -81,8 +81,6 @@ func durationValue(k *koanf.Koanf, key string, fallback time.Duration) (time.Dur
 	switch val := v.(type) {
 	case nil:
 		return fallback, nil
-	case time.Duration:
-		return val, nil
 	case string:
 		d, err := time.ParseDuration(val)
 		if err != nil {
@@ -97,9 +95,6 @@ func envMapper(key string, value string) (string, any) {
 	mapKey := strings.ToLower(strings.TrimPrefix(key, envPrefix))
 	switch mapKey {
 	case "pim_default_duration":
-		if d, err := time.ParseDuration(value); err == nil {
-			return "pim.default_duration", d
-		}
 		return "pim.default_duration", value
 	case "pim_subscription_id":
 		return "pim.subscription_id", value

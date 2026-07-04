@@ -51,7 +51,7 @@ func TestActiveAssignments_listsCurrentActiveInstancesAcrossSubscriptions(t *tes
 func TestActiveAssignments_returnsInstanceError(t *testing.T) {
 	adapter := newActiveAssignments(
 		fakeSubscriptions{subs: []subscription{{ID: "sub-a"}}},
-		fakeActiveInstances{err: app.PermissionDenied(errors.New("denied"))},
+		fakeActiveInstances{err: app.PermissionDenied(errors.New("denied"), "PIM")},
 		func() time.Time { return activeTime("2026-05-07T18:00:00Z") },
 		nil,
 	)

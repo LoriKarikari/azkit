@@ -141,7 +141,7 @@ func (c *CtxRmCmd) Run(ctx context.Context, streams *Streams) error {
 		return err
 	}
 	if !c.Force && os.Getenv(activeContextEnv) == c.Name {
-		return svc.Remove(ctx, c.Name, false)
+		return app.ActiveContextRemoval(c.Name)
 	}
 	if !c.Force && !interactive.IsTerminalFn() {
 		return app.ContextRemovalNeedsForce(c.Name)

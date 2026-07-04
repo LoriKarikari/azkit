@@ -78,18 +78,8 @@ func (c *Cache) Save(
 		return fmt.Errorf("encoding subscription cache: %w", err)
 	}
 	contents = append(contents, '\n')
-	if err := writeFileAtomic(active.Dir, cachePath(active), contents); err != nil {
+	if err := writeFileAtomic(cachePath(active), contents); err != nil {
 		return fmt.Errorf("writing subscription cache: %w", err)
-	}
-	return nil
-}
-
-func (c *Cache) Invalidate(ctx context.Context, active domain.TenantContext) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	if err := os.Remove(cachePath(active)); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("removing subscription cache: %w", err)
 	}
 	return nil
 }
@@ -98,7 +88,8 @@ func cachePath(active domain.TenantContext) string {
 	return filepath.Join(active.Dir, cacheFileName)
 }
 
-func writeFileAtomic(dir string, target string, contents []byte) error {
+func writeFileAtomic(target string, contents []byte) error {
+	dir := filepath.Dir(target)
 	tmp, err := os.CreateTemp(dir, cacheFileName+".*.tmp")
 	if err != nil {
 		return err

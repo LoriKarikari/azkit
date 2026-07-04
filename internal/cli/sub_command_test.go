@@ -53,7 +53,7 @@ func TestRunner_subListFetchesAndCachesForActiveContext(t *testing.T) {
 	}
 }
 
-func TestRunner_subRefreshInvalidatesCache(t *testing.T) {
+func TestRunner_subRefreshOverwritesCache(t *testing.T) {
 	_, stateRoot := setupContextDirs(t)
 	t.Setenv("AZKIT_CONTEXT", "prod")
 	now := time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC)

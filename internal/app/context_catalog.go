@@ -23,6 +23,7 @@ var reservedContextNames = map[string]struct{}{
 
 type ContextCatalog interface {
 	Save(context.Context, domain.TenantContext) (domain.TenantContext, error)
+	Get(context.Context, string) (domain.TenantContext, bool, error)
 	List(context.Context) ([]domain.TenantContext, error)
 	Remove(context.Context, string) error
 }
@@ -64,19 +65,14 @@ func (s *ContextService) List(ctx context.Context) ([]domain.TenantContext, erro
 
 func (s *ContextService) Get(ctx context.Context, name string) (domain.TenantContext, error) {
 	name = strings.TrimSpace(name)
-	if err := validateContextName(name); err != nil {
-		return domain.TenantContext{}, err
-	}
-	contexts, err := s.List(ctx)
+	item, ok, err := s.catalog.Get(ctx, name)
 	if err != nil {
 		return domain.TenantContext{}, err
 	}
-	for _, item := range contexts {
-		if item.Name == name {
-			return item, nil
-		}
+	if !ok {
+		return domain.TenantContext{}, ContextNotFound(name)
 	}
-	return domain.TenantContext{}, ContextNotFound(name)
+	return item, nil
 }
 
 func (s *ContextService) Current(ctx context.Context) (domain.TenantContext, bool, error) {
@@ -93,9 +89,6 @@ func (s *ContextService) Current(ctx context.Context) (domain.TenantContext, boo
 
 func (s *ContextService) Remove(ctx context.Context, name string, force bool) error {
 	name = strings.TrimSpace(name)
-	if err := validateContextName(name); err != nil {
-		return err
-	}
 	if !force && name == s.activeName() {
 		return ActiveContextRemoval(name)
 	}

@@ -55,7 +55,7 @@ func TestEligibleAssignments_wrapsSubscriptionErrorAsAzureAPIError(t *testing.T)
 }
 
 func TestEligibleAssignments_returnsScheduleError(t *testing.T) {
-	want := app.PermissionDenied(errors.New("denied"))
+	want := app.PermissionDenied(errors.New("denied"), "PIM")
 	adapter := newEligibleAssignments(
 		fakeSubscriptions{subs: []subscription{{ID: "sub-a"}}},
 		fakeSchedules{err: want},
