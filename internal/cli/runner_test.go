@@ -174,6 +174,38 @@ func TestRunner_versionIgnoresInvalidConfig(t *testing.T) {
 	}
 }
 
+func TestRunner_versionFlag(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"--version"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d", code)
+	}
+	if stdout.String() != "azkit dev\n" {
+		t.Fatalf("want short version output, got %q", stdout.String())
+	}
+	if stderr.String() != "" {
+		t.Fatalf("want empty stderr, got: %q", stderr.String())
+	}
+}
+
+func TestRunner_versionFlagIgnoresInvalidConfig(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+	configPath := writeRunnerConfig(t, "invalid: [unclosed")
+
+	code := runner.Run(t.Context(), []string{"--config", configPath, "--version"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	if stdout.String() != "azkit dev\n" {
+		t.Fatalf("want short version output, got %q", stdout.String())
+	}
+}
+
 func TestRunner_usageErrorExitsTwo(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
