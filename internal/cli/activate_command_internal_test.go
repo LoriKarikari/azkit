@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 func TestActivateFilterEligibleByRole(t *testing.T) {

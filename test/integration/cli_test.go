@@ -12,8 +12,8 @@ import (
 	"testing"
 )
 
-func TestPimctlBinary(t *testing.T) {
-	bin := buildPimctl(t)
+func TestAzkitBinary(t *testing.T) {
+	bin := buildAzkit(t)
 
 	tests := []struct {
 		name         string
@@ -27,7 +27,7 @@ func TestPimctlBinary(t *testing.T) {
 			name:       "version",
 			args:       []string{"version"},
 			wantCode:   0,
-			wantStdout: "pimctl dev",
+			wantStdout: "azkit dev",
 		},
 		{
 			name:         "usage error exits two",
@@ -37,15 +37,15 @@ func TestPimctlBinary(t *testing.T) {
 			wantNoStdout: true,
 		},
 		{
-			name:         "activate validates before azure auth",
-			args:         []string{"activate", "--scope", "/subscriptions/sub-a", "--reason", "break glass"},
+			name:         "pim activate validates before azure auth",
+			args:         []string{"pim", "activate", "--scope", "/subscriptions/sub-a", "--reason", "break glass"},
 			wantCode:     1,
 			wantStderr:   "Activation role is required.",
 			wantNoStdout: true,
 		},
 		{
-			name:         "deactivate requires assignment id outside a terminal",
-			args:         []string{"deactivate"},
+			name:         "pim deactivate requires assignment id outside a terminal",
+			args:         []string{"pim", "deactivate"},
 			wantCode:     1,
 			wantStderr:   "Assignment ID is required.",
 			wantNoStdout: true,
@@ -54,7 +54,7 @@ func TestPimctlBinary(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			stdout, stderr, code := runPimctl(t, bin, tt.args...)
+			stdout, stderr, code := runAzkit(t, bin, tt.args...)
 			if code != tt.wantCode {
 				t.Fatalf("exit code = %d, want %d\nstdout:\n%s\nstderr:\n%s", code, tt.wantCode, stdout, stderr)
 			}
@@ -71,20 +71,20 @@ func TestPimctlBinary(t *testing.T) {
 	}
 }
 
-func buildPimctl(t *testing.T) string {
+func buildAzkit(t *testing.T) string {
 	t.Helper()
 
-	bin := filepath.Join(t.TempDir(), "pimctl")
-	cmd := exec.CommandContext(t.Context(), "go", "build", "-o", bin, "./cmd/pimctl")
+	bin := filepath.Join(t.TempDir(), "azkit")
+	cmd := exec.CommandContext(t.Context(), "go", "build", "-o", bin, "./cmd/azkit")
 	cmd.Dir = repoRoot(t)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("build pimctl: %v\n%s", err, output)
+		t.Fatalf("build azkit: %v\n%s", err, output)
 	}
 	return bin
 }
 
-func runPimctl(t *testing.T, bin string, args ...string) (string, string, int) {
+func runAzkit(t *testing.T, bin string, args ...string) (string, string, int) {
 	t.Helper()
 
 	cmd := exec.CommandContext(t.Context(), bin, args...)
@@ -107,7 +107,7 @@ func runPimctl(t *testing.T, bin string, args ...string) (string, string, int) {
 	if errors.As(err, &exitErr) {
 		return stdout.String(), stderr.String(), exitErr.ExitCode()
 	}
-	t.Fatalf("run pimctl %v: %v", args, err)
+	t.Fatalf("run azkit %v: %v", args, err)
 	return "", "", 0
 }
 

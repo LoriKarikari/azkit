@@ -15,7 +15,7 @@ type VersionCmd struct{}
 
 func (c *VersionCmd) Run(streams *Streams) error {
 	out := fmt.Sprintf(
-		"pimctl %s\ncommit: %s\ndate: %s\n",
+		"azkit %s\ncommit: %s\ndate: %s\n",
 		version,
 		commit,
 		date,

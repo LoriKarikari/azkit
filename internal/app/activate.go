@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 var (

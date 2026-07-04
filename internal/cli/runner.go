@@ -11,10 +11,10 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/willabides/kongplete"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
-	"github.com/LoriKarikari/pimctl/internal/config"
-	"github.com/LoriKarikari/pimctl/internal/domain"
-	"github.com/LoriKarikari/pimctl/internal/interactive"
+	"github.com/LoriKarikari/azkit/internal/app"
+	"github.com/LoriKarikari/azkit/internal/config"
+	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/interactive"
 )
 
 type Streams struct {
@@ -59,12 +59,16 @@ func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
 type CLI struct {
 	Verbose    bool          `short:"v" help:"Enable debug logging to stderr"`
 	ConfigPath string        `name:"config" help:"Path to config file"`
+	Pim        pimCmd        `cmd:"" help:"Manage Azure resource-role PIM workflows"`
+	Completion CompletionCmd `cmd:"" help:"Generate shell completion script"`
+	Version    VersionCmd    `cmd:"" help:"Show version information"`
+}
+
+type pimCmd struct {
 	List       ListCmd       `cmd:"" help:"List eligible PIM role assignments"`
 	Status     StatusCmd     `cmd:"" help:"List active PIM role assignments"`
 	Activate   ActivateCmd   `cmd:"" help:"Activate an eligible PIM role assignment"`
 	Deactivate DeactivateCmd `cmd:"" help:"Deactivate an active PIM role assignment"`
-	Completion CompletionCmd `cmd:"" help:"Generate shell completion script"`
-	Version    VersionCmd    `cmd:"" help:"Show version information"`
 }
 
 type kongExit int
@@ -83,8 +87,9 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 	model := CLI{}
 	parser, err := kong.New(
 		&model,
-		kong.Name("pimctl"),
+		kong.Name("azkit"),
 		kong.Writers(r.streams.Stdout, r.streams.Stderr),
+		kong.Help(azkitHelp),
 		kong.Exit(func(code int) { panic(kongExit(code)) }),
 		kong.BindTo(ctx, (*context.Context)(nil)),
 		kong.Bind(r.services),
@@ -140,6 +145,17 @@ func (r *Runner) handleParseError(err error) int {
 	return 2
 }
 
+func azkitHelp(options kong.HelpOptions, ctx *kong.Context) error {
+	if ctx.Selected() == nil {
+		options.Compact = true
+		options.NoExpandSubcommands = true
+		return kong.DefaultHelpPrinter(options, ctx)
+	}
+
+	options.Tree = true
+	return kong.DefaultHelpPrinter(options, ctx)
+}
+
 func commandNeedsConfig(parsed *kong.Context) bool {
 	command := strings.Fields(parsed.Command())
 	if len(command) == 0 {
@@ -154,14 +170,14 @@ func commandNeedsConfig(parsed *kong.Context) bool {
 
 func wantsJSON(model CLI, parsed *kong.Context) bool {
 	switch parsed.Command() {
-	case "list":
-		return model.List.JSON
-	case "status":
-		return model.Status.JSON
-	case "activate":
-		return model.Activate.JSON
-	case "deactivate":
-		return model.Deactivate.JSON
+	case "pim list":
+		return model.Pim.List.JSON
+	case "pim status":
+		return model.Pim.Status.JSON
+	case "pim activate":
+		return model.Pim.Activate.JSON
+	case "pim deactivate":
+		return model.Pim.Deactivate.JSON
 	}
 	return false
 }

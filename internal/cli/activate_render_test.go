@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 func TestRenderActivationJSON(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/LoriKarikari/pimctl/internal/cli"
+	"github.com/LoriKarikari/azkit/internal/cli"
 )
 
 func TestCompletionUsesKongplete(t *testing.T) {
@@ -23,8 +23,8 @@ func TestCompletionUsesKongplete(t *testing.T) {
 	if !strings.Contains(got, "complete -C ") {
 		t.Fatalf("want kongplete completion script, got: %s", got)
 	}
-	if !strings.Contains(got, "pimctl") {
-		t.Fatalf("want script referencing pimctl, got: %s", got)
+	if !strings.Contains(got, "azkit") {
+		t.Fatalf("want script referencing azkit, got: %s", got)
 	}
 }
 
@@ -43,8 +43,8 @@ func TestCompletionRejectsShellArgument(t *testing.T) {
 }
 
 func TestKongpleteCompletesCommands(t *testing.T) {
-	t.Setenv("COMP_LINE", "pimctl ")
-	t.Setenv("COMP_POINT", "7")
+	t.Setenv("COMP_LINE", "azkit ")
+	t.Setenv("COMP_POINT", "6")
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
@@ -54,8 +54,11 @@ func TestKongpleteCompletesCommands(t *testing.T) {
 		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
 	}
 	got := stdout.String()
-	if !strings.Contains(got, "activate") || !strings.Contains(got, "completion") {
+	if !strings.Contains(got, "pim") || !strings.Contains(got, "completion") {
 		t.Fatalf("want command completions, got: %s", got)
+	}
+	if strings.Contains(got, "activate") {
+		t.Fatalf("root PIM command should not be completed, got: %s", got)
 	}
 }
 

@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
-	"github.com/LoriKarikari/pimctl/internal/cli"
-	"github.com/LoriKarikari/pimctl/internal/config"
-	"github.com/LoriKarikari/pimctl/internal/domain"
-	"github.com/LoriKarikari/pimctl/internal/inmemory"
-	"github.com/LoriKarikari/pimctl/internal/interactive"
+	"github.com/LoriKarikari/azkit/internal/app"
+	"github.com/LoriKarikari/azkit/internal/cli"
+	"github.com/LoriKarikari/azkit/internal/config"
+	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/inmemory"
+	"github.com/LoriKarikari/azkit/internal/interactive"
 )
 
 type delayEligibleStore struct {
@@ -78,7 +78,7 @@ func TestActivateShowsListingSpinner(t *testing.T) {
 		},
 	}, &stdout, &stderr)
 
-	runner.Run(t.Context(), []string{"activate"})
+	runner.Run(t.Context(), []string{"pim", "activate"})
 
 	if !strings.Contains(stderr.String(), "Loading eligible assignments...") {
 		t.Fatalf("want loading message on stderr, got: %q", stderr.String())
@@ -119,7 +119,7 @@ func TestDeactivateShowsListingSpinner(t *testing.T) {
 		},
 	}, &stdout, &stderr)
 
-	runner.Run(t.Context(), []string{"deactivate"})
+	runner.Run(t.Context(), []string{"pim", "deactivate"})
 
 	if !strings.Contains(stderr.String(), "Loading active assignments...") {
 		t.Fatalf("want loading message on stderr, got: %q", stderr.String())

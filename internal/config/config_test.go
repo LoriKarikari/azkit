@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/LoriKarikari/pimctl/internal/config"
+	"github.com/LoriKarikari/azkit/internal/config"
 )
 
 func TestLoadDefaults(t *testing.T) {

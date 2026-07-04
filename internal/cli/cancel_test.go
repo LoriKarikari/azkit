@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
-	"github.com/LoriKarikari/pimctl/internal/cli"
-	"github.com/LoriKarikari/pimctl/internal/config"
-	"github.com/LoriKarikari/pimctl/internal/domain"
-	"github.com/LoriKarikari/pimctl/internal/inmemory"
-	"github.com/LoriKarikari/pimctl/internal/interactive"
+	"github.com/LoriKarikari/azkit/internal/app"
+	"github.com/LoriKarikari/azkit/internal/cli"
+	"github.com/LoriKarikari/azkit/internal/config"
+	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/inmemory"
+	"github.com/LoriKarikari/azkit/internal/interactive"
 )
 
 func TestCancelActivationInteractive(t *testing.T) {
@@ -44,7 +44,7 @@ func TestCancelActivationInteractive(t *testing.T) {
 		},
 	}, &stdout, &stderr)
 
-	code := runner.Run(t.Context(), []string{"activate"})
+	code := runner.Run(t.Context(), []string{"pim", "activate"})
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}
@@ -80,7 +80,7 @@ func TestCancelDeactivationInteractive(t *testing.T) {
 		},
 	}, &stdout, &stderr)
 
-	code := runner.Run(t.Context(), []string{"deactivate"})
+	code := runner.Run(t.Context(), []string{"pim", "deactivate"})
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}

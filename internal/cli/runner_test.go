@@ -12,18 +12,18 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/LoriKarikari/pimctl/internal/app"
-	"github.com/LoriKarikari/pimctl/internal/cli"
-	"github.com/LoriKarikari/pimctl/internal/domain"
-	"github.com/LoriKarikari/pimctl/internal/inmemory"
+	"github.com/LoriKarikari/azkit/internal/app"
+	"github.com/LoriKarikari/azkit/internal/cli"
+	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/inmemory"
 )
 
-func TestRunner_listHuman(t *testing.T) {
+func TestRunner_pimListHuman(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, nil)
 
-	if code := runner.Run(t.Context(), []string{"list"}); code != 0 {
+	if code := runner.Run(t.Context(), []string{"pim", "list"}); code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}
 
@@ -36,12 +36,12 @@ func TestRunner_listHuman(t *testing.T) {
 	}
 }
 
-func TestRunner_listJSON(t *testing.T) {
+func TestRunner_pimListJSON(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, nil)
 
-	if code := runner.Run(t.Context(), []string{"list", "--json"}); code != 0 {
+	if code := runner.Run(t.Context(), []string{"pim", "list", "--json"}); code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}
 
@@ -51,12 +51,34 @@ func TestRunner_listJSON(t *testing.T) {
 	}
 }
 
-func TestRunner_listErrorHuman(t *testing.T) {
+func TestRunner_rootPimCommandsRejected(t *testing.T) {
+	commands := []string{"list", "activate", "status", "deactivate"}
+	for _, command := range commands {
+		t.Run(command, func(t *testing.T) {
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
+			runner := newRunner(&stdout, &stderr, nil)
+
+			code := runner.Run(t.Context(), []string{command})
+			if code != 2 {
+				t.Fatalf("want exit 2, got %d", code)
+			}
+			if stdout.String() != "" {
+				t.Fatalf("want empty stdout, got: %q", stdout.String())
+			}
+			if !strings.Contains(stderr.String(), "unexpected argument "+command) {
+				t.Fatalf("want parse error on stderr, got: %s", stderr.String())
+			}
+		})
+	}
+}
+
+func TestRunner_pimListErrorHuman(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
 
-	code := runner.Run(t.Context(), []string{"list"})
+	code := runner.Run(t.Context(), []string{"pim", "list"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -68,12 +90,12 @@ func TestRunner_listErrorHuman(t *testing.T) {
 	}
 }
 
-func TestRunner_listErrorJSON(t *testing.T) {
+func TestRunner_pimListErrorJSON(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
 
-	code := runner.Run(t.Context(), []string{"list", "--json"})
+	code := runner.Run(t.Context(), []string{"pim", "list", "--json"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -85,12 +107,12 @@ func TestRunner_listErrorJSON(t *testing.T) {
 	}
 }
 
-func TestRunner_statusHuman(t *testing.T) {
+func TestRunner_pimStatusHuman(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, nil)
 
-	if code := runner.Run(t.Context(), []string{"status"}); code != 0 {
+	if code := runner.Run(t.Context(), []string{"pim", "status"}); code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}
 
@@ -103,12 +125,12 @@ func TestRunner_statusHuman(t *testing.T) {
 	}
 }
 
-func TestRunner_statusErrorJSON(t *testing.T) {
+func TestRunner_pimStatusErrorJSON(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := newRunner(&stdout, &stderr, app.AuthFailed(assert.AnError))
 
-	code := runner.Run(t.Context(), []string{"status", "--json"})
+	code := runner.Run(t.Context(), []string{"pim", "status", "--json"})
 	if code != 1 {
 		t.Fatalf("want exit 1, got %d", code)
 	}
@@ -129,7 +151,7 @@ func TestRunner_version(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d", code)
 	}
-	if !strings.Contains(stdout.String(), "pimctl dev") {
+	if !strings.Contains(stdout.String(), "azkit dev") {
 		t.Fatalf("missing version output:\n%s", stdout.String())
 	}
 	if stderr.String() != "" {
@@ -147,7 +169,7 @@ func TestRunner_versionIgnoresInvalidConfig(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "pimctl dev") {
+	if !strings.Contains(stdout.String(), "azkit dev") {
 		t.Fatalf("missing version output:\n%s", stdout.String())
 	}
 }
@@ -193,6 +215,42 @@ func TestRunner_helpDoesNotBuildListService(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "Usage:") {
 		t.Fatalf("missing help output:\n%s", stdout.String())
+	}
+}
+
+func TestRunner_rootHelpListsOnlyTopLevelCommands(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"--help"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "pim") {
+		t.Fatalf("missing pim command:\n%s", got)
+	}
+	if strings.Contains(got, "pim list") {
+		t.Fatalf("root help should not expand PIM commands:\n%s", got)
+	}
+}
+
+func TestRunner_pimHelpListsChildCommandsWithoutParentPrefix(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"pim", "--help"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "list") || !strings.Contains(got, "activate") {
+		t.Fatalf("missing PIM child commands:\n%s", got)
+	}
+	if strings.Contains(got, "pim list") || strings.Contains(got, "pim activate") {
+		t.Fatalf("pim help should list child commands without parent prefix:\n%s", got)
 	}
 }
 

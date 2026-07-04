@@ -3,7 +3,7 @@ package app
 import (
 	"strings"
 
-	"github.com/LoriKarikari/pimctl/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/domain"
 )
 
 // FilterEligibleAssignments returns eligible assignments matching the Activation selectors supplied by the caller.
