@@ -60,11 +60,12 @@ func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
 }
 
 type CLI struct {
-	Verbose    bool          `short:"v" help:"Enable debug logging to stderr"`
-	ConfigPath string        `name:"config" help:"Path to config file"`
-	Pim        pimCmd        `cmd:"" help:"Manage Azure resource-role PIM workflows"`
-	Completion CompletionCmd `cmd:"" help:"Generate shell completion script"`
-	Version    VersionCmd    `cmd:"" help:"Show version information"`
+	Verbose     bool             `short:"v" help:"Enable debug logging to stderr"`
+	VersionFlag kong.VersionFlag `name:"version" help:"Show version information and exit"`
+	ConfigPath  string           `name:"config" help:"Path to config file"`
+	Pim         pimCmd           `cmd:"" help:"Manage Azure resource-role PIM workflows"`
+	Completion  CompletionCmd    `cmd:"" help:"Generate shell completion script"`
+	Version     VersionCmd       `cmd:"" help:"Show version information"`
 }
 
 type pimCmd struct {
@@ -92,6 +93,7 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 		&model,
 		kong.Name("azkit"),
 		kong.Writers(r.streams.Stdout, r.streams.Stderr),
+		kong.Vars{"version": versionLine()},
 		kong.Help(azkitHelp),
 		kong.Exit(func(code int) { panic(kongExit(code)) }),
 		kong.BindTo(ctx, (*context.Context)(nil)),

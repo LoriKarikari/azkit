@@ -30,6 +30,12 @@ func TestAzkitBinary(t *testing.T) {
 			wantStdout: "azkit dev",
 		},
 		{
+			name:       "version flag",
+			args:       []string{"--version"},
+			wantCode:   0,
+			wantStdout: "azkit dev",
+		},
+		{
 			name:         "usage error exits two",
 			args:         []string{"not-a-command"},
 			wantCode:     2,
