@@ -30,7 +30,7 @@
 - Use golden tests for human CLI output.
 - Use JSON contract tests for `--json` output and error shapes.
 - Use fake clocks when behavior depends on time.
-- Gate live integration tests behind an explicit environment variable such as `PIMCTL_LIVE_TESTS=1`.
+- Gate live integration tests behind an explicit environment variable such as `AZKIT_LIVE_TESTS=1`.
 
 ## Go style
 
