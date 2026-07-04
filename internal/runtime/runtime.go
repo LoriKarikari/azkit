@@ -2,7 +2,10 @@ package runtime
 
 import (
 	"log/slog"
+	"os"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -10,6 +13,8 @@ import (
 	"github.com/LoriKarikari/azkit/internal/app"
 	"github.com/LoriKarikari/azkit/internal/azurepim"
 	"github.com/LoriKarikari/azkit/internal/cli"
+	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/subscriptionstore"
 )
 
 type Runtime struct {
@@ -68,6 +73,22 @@ func (r *Runtime) Services() cli.Services {
 			active := azurepim.NewActiveAssignments(cred, log)
 			deactivator := azurepim.NewDeactivationStore(cred, log)
 			return app.NewDeactivationService(active, deactivator), nil
+		},
+		Subscriptions: func(*slog.Logger) (*app.SubscriptionService, error) {
+			return app.NewSubscriptionService(
+				subscriptionstore.New(),
+				func(active domain.TenantContext) (app.SubscriptionSource, error) {
+					if !strings.EqualFold(os.Getenv("AZURE_TENANT_ID"), active.TenantID) {
+						return nil, app.ContextEnvironmentMismatch(active)
+					}
+					cred, err := r.credential()
+					if err != nil {
+						return nil, err
+					}
+					return azurepim.NewSubscriptionSourceFromCred(cred), nil
+				},
+				time.Now,
+			), nil
 		},
 	}
 }

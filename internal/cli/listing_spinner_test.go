@@ -31,7 +31,7 @@ func (s *delayEligibleStore) ListEligible(ctx context.Context) ([]domain.Eligibl
 }
 
 type delayActiveStore struct {
-	inner app.ActiveAssignments
+	inner app.ActiveAssignmentStore
 	delay time.Duration
 }
 
@@ -39,6 +39,15 @@ func (s *delayActiveStore) ListActive(ctx context.Context) ([]domain.ActiveAssig
 	select {
 	case <-time.After(s.delay):
 		return s.inner.ListActive(ctx)
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+func (s *delayActiveStore) ListActiveForScope(ctx context.Context, scope string) ([]domain.ActiveAssignment, error) {
+	select {
+	case <-time.After(s.delay):
+		return s.inner.ListActiveForScope(ctx, scope)
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}

@@ -23,6 +23,7 @@ var reservedContextNames = map[string]struct{}{
 
 type ContextCatalog interface {
 	Save(context.Context, domain.TenantContext) (domain.TenantContext, error)
+	Get(context.Context, string) (domain.TenantContext, bool, error)
 	List(context.Context) ([]domain.TenantContext, error)
 	Remove(context.Context, string) error
 }
@@ -64,19 +65,14 @@ func (s *ContextService) List(ctx context.Context) ([]domain.TenantContext, erro
 
 func (s *ContextService) Get(ctx context.Context, name string) (domain.TenantContext, error) {
 	name = strings.TrimSpace(name)
-	if err := validateContextName(name); err != nil {
-		return domain.TenantContext{}, err
-	}
-	contexts, err := s.List(ctx)
+	item, ok, err := s.catalog.Get(ctx, name)
 	if err != nil {
 		return domain.TenantContext{}, err
 	}
-	for _, item := range contexts {
-		if item.Name == name {
-			return item, nil
-		}
+	if !ok {
+		return domain.TenantContext{}, ContextNotFound(name)
 	}
-	return domain.TenantContext{}, ContextNotFound(name)
+	return item, nil
 }
 
 func (s *ContextService) Current(ctx context.Context) (domain.TenantContext, bool, error) {
@@ -93,9 +89,6 @@ func (s *ContextService) Current(ctx context.Context) (domain.TenantContext, boo
 
 func (s *ContextService) Remove(ctx context.Context, name string, force bool) error {
 	name = strings.TrimSpace(name)
-	if err := validateContextName(name); err != nil {
-		return err
-	}
 	if !force && name == s.activeName() {
 		return ActiveContextRemoval(name)
 	}
@@ -133,6 +126,42 @@ func MissingContextName() *Error {
 	return &Error{
 		Code:    domain.CodeMissingContext,
 		Message: "Context name is required outside an interactive terminal.",
+	}
+}
+
+func MissingActiveContext() *Error {
+	return &Error{
+		Code:    domain.CodeMissingActiveContext,
+		Message: "No active context. Run `azkit ctx <name>` first.",
+	}
+}
+
+func MissingSubscriptionCommand() *Error {
+	return &Error{
+		Code:    domain.CodeMissingSubscriptionCmd,
+		Message: "Subscription command is required. Run `azkit sub -l` to list subscriptions.",
+	}
+}
+
+func ContextNeedsLogin(ctx domain.TenantContext) *Error {
+	return &Error{
+		Code: domain.CodeContextNeedsLogin,
+		Message: fmt.Sprintf(
+			"Context %q needs Azure login. Run `az login --tenant %s`.",
+			ctx.Name,
+			ctx.TenantID,
+		),
+	}
+}
+
+func ContextEnvironmentMismatch(ctx domain.TenantContext) *Error {
+	return &Error{
+		Code: domain.CodeContextEnvMismatch,
+		Message: fmt.Sprintf(
+			"Context %q is not applied to this shell. Run `azkit ctx %s` first.",
+			ctx.Name,
+			ctx.Name,
+		),
 	}
 }
 

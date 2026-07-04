@@ -13,7 +13,7 @@ import (
 
 func azurePIMOperationError(err error) error {
 	if azurePIMPermissionDenied(err) {
-		return app.PermissionDenied(err)
+		return app.PermissionDenied(err, "PIM")
 	}
 	if activeDurationTooShort(err) {
 		return &app.Error{

@@ -14,16 +14,13 @@ type ShellEnvChange struct {
 }
 
 func (s *Streams) RequireShellIntegration(command string) error {
-	if s != nil && s.ShellEnv {
+	if s.ShellEnv {
 		return nil
 	}
 	return app.ShellIntegrationRequired(command)
 }
 
 func (s *Streams) RenderShellEnv(changes []ShellEnvChange) (string, error) {
-	if s == nil {
-		return renderShellEnv("", changes)
-	}
 	return renderShellEnv(s.Shell, changes)
 }
 

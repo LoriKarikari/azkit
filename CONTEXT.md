@@ -72,6 +72,10 @@ _Avoid_: Default tenant, current account
 The tenant context that was active before the last context switch in the current shell.
 _Avoid_: Backup context, fallback tenant
 
+**Subscription cache**:
+The per-context local cache of Azure subscriptions. It avoids repeated Azure calls and can be refreshed explicitly.
+_Avoid_: Subscription catalog, account cache
+
 **Interactive activation**:
 A guided terminal flow for choosing and activating an eligible assignment.
 _Avoid_: Wizard, dashboard

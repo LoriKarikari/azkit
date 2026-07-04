@@ -40,6 +40,7 @@ type Services struct {
 	Status                func(*slog.Logger) (*app.StatusService, error)
 	Activate              func(*slog.Logger) (*app.ActivationService, error)
 	Deactivate            func(*slog.Logger) (*app.DeactivationService, error)
+	Subscriptions         func(*slog.Logger) (*app.SubscriptionService, error)
 	ActivateInteractive   activateInteractiveFunc
 	DeactivateInteractive deactivateInteractiveFunc
 	PickContext           contextPickerFunc
@@ -74,6 +75,7 @@ type CLI struct {
 	ConfigPath  string           `name:"config" help:"Path to config file"`
 	Pim         pimCmd           `cmd:"" help:"Manage Azure resource-role PIM workflows"`
 	Ctx         CtxCmd           `cmd:"" name:"ctx" help:"Manage tenant contexts"`
+	Sub         SubCmd           `cmd:"" name:"sub" help:"Manage subscriptions in the active context"`
 	ShellInit   ShellInitCmd     `cmd:"" name:"shell-init" help:"Print shell integration script"`
 	Completion  CompletionCmd    `cmd:"" help:"Generate shell completion script"`
 	Version     VersionCmd       `cmd:"" help:"Show version information"`
@@ -137,7 +139,7 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 	if commandNeedsConfig(parsed) {
 		cfg, err := config.Load(model.ConfigPath)
 		if err != nil {
-			_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(model, parsed)))
+			_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(parsed)))
 			return 1
 		}
 		r.streams.Config = cfg
@@ -147,7 +149,7 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 		if errors.Is(err, interactive.ErrCanceled) {
 			return 130
 		}
-		_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(model, parsed)))
+		_, _ = io.WriteString(r.streams.Stderr, RenderError(err, wantsJSON(parsed)))
 		return 1
 	}
 	return 0
@@ -183,14 +185,10 @@ func commandNeedsConfig(parsed *kong.Context) bool {
 	if len(command) == 0 {
 		return true
 	}
-	switch command[0] {
-	case "completion", "ctx", "shell-init", "version":
-		return false
-	}
-	return true
+	return command[0] == "pim"
 }
 
-func wantsJSON(_ CLI, parsed *kong.Context) bool {
+func wantsJSON(parsed *kong.Context) bool {
 	selected := parsed.Selected()
 	if selected == nil || !selected.Target.IsValid() {
 		return false

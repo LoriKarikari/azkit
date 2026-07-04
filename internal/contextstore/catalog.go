@@ -68,6 +68,22 @@ func (c *Catalog) Save(ctx context.Context, item domain.TenantContext) (domain.T
 	return c.enrich(catalogRecord{Name: item.Name, TenantID: item.TenantID}), nil
 }
 
+func (c *Catalog) Get(ctx context.Context, name string) (domain.TenantContext, bool, error) {
+	if err := ctx.Err(); err != nil {
+		return domain.TenantContext{}, false, err
+	}
+	data, err := c.load()
+	if err != nil {
+		return domain.TenantContext{}, false, err
+	}
+	for _, record := range data.Contexts {
+		if record.Name == name {
+			return c.enrich(record), true, nil
+		}
+	}
+	return domain.TenantContext{}, false, nil
+}
+
 func (c *Catalog) List(ctx context.Context) ([]domain.TenantContext, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
