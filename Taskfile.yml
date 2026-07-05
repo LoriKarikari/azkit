@@ -7,6 +7,7 @@ vars:
   GORELEASER_VERSION: v2.17.0
   VERSION: '{{default "dev" .VERSION}}'
   RELEASE_VERSION: '{{default "" .RELEASE_VERSION}}'
+  COVERAGE_MIN: '{{default "65.0" .COVERAGE_MIN}}'
   COMMIT:
     sh: git rev-parse --short HEAD 2>/dev/null || printf unknown
   DATE:
@@ -69,6 +70,23 @@ tasks:
     desc: Print coverage summary from coverage.out.
     cmds:
       - go tool cover -func=coverage.out
+
+  coverage:check:
+    desc: Verify total statement coverage meets COVERAGE_MIN.
+    cmds:
+      - |
+        total="$(go tool cover -func=coverage.out | awk '/^total:/ { sub(/%$/, "", $3); print $3 }')"
+        if [ -z "$total" ]; then
+          echo "coverage total not found" >&2
+          exit 1
+        fi
+        awk -v total="$total" -v min="{{.COVERAGE_MIN}}" 'BEGIN {
+          if (total + 0 < min + 0) {
+            printf "coverage %.1f%% is below %.1f%%\n", total, min
+            exit 1
+          }
+          printf "coverage %.1f%% meets %.1f%% floor\n", total, min
+        }'
 
   vet:
     desc: Run go vet.
@@ -140,6 +158,7 @@ tasks:
       - task: tidy:check
       - task: install:check
       - task: test:race
+      - task: coverage:check
       - task: test:integration
       - task: vet
       - task: lint

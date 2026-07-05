@@ -68,6 +68,9 @@ jobs:
           name: coverage
           path: coverage.out
 
+      - name: Check coverage floor
+        run: task coverage:check
+
   test-os:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
