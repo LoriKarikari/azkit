@@ -2,7 +2,7 @@
 set -eu
 
 version="${1:-dev}"
-root_dir="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+root_dir="$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)"
 smoke_dir="$(mktemp -d "${TMPDIR:-/tmp}/azkit-smoke.XXXXXX")"
 
 cleanup() {

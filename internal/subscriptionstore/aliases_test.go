@@ -3,6 +3,7 @@ package subscriptionstore_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -70,6 +71,9 @@ func TestAliases_SaveOverwrites(t *testing.T) {
 }
 
 func TestAliases_SaveUsesOwnerOnlyPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX permissions are not representable on Windows")
+	}
 	store := subscriptionstore.NewAliases()
 	active := domain.TenantContext{Name: "prod", TenantID: "tenant", Dir: t.TempDir()}
 

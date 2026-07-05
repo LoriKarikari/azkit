@@ -167,7 +167,7 @@ if [ -z "$bin_path" ]; then
 fi
 
 install -m 0755 "$bin_path" "${bin_dir}/${bin_name}"
-log "Installed: $(${bin_dir}/${bin_name} version 2>/dev/null || printf '%s' "${bin_dir}/${bin_name}")"
+log "Installed: $("${bin_dir}/${bin_name}" version 2>/dev/null || printf '%s' "${bin_dir}/${bin_name}")"
 
 case ":${PATH}:" in
 	*:"${bin_dir}":*) ;;

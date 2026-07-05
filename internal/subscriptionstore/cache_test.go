@@ -3,6 +3,7 @@ package subscriptionstore_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -31,6 +32,10 @@ func TestCache_SaveAndLoadRoundTrip(t *testing.T) {
 	}
 	if !got.FetchedAt.Equal(fetchedAt) || len(got.Subscriptions) != 1 || got.Subscriptions[0].ID != "sub-a" {
 		t.Fatalf("unexpected cache: %+v", got)
+	}
+	if runtime.GOOS == "windows" {
+		t.Log("POSIX permissions are not representable on Windows")
+		return
 	}
 	info, err := os.Stat(filepath.Join(active.Dir, "subscriptions.json"))
 	if err != nil {
