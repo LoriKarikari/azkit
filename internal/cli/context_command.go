@@ -3,7 +3,6 @@ package cli
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -43,6 +42,7 @@ type CtxCmd struct {
 
 type CtxSwitchCmd struct {
 	List bool   `short:"l" name:"list" help:"List saved contexts"`
+	JSON bool   `help:"Output as JSON"`
 	Name string `arg:"" optional:"" help:"Context name, or '-' for the previous context"`
 }
 
@@ -64,12 +64,19 @@ func (c *CtxCurrentCmd) jsonOutput() bool {
 	return c.JSON
 }
 
+func (c *CtxSwitchCmd) jsonOutput() bool {
+	return c.JSON
+}
+
 func (c *CtxSwitchCmd) Run(ctx context.Context, services Services, streams *Streams) error {
 	if c.List && c.Name != "" {
 		return app.ConflictingContextSelectors()
 	}
+	if c.JSON && !c.List {
+		return app.JSONOutputNotSupported("azkit ctx")
+	}
 	if c.List {
-		return renderContextList(ctx, streams)
+		return renderContextList(ctx, streams, c.JSON)
 	}
 	svc, err := contextService(streams)
 	if err != nil {
@@ -168,7 +175,7 @@ func (c *CtxRmCmd) Run(ctx context.Context, streams *Streams) error {
 	return err
 }
 
-func renderContextList(ctx context.Context, streams *Streams) error {
+func renderContextList(ctx context.Context, streams *Streams, asJSON bool) error {
 	svc, err := contextService(streams)
 	if err != nil {
 		return err
@@ -177,7 +184,12 @@ func renderContextList(ctx context.Context, streams *Streams) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.WriteString(streams.Stdout, renderContextsHuman(contexts, os.Getenv(activeContextEnv)))
+	current := os.Getenv(activeContextEnv)
+	if asJSON {
+		_, err = io.WriteString(streams.Stdout, renderContextsJSON(contexts, current, os.Getenv(previousContextEnv)))
+		return err
+	}
+	_, err = io.WriteString(streams.Stdout, renderContextsHuman(contexts, current))
 	return err
 }
 
@@ -229,6 +241,20 @@ func renderContextsHuman(contexts []domain.TenantContext, active string) string 
 	return buf.String()
 }
 
+type contextEntryJSON struct {
+	Context   string `json:"context"`
+	TenantID  string `json:"tenant_id"`
+	ConfigDir string `json:"config_dir"`
+	Status    string `json:"status"`
+	Current   bool   `json:"current"`
+}
+
+type contextListJSON struct {
+	Current  string             `json:"current"`
+	Previous string             `json:"previous"`
+	Contexts []contextEntryJSON `json:"contexts"`
+}
+
 type currentContextJSON struct {
 	Context   string `json:"context"`
 	TenantID  string `json:"tenant_id"`
@@ -250,6 +276,20 @@ func renderCurrentContextHuman(current domain.TenantContext, ok bool) string {
 	return buf.String()
 }
 
+func renderContextsJSON(contexts []domain.TenantContext, current string, previous string) string {
+	entries := make([]contextEntryJSON, 0, len(contexts))
+	for _, item := range contexts {
+		entries = append(entries, contextEntryJSON{
+			Context:   item.Name,
+			TenantID:  item.TenantID,
+			ConfigDir: item.Dir,
+			Status:    string(item.Status),
+			Current:   item.Name == current,
+		})
+	}
+	return marshalJSON(contextListJSON{Current: current, Previous: previous, Contexts: entries})
+}
+
 func renderCurrentContextJSON(current domain.TenantContext, ok bool) string {
 	out := currentContextJSON{}
 	if ok {
@@ -260,8 +300,7 @@ func renderCurrentContextJSON(current domain.TenantContext, ok bool) string {
 			Status:    string(current.Status),
 		}
 	}
-	b, _ := json.MarshalIndent(out, "", "  ")
-	return string(b) + "\n"
+	return marshalJSON(out)
 }
 
 func contextService(streams *Streams) (*app.ContextService, error) {

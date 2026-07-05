@@ -140,3 +140,10 @@ func ConflictingContextSelectors() *Error {
 		Message: "Use either a context name or --list, not both.",
 	}
 }
+
+func JSONOutputNotSupported(command string) *Error {
+	return &Error{
+		Code:    domain.CodeConflictingSelectors,
+		Message: fmt.Sprintf("%s changes your shell and does not support --json.", command),
+	}
+}
