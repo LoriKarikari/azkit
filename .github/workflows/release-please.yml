@@ -17,12 +17,12 @@ jobs:
       id-token: write
       pull-requests: write
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         if: ${{ steps.release.outputs.release_created == 'true' }}
         with:
           fetch-depth: 0
@@ -43,11 +43,11 @@ jobs:
 
       - name: Setup Syft
         if: ${{ steps.release.outputs.release_created == 'true' }}
-        uses: anchore/sbom-action/download-syft@v0.24.0
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
           syft-version: v1.46.0
 
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
         if: ${{ steps.release.outputs.release_created == 'true' }}
         with:
           distribution: goreleaser
@@ -58,7 +58,7 @@ jobs:
 
       - name: Attest release artifacts
         if: ${{ steps.release.outputs.release_created == 'true' }}
-        uses: actions/attest@v4
+        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4
         with:
           subject-checksums: dist/checksums.txt
 
