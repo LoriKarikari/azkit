@@ -25,6 +25,7 @@ jobs:
         if: ${{ steps.release.outputs.release_created == 'true' }}
         with:
           fetch-depth: 0
+          ref: ${{ steps.release.outputs.tag_name }}
 
       - name: Setup Go and Task
         if: ${{ steps.release.outputs.release_created == 'true' }}
@@ -47,3 +48,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Smoke test published release
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: ./scripts/smoke-release-install.sh "${{ steps.release.outputs.tag_name }}"

@@ -6,6 +6,7 @@ vars:
   GOVULNCHECK_VERSION: v1.3.0
   GORELEASER_VERSION: v2.17.0
   VERSION: '{{default "dev" .VERSION}}'
+  RELEASE_VERSION: '{{default "" .RELEASE_VERSION}}'
   COMMIT:
     sh: git rev-parse --short HEAD 2>/dev/null || printf unknown
   DATE:
@@ -112,6 +113,11 @@ tasks:
         else
           go run github.com/goreleaser/goreleaser/v2@{{.GORELEASER_VERSION}} check;
         fi
+
+  release:smoke:
+    desc: Install and smoke-test a published release. Set RELEASE_VERSION=vX.Y.Z.
+    cmds:
+      - ./scripts/smoke-release-install.sh '{{.RELEASE_VERSION}}'
 
   smoke:
     desc: Build and smoke-test the CLI command surface.

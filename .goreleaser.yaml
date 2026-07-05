@@ -33,3 +33,5 @@ changelog:
 
 release:
   prerelease: auto
+  mode: keep-existing
+  replace_existing_artifacts: true
