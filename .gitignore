@@ -20,4 +20,5 @@ coverage.html
 .scratch/
 
 # Local binaries
+/azkit
 /pimctl

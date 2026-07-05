@@ -1,6 +1,6 @@
-# pimctl
+# azkit
 
-A command-line tool for activating and managing Azure Privileged Identity Management access with high-quality Go CLI ergonomics.
+An umbrella CLI for Azure operator workflows, starting with Azure resource-role PIM, tenant contexts, and subscription switching.
 
 ## Language
 

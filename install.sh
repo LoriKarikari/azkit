@@ -2,22 +2,22 @@
 set -eu
 
 repo="LoriKarikari/pimctl"
-bin_name="pimctl"
-version="${PIMCTL_INSTALL_VERSION:-latest}"
-bin_dir="${PIMCTL_INSTALL_DIR:-${HOME}/.local/bin}"
+bin_name="azkit"
+version="${AZKIT_INSTALL_VERSION:-latest}"
+bin_dir="${AZKIT_INSTALL_DIR:-${HOME}/.local/bin}"
 tmp_dir=""
 
 usage() {
 	cat <<EOF
-Install pimctl from GitHub releases.
+Install azkit from GitHub releases.
 
 Usage:
   curl -fsSL https://raw.githubusercontent.com/${repo}/main/install.sh | sh
 
 Environment:
-  PIMCTL_INSTALL_VERSION  Version to install, for example v0.3.0. Defaults to latest.
-  PIMCTL_INSTALL_DIR      Install directory. Defaults to ~/.local/bin.
-  GITHUB_TOKEN            Optional token for GitHub API rate limits.
+  AZKIT_INSTALL_VERSION  Version to install, for example v0.3.0. Defaults to latest.
+  AZKIT_INSTALL_DIR      Install directory. Defaults to ~/.local/bin.
+  GITHUB_TOKEN           Optional token for GitHub API rate limits.
 EOF
 }
 
@@ -140,7 +140,7 @@ if [ -z "$checksums_url" ]; then
 fi
 
 archive="$(basename "$asset_url")"
-tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/pimctl.XXXXXX")"
+tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/azkit.XXXXXX")"
 archive_path="${tmp_dir}/${archive}"
 checksums_path="${tmp_dir}/checksums.txt"
 

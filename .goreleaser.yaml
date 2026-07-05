@@ -1,5 +1,7 @@
 version: 2
 
+project_name: azkit
+
 builds:
   - main: ./cmd/azkit
     binary: azkit
