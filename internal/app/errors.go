@@ -147,3 +147,10 @@ func JSONOutputNotSupported(command string) *Error {
 		Message: fmt.Sprintf("%s changes your shell and does not support --json.", command),
 	}
 }
+
+func ShellEnvOutputNotSupported(command string) *Error {
+	return &Error{
+		Code:    domain.CodeConflictingSelectors,
+		Message: fmt.Sprintf("%s prints output and cannot run through shell integration.", command),
+	}
+}

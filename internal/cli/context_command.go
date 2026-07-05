@@ -75,6 +75,9 @@ func (c *CtxSwitchCmd) Run(ctx context.Context, services Services, streams *Stre
 	if c.JSON && !c.List {
 		return app.JSONOutputNotSupported("azkit ctx")
 	}
+	if streams.ShellEnv && (c.List || c.JSON) {
+		return app.ShellEnvOutputNotSupported("azkit ctx")
+	}
 	if c.List {
 		return renderContextList(ctx, streams, c.JSON)
 	}
@@ -256,6 +259,7 @@ type contextListJSON struct {
 }
 
 type currentContextJSON struct {
+	Active    bool   `json:"active"`
 	Context   string `json:"context"`
 	TenantID  string `json:"tenant_id"`
 	ConfigDir string `json:"config_dir"`
@@ -294,6 +298,7 @@ func renderCurrentContextJSON(current domain.TenantContext, ok bool) string {
 	out := currentContextJSON{}
 	if ok {
 		out = currentContextJSON{
+			Active:    true,
 			Context:   current.Name,
 			TenantID:  current.TenantID,
 			ConfigDir: current.Dir,

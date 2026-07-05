@@ -715,3 +715,44 @@ func TestRunner_subJSONNeverEmitsShellCode(t *testing.T) {
 		t.Fatalf("--json must not emit shell code, got %q", stdout.String())
 	}
 }
+
+func TestRunner_subListJSONRejectedThroughShellEnv(t *testing.T) {
+	setupContextDirs(t)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-1", Name: "$(echo owned)"}}}
+	runner := subscriptionRunner(&stdout, &stderr, source, time.Now())
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "sub", "--json", "-l"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("shell-env JSON list must not emit eval-able stdout, got %q", stdout.String())
+	}
+	if source.calls != 0 {
+		t.Fatalf("shell-env JSON list should fail before fetching, got %d calls", source.calls)
+	}
+	if !strings.Contains(stderr.String(), "shell integration") {
+		t.Fatalf("want shell integration output guidance, got: %s", stderr.String())
+	}
+}
+
+func TestRunner_subRefreshJSONRejectedThroughShellEnv(t *testing.T) {
+	setupContextDirs(t)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-1", Name: "$(echo owned)"}}}
+	runner := subscriptionRunner(&stdout, &stderr, source, time.Now())
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "sub", "--json", "--refresh"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("shell-env JSON refresh must not emit eval-able stdout, got %q", stdout.String())
+	}
+	if source.calls != 0 {
+		t.Fatalf("shell-env JSON refresh should fail before fetching, got %d calls", source.calls)
+	}
+}

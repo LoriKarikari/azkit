@@ -581,3 +581,21 @@ func TestRunner_ctxJSONNeverEmitsShellCode(t *testing.T) {
 		t.Fatalf("--json must not emit shell code, got %q", stdout.String())
 	}
 }
+
+func TestRunner_ctxListJSONRejectedThroughShellEnv(t *testing.T) {
+	setupContextDirs(t)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "ctx", "--json", "-l"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("shell-env JSON list must not emit eval-able stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "shell integration") {
+		t.Fatalf("want shell integration output guidance, got: %s", stderr.String())
+	}
+}

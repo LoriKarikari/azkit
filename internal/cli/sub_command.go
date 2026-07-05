@@ -49,14 +49,17 @@ func (c *SubSwitchCmd) jsonOutput() bool {
 }
 
 func (c *SubSwitchCmd) Run(ctx context.Context, services Services, streams *Streams) error {
-	if c.Target == "" && !c.List && !c.Refresh && !interactive.IsTerminalFn() {
-		return app.MissingSubscriptionCommand()
-	}
 	if c.Target != "" && (c.List || c.Refresh) {
 		return app.ConflictingSubscriptionSelectors()
 	}
 	if c.JSON && !c.List && !c.Refresh {
 		return app.JSONOutputNotSupported("azkit sub")
+	}
+	if c.Target == "" && !c.List && !c.Refresh && !interactive.IsTerminalFn() {
+		return app.MissingSubscriptionCommand()
+	}
+	if streams.ShellEnv && (c.List || c.Refresh || c.JSON) {
+		return app.ShellEnvOutputNotSupported("azkit sub")
 	}
 	if c.List || c.Refresh {
 		return runSubscriptionList(ctx, services, streams, c.Refresh, c.JSON)
