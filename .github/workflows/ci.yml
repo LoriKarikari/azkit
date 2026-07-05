@@ -63,6 +63,30 @@ jobs:
           name: coverage
           path: coverage.out
 
+  test-os:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go and Task
+        uses: ./.github/actions/setup-task
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Unit tests
+        run: task test
+
   vet:
     name: Vet
     runs-on: ubuntu-latest
@@ -162,6 +186,7 @@ jobs:
     needs:
       - hygiene
       - test
+      - test-os
       - vet
       - lint
       - security
