@@ -11,6 +11,7 @@ import (
 
 	"github.com/LoriKarikari/azkit/internal/app"
 	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/interactive"
 )
 
 type SubCmd struct {
@@ -44,7 +45,7 @@ func (c *SubCurrentCmd) jsonOutput() bool {
 }
 
 func (c *SubSwitchCmd) Run(ctx context.Context, services Services, streams *Streams) error {
-	if c.Target == "" && !c.List && !c.Refresh {
+	if c.Target == "" && !c.List && !c.Refresh && !interactive.IsTerminalFn() {
 		return app.MissingSubscriptionCommand()
 	}
 	if c.Target != "" && (c.List || c.Refresh) {
@@ -60,6 +61,20 @@ func (c *SubSwitchCmd) Run(ctx context.Context, services Services, streams *Stre
 	svc, err := services.Subscriptions(streams.Log)
 	if err != nil {
 		return err
+	}
+	if c.Target == "" {
+		if err := streams.RequireShellIntegration("azkit sub"); err != nil {
+			return err
+		}
+		subscriptions, err := svc.List(ctx, active, false)
+		if err != nil {
+			return err
+		}
+		selected, err := services.PickSubscription(ctx, subscriptions)
+		if err != nil {
+			return err
+		}
+		return switchSubscription(streams, selected)
 	}
 	target := c.Target
 	if target == "-" {

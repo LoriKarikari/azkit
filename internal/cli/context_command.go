@@ -65,6 +65,9 @@ func (c *CtxCurrentCmd) jsonOutput() bool {
 }
 
 func (c *CtxSwitchCmd) Run(ctx context.Context, services Services, streams *Streams) error {
+	if c.List && c.Name != "" {
+		return app.ConflictingContextSelectors()
+	}
 	if c.List {
 		return renderContextList(ctx, streams)
 	}
@@ -76,6 +79,9 @@ func (c *CtxSwitchCmd) Run(ctx context.Context, services Services, streams *Stre
 	if name == "" {
 		if !interactive.IsTerminalFn() {
 			return app.MissingContextName()
+		}
+		if err := streams.RequireShellIntegration("azkit ctx"); err != nil {
+			return err
 		}
 		contexts, err := svc.List(ctx)
 		if err != nil {

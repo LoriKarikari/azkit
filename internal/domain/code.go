@@ -29,6 +29,7 @@ const (
 	CodeMissingScope                 Code = "missing_scope"
 	CodeMissingSubscriptionCmd       Code = "missing_subscription_command"
 	CodeMissingTenant                Code = "missing_tenant"
+	CodeNoSubscriptions              Code = "no_subscriptions"
 	CodePermissionDenied             Code = "permission_denied"
 	CodePreviousContextNotFound      Code = "previous_context_not_found"
 	CodePreviousSubscriptionNotFound Code = "previous_subscription_not_found"
