@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -11,7 +12,9 @@ import (
 )
 
 func TestCompletionUsesKongplete(t *testing.T) {
-	t.Setenv("SHELL", "/bin/bash")
+	if runtime.GOOS == "windows" {
+		t.Skip("kongplete detects cmd.exe through COMSPEC on Windows")
+	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
@@ -78,7 +81,9 @@ func TestCompletionHelpDoesNotExposeUnsupportedUninstallFlag(t *testing.T) {
 }
 
 func TestCompletionIgnoresInvalidConfig(t *testing.T) {
-	t.Setenv("SHELL", "/bin/bash")
+	if runtime.GOOS == "windows" {
+		t.Skip("kongplete detects cmd.exe through COMSPEC on Windows")
+	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	runner := cli.NewRunner(cli.Services{}, &stdout, &stderr)
