@@ -443,3 +443,54 @@ func setupContextDirs(t *testing.T) (string, string) {
 	t.Setenv("HOME", t.TempDir())
 	return configRoot, stateRoot
 }
+
+func TestRunner_ctxNoArgsPickerCancelLeavesStdoutEmpty(t *testing.T) {
+	setupContextDirs(t)
+	t.Setenv("AZKIT_SHELL", "bash")
+	interactive.IsTerminalFn = func() bool { return true }
+	t.Cleanup(func() { interactive.IsTerminalFn = interactive.IsTerminal })
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := cli.NewRunner(cli.Services{
+		PickContext: func(context.Context, []domain.TenantContext) (domain.TenantContext, error) {
+			return domain.TenantContext{}, interactive.ErrCanceled
+		},
+	}, &stdout, &stderr)
+
+	if code := runner.Run(t.Context(), []string{"ctx", "add", "prod", "--tenant", "tenant-prod"}); code != 0 {
+		t.Fatalf("add prod: exit %d: %s", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "ctx"})
+	if code != 130 {
+		t.Fatalf("want cancel exit 130, got %d: %s", code, stderr.String())
+	}
+	if stdout.String() != "" {
+		t.Fatalf("canceled picker must not emit shell changes, got %q", stdout.String())
+	}
+}
+
+func TestRunner_ctxSwitchDoesNotFuzzyMatchOutsidePicker(t *testing.T) {
+	setupContextDirs(t)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+	if code := runner.Run(t.Context(), []string{"ctx", "add", "prod", "--tenant", "tenant-prod"}); code != 0 {
+		t.Fatalf("add prod: exit %d: %s", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "ctx", "pr"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("direct fuzzy miss must not emit shell changes, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `Context "pr" was not found`) {
+		t.Fatalf("want exact lookup miss, got: %s", stderr.String())
+	}
+}

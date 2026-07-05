@@ -14,6 +14,7 @@ import (
 	"github.com/LoriKarikari/azkit/internal/app"
 	"github.com/LoriKarikari/azkit/internal/cli"
 	"github.com/LoriKarikari/azkit/internal/domain"
+	"github.com/LoriKarikari/azkit/internal/interactive"
 	"github.com/LoriKarikari/azkit/internal/subscriptionstore"
 )
 
@@ -219,6 +220,16 @@ func subscriptionRunner(
 	source *cliSubscriptionSource,
 	now time.Time,
 ) *cli.Runner {
+	return subscriptionRunnerWithPicker(stdout, stderr, source, now, nil)
+}
+
+func subscriptionRunnerWithPicker(
+	stdout *bytes.Buffer,
+	stderr *bytes.Buffer,
+	source *cliSubscriptionSource,
+	now time.Time,
+	pickSubscription func(context.Context, []domain.Subscription) (domain.Subscription, error),
+) *cli.Runner {
 	return cli.NewRunner(cli.Services{
 		Subscriptions: func(*slog.Logger) (*app.SubscriptionService, error) {
 			return app.NewSubscriptionService(
@@ -233,6 +244,7 @@ func subscriptionRunner(
 				func() time.Time { return now },
 			), nil
 		},
+		PickSubscription: pickSubscription,
 	}, stdout, stderr)
 }
 
@@ -507,5 +519,79 @@ func TestRunner_subAliasRejectsReservedName(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "Invalid alias name") {
 		t.Fatalf("want invalid alias error, got: %s", stderr.String())
+	}
+}
+
+func TestRunner_subNoArgsUsesInteractivePicker(t *testing.T) {
+	_, stateRoot := setupContextDirs(t)
+	t.Setenv("AZKIT_CONTEXT", "prod")
+	t.Setenv("AZKIT_SHELL", "bash")
+	interactive.IsTerminalFn = func() bool { return true }
+	t.Cleanup(func() { interactive.IsTerminalFn = interactive.IsTerminal })
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{
+		{ID: "sub-dev", Name: "Development"},
+		{ID: "sub-prod", Name: "Production"},
+	}}
+	runner := subscriptionRunnerWithPicker(&stdout, &stderr, source, time.Now(), func(_ context.Context, subscriptions []domain.Subscription) (domain.Subscription, error) {
+		if len(subscriptions) != 2 {
+			t.Fatalf("want 2 subscriptions, got %d", len(subscriptions))
+		}
+		return subscriptions[1], nil
+	})
+	addReadyContext(t, runner, &stdout, &stderr, stateRoot, "prod", "tenant-prod")
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "sub"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "export AZURE_SUBSCRIPTION_ID='sub-prod'") {
+		t.Fatalf("picker selection was not switched:\n%s", stdout.String())
+	}
+}
+
+func TestRunner_subNoArgsPickerCancelLeavesStdoutEmpty(t *testing.T) {
+	_, stateRoot := setupContextDirs(t)
+	t.Setenv("AZKIT_CONTEXT", "prod")
+	t.Setenv("AZKIT_SHELL", "bash")
+	t.Setenv("AZKIT_SUBSCRIPTION_ID", "sub-old")
+	interactive.IsTerminalFn = func() bool { return true }
+	t.Cleanup(func() { interactive.IsTerminalFn = interactive.IsTerminal })
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-new", Name: "New"}}}
+	runner := subscriptionRunnerWithPicker(&stdout, &stderr, source, time.Now(), func(context.Context, []domain.Subscription) (domain.Subscription, error) {
+		return domain.Subscription{}, interactive.ErrCanceled
+	})
+	addReadyContext(t, runner, &stdout, &stderr, stateRoot, "prod", "tenant-prod")
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "sub"})
+	if code != 130 {
+		t.Fatalf("want cancel exit 130, got %d: %s", code, stderr.String())
+	}
+	if stdout.String() != "" {
+		t.Fatalf("canceled picker must not emit shell changes, got %q", stdout.String())
+	}
+}
+
+func TestRunner_subSwitchDoesNotFuzzyMatchOutsidePicker(t *testing.T) {
+	_, stateRoot := setupContextDirs(t)
+	t.Setenv("AZKIT_CONTEXT", "prod")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-1", Name: "Production Account"}}}
+	runner := subscriptionRunner(&stdout, &stderr, source, time.Now())
+	addReadyContext(t, runner, &stdout, &stderr, stateRoot, "prod", "tenant-prod")
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "sub", "Prod"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("direct fuzzy miss must not emit shell changes, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `Subscription "Prod" was not found`) {
+		t.Fatalf("want exact lookup miss, got: %s", stderr.String())
 	}
 }

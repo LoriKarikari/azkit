@@ -31,6 +31,8 @@ type activateInteractiveFunc func(context.Context, []domain.EligibleAssignment, 
 
 type deactivateInteractiveFunc func(context.Context, []domain.ActiveAssignment, *app.DeactivationService, interactive.DeactivationInput) (*domain.DeactivationResult, error)
 
+type subscriptionPickerFunc func(context.Context, []domain.Subscription) (domain.Subscription, error)
+
 type jsonCommand interface {
 	jsonOutput() bool
 }
@@ -44,6 +46,7 @@ type Services struct {
 	ActivateInteractive   activateInteractiveFunc
 	DeactivateInteractive deactivateInteractiveFunc
 	PickContext           contextPickerFunc
+	PickSubscription      subscriptionPickerFunc
 }
 
 type Runner struct {
@@ -61,6 +64,9 @@ func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
 	}
 	if services.PickContext == nil {
 		services.PickContext = interactive.PickContext
+	}
+	if services.PickSubscription == nil {
+		services.PickSubscription = interactive.PickSubscription
 	}
 	return &Runner{
 		services: services,

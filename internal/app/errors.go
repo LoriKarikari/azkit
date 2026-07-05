@@ -64,6 +64,13 @@ func UnknownSubscription(selector string) *Error {
 	}
 }
 
+func NoSubscriptions() *Error {
+	return &Error{
+		Code:    domain.CodeUnknownSubscription,
+		Message: "No subscriptions found for the active context.",
+	}
+}
+
 func AmbiguousSubscription(selector string) *Error {
 	return &Error{
 		Code:    domain.CodeAmbiguousSubscription,
