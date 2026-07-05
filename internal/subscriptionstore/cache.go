@@ -90,7 +90,7 @@ func cachePath(active domain.TenantContext) string {
 
 func writeFileAtomic(target string, contents []byte) error {
 	dir := filepath.Dir(target)
-	tmp, err := os.CreateTemp(dir, cacheFileName+".*.tmp")
+	tmp, err := os.CreateTemp(dir, filepath.Base(target)+".*.tmp")
 	if err != nil {
 		return err
 	}

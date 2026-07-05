@@ -150,3 +150,18 @@ func TestStreamsRenderShellEnv(t *testing.T) {
 		t.Fatalf("missing unset in PowerShell output:\n%s", powershell)
 	}
 }
+
+func TestRunner_shellInitSubExcludesManagementCommands(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"shell-init", "bash"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "alias|unalias|current|-l|--list|--refresh|--help|-h") {
+		t.Fatalf("want sub management commands excluded from shell hook, got:\n%s", got)
+	}
+}
