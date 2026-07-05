@@ -8,20 +8,21 @@ concurrency:
   group: release-please-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+      pull-requests: write
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: ${{ steps.release.outputs.release_created == 'true' }}
         with:
           fetch-depth: 0
@@ -40,7 +41,13 @@ jobs:
       - run: task vet
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
-      - uses: goreleaser/goreleaser-action@v6
+      - name: Setup Syft
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          syft-version: v1.46.0
+
+      - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         if: ${{ steps.release.outputs.release_created == 'true' }}
         with:
           distribution: goreleaser
@@ -48,6 +55,12 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attest release artifacts
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4
+        with:
+          subject-checksums: dist/checksums.txt
 
       - name: Smoke test published release
         if: ${{ steps.release.outputs.release_created == 'true' }}

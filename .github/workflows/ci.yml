@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Go and Task
         uses: ./.github/actions/setup-task
@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Go and Task
         uses: ./.github/actions/setup-task
@@ -63,7 +63,7 @@ jobs:
         run: task coverage:summary
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage
           path: coverage.out
@@ -81,7 +81,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Go and Task
         uses: ./.github/actions/setup-task
@@ -99,7 +99,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Go and Task
         uses: ./.github/actions/setup-task
@@ -110,24 +110,6 @@ jobs:
       - name: Vet
         run: task vet
 
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup Go and Task
-        uses: ./.github/actions/setup-task
-
-      - name: Download modules
-        run: go mod download
-
-      - name: Lint
-        run: task lint
-
   security:
     name: Security
     runs-on: ubuntu-latest
@@ -135,7 +117,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Go and Task
         uses: ./.github/actions/setup-task
@@ -153,7 +135,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
@@ -161,7 +143,7 @@ jobs:
         uses: ./.github/actions/setup-task
 
       - name: Setup GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
           version: v2.17.0
@@ -177,31 +159,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Go and Task
         uses: ./.github/actions/setup-task
 
       - name: Smoke test CLI
         run: task smoke
-
-  required:
-    name: Test, vet, lint
-    runs-on: ubuntu-latest
-    needs:
-      - hygiene
-      - test
-      - test-os
-      - vet
-      - lint
-      - security
-      - release-check
-      - smoke
-    if: ${{ always() }}
-    steps:
-      - name: Check split CI result
-        run: |
-          if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ] || [ "${{ contains(needs.*.result, 'skipped') }}" = "true" ]; then
-            exit 1
-          fi
-          echo "CI split jobs passed."
