@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: release-please-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write
@@ -21,27 +25,30 @@ jobs:
         if: ${{ steps.release.outputs.release_created == 'true' }}
         with:
           fetch-depth: 0
+          ref: ${{ steps.release.outputs.tag_name }}
 
-      - uses: actions/setup-go@v6
+      - name: Setup Go and Task
         if: ${{ steps.release.outputs.release_created == 'true' }}
-        with:
-          go-version-file: go.mod
-          cache: true
+        uses: ./.github/actions/setup-task
 
       - run: go mod download
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
-      - run: go test ./...
+      - run: task test
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
-      - run: go vet ./...
+      - run: task vet
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
       - uses: goreleaser/goreleaser-action@v6
         if: ${{ steps.release.outputs.release_created == 'true' }}
         with:
           distribution: goreleaser
-          version: '~> v2'
+          version: v2.17.0
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Smoke test published release
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: ./scripts/smoke-release-install.sh "${{ steps.release.outputs.tag_name }}"

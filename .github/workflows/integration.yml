@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: '17 5 * * 1'
 
+concurrency:
+  group: integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -19,11 +23,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
+      - name: Setup Go and Task
+        uses: ./.github/actions/setup-task
 
       - name: Run live tests
         env:
@@ -32,4 +33,4 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-        run: go test -tags=integration -count=1 ./internal/azurepim
+        run: task test:live

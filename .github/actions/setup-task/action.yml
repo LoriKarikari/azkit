@@ -1,0 +1,23 @@
+name: Setup Go and Task
+
+description: Set up Go and install Task for project workflows.
+
+inputs:
+  task-version:
+    description: Task version to install.
+    required: false
+    default: 3.52.0
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: true
+
+    - name: Setup Task
+      uses: go-task/setup-task@v2
+      with:
+        version: ${{ inputs.task-version }}
