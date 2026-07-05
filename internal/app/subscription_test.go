@@ -21,7 +21,7 @@ func TestSubscriptionService_usesFreshCache(t *testing.T) {
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{}
-	svc := app.NewSubscriptionService(cache, nil, func(active domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, emptyAliasStore(), func(active domain.TenantContext) (app.SubscriptionSource, error) {
 		if active.Name != "prod" {
 			t.Fatalf("unexpected active context: %+v", active)
 		}
@@ -50,7 +50,7 @@ func TestSubscriptionService_refreshOverwritesCache(t *testing.T) {
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-live", Name: "Live"}}}
-	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, emptyAliasStore(), func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -79,7 +79,7 @@ func TestSubscriptionService_refreshKeepsCacheWhenFetchFails(t *testing.T) {
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{err: errors.New("network down")}
-	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, emptyAliasStore(), func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -102,7 +102,7 @@ func TestSubscriptionService_fetchesWhenCacheExpired(t *testing.T) {
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-live", Name: "Live"}}}
-	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, emptyAliasStore(), func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -128,7 +128,7 @@ func TestSubscriptionService_treatsExactlyTTLAsStale(t *testing.T) {
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-live", Name: "Live"}}}
-	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, emptyAliasStore(), func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -151,7 +151,7 @@ func TestSubscriptionService_servesFreshCacheEvenWhenContextNeedsLogin(t *testin
 		hasCached: true,
 	}
 	source := &fakeSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-live", Name: "Live"}}}
-	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, emptyAliasStore(), func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -175,7 +175,7 @@ func TestSubscriptionService_needsLoginWithoutFreshCache(t *testing.T) {
 	now := time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC)
 	cache := &fakeSubscriptionCache{}
 	source := &fakeSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-live", Name: "Live"}}}
-	svc := app.NewSubscriptionService(cache, nil, func(domain.TenantContext) (app.SubscriptionSource, error) {
+	svc := app.NewSubscriptionService(cache, emptyAliasStore(), func(domain.TenantContext) (app.SubscriptionSource, error) {
 		return source, nil
 	}, func() time.Time { return now })
 
@@ -272,7 +272,7 @@ func TestSubscriptionService_resolveUnknownOrAmbiguous(t *testing.T) {
 		},
 		hasCached: true,
 	}
-	svc := app.NewSubscriptionService(cache, nil, sourceFactory(nil), func() time.Time { return now })
+	svc := app.NewSubscriptionService(cache, emptyAliasStore(), sourceFactory(nil), func() time.Time { return now })
 
 	_, err := svc.Resolve(t.Context(), readyContext(), "missing")
 	if err == nil {
@@ -309,6 +309,36 @@ func TestSubscriptionService_createAlias(t *testing.T) {
 	if err := svc.CreateAlias(t.Context(), readyContext(), "Production", "sub-1"); err == nil {
 		t.Fatal("want collision with subscription name")
 	}
+	if err := svc.CreateAlias(t.Context(), readyContext(), "sub-1", "sub-1"); err == nil {
+		t.Fatal("want collision with subscription ID")
+	}
+}
+
+func TestSubscriptionService_aliasesAreCaseInsensitive(t *testing.T) {
+	now := time.Date(2026, 7, 4, 12, 0, 0, 0, time.UTC)
+	cache := &fakeSubscriptionCache{
+		cached: domain.SubscriptionCache{
+			FetchedAt:     now.Add(-time.Hour),
+			Subscriptions: []domain.Subscription{{ID: "sub-1", Name: "Production"}},
+		},
+		hasCached: true,
+	}
+	aliases := &fakeAliasStore{aliases: map[string]domain.Subscription{}}
+	svc := app.NewSubscriptionService(cache, aliases, sourceFactory(nil), func() time.Time { return now })
+
+	if err := svc.CreateAlias(t.Context(), readyContext(), "Prod", "sub-1"); err != nil {
+		t.Fatalf("create alias: %v", err)
+	}
+	got, err := svc.Resolve(t.Context(), readyContext(), "PROD")
+	if err != nil {
+		t.Fatalf("resolve alias by different case: %v", err)
+	}
+	if got.ID != "sub-1" {
+		t.Fatalf("want sub-1, got %+v", got)
+	}
+	if err := svc.CreateAlias(t.Context(), readyContext(), "prod", "sub-1"); err == nil {
+		t.Fatal("want duplicate alias across case variants")
+	}
 }
 
 func TestSubscriptionService_removeAlias(t *testing.T) {
@@ -337,6 +367,10 @@ func sourceFactory(source *fakeSubscriptionSource) func(domain.TenantContext) (a
 		}
 		return source, nil
 	}
+}
+
+func emptyAliasStore() *fakeAliasStore {
+	return &fakeAliasStore{aliases: map[string]domain.Subscription{}}
 }
 
 type fakeAliasStore struct {

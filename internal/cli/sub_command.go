@@ -47,6 +47,9 @@ func (c *SubSwitchCmd) Run(ctx context.Context, services Services, streams *Stre
 	if c.Target == "" && !c.List && !c.Refresh {
 		return app.MissingSubscriptionCommand()
 	}
+	if c.Target != "" && (c.List || c.Refresh) {
+		return app.ConflictingSubscriptionSelectors()
+	}
 	if c.List || c.Refresh {
 		return runSubscriptionList(ctx, services, streams, c.Refresh)
 	}

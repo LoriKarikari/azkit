@@ -1,6 +1,9 @@
 package subscriptionstore_test
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/LoriKarikari/azkit/internal/domain"
@@ -63,5 +66,40 @@ func TestAliases_SaveOverwrites(t *testing.T) {
 	}
 	if got["prod"].ID != "sub-new" {
 		t.Fatalf("want overwritten alias, got %+v", got)
+	}
+}
+
+func TestAliases_SaveUsesOwnerOnlyPermissions(t *testing.T) {
+	store := subscriptionstore.NewAliases()
+	active := domain.TenantContext{Name: "prod", TenantID: "tenant", Dir: t.TempDir()}
+
+	if err := store.Save(t.Context(), active, map[string]domain.Subscription{
+		"prod": {ID: "sub-1", Name: "Production"},
+	}); err != nil {
+		t.Fatalf("save aliases: %v", err)
+	}
+	info, err := os.Stat(filepath.Join(active.Dir, "aliases.json"))
+	if err != nil {
+		t.Fatalf("stat aliases: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0600 {
+		t.Fatalf("want 0600 aliases file, got %v", got)
+	}
+}
+
+func TestAliases_CorruptFileReportsPath(t *testing.T) {
+	store := subscriptionstore.NewAliases()
+	active := domain.TenantContext{Name: "prod", TenantID: "tenant", Dir: t.TempDir()}
+	path := filepath.Join(active.Dir, "aliases.json")
+	if err := os.WriteFile(path, []byte("{"), 0600); err != nil {
+		t.Fatalf("write corrupt aliases: %v", err)
+	}
+
+	_, err := store.Load(t.Context(), active)
+	if err == nil {
+		t.Fatal("want corrupt aliases error")
+	}
+	if !strings.Contains(err.Error(), path) {
+		t.Fatalf("want error to include path %q, got %v", path, err)
 	}
 }

@@ -23,16 +23,17 @@ func (a *Aliases) Load(ctx context.Context, active domain.TenantContext) (map[st
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	contents, err := os.ReadFile(aliasesPath(active)) // #nosec G304 -- fixed aliases file under the user-controlled context dir.
+	path := aliasesPath(active)
+	contents, err := os.ReadFile(path) // #nosec G304 -- fixed aliases file under the user-controlled context dir.
 	if errors.Is(err, os.ErrNotExist) {
 		return map[string]domain.Subscription{}, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("reading subscription aliases: %w", err)
+		return nil, fmt.Errorf("reading subscription aliases %s: %w", path, err)
 	}
 	var records map[string]aliasRecord
 	if err := json.Unmarshal(contents, &records); err != nil {
-		return nil, fmt.Errorf("parsing subscription aliases: %w", err)
+		return nil, fmt.Errorf("parsing subscription aliases %s: %w", path, err)
 	}
 	out := make(map[string]domain.Subscription, len(records))
 	for k, v := range records {
@@ -61,8 +62,9 @@ func (a *Aliases) Save(
 		return fmt.Errorf("encoding subscription aliases: %w", err)
 	}
 	contents = append(contents, '\n')
-	if err := os.WriteFile(aliasesPath(active), contents, 0600); err != nil {
-		return fmt.Errorf("writing subscription aliases: %w", err)
+	path := aliasesPath(active)
+	if err := writeFileAtomic(path, contents); err != nil {
+		return fmt.Errorf("writing subscription aliases %s: %w", path, err)
 	}
 	return nil
 }

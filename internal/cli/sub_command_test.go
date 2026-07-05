@@ -141,6 +141,28 @@ func TestRunner_subBareCommandFailsWithoutStdout(t *testing.T) {
 	}
 }
 
+func TestRunner_subTargetWithRefreshFailsWithoutEvalStdout(t *testing.T) {
+	setupContextDirs(t)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-1", Name: "$(echo owned)"}}}
+	runner := subscriptionRunner(&stdout, &stderr, source, time.Now())
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "sub", "prod", "--refresh"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("target+refresh must not print eval-able stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "not both") {
+		t.Fatalf("want conflicting selector guidance, got: %s", stderr.String())
+	}
+	if source.calls != 0 {
+		t.Fatalf("conflicting selector should fail before fetching, got %d source calls", source.calls)
+	}
+}
+
 func TestRunner_subListCredentialFailureIsActionable(t *testing.T) {
 	_, stateRoot := setupContextDirs(t)
 	t.Setenv("AZKIT_CONTEXT", "prod")
@@ -292,6 +314,24 @@ func TestRunner_subSwitchSetsEnvironment(t *testing.T) {
 	}
 }
 
+func TestRunner_subSwitchesByExactName(t *testing.T) {
+	_, stateRoot := setupContextDirs(t)
+	t.Setenv("AZKIT_CONTEXT", "prod")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-1", Name: "Production Account"}}}
+	runner := subscriptionRunner(&stdout, &stderr, source, time.Now())
+	addReadyContext(t, runner, &stdout, &stderr, stateRoot, "prod", "tenant-prod")
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "sub", "Production Account"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "export AZURE_SUBSCRIPTION_ID='sub-1'") {
+		t.Fatalf("want switch by exact name, got: %s", stdout.String())
+	}
+}
+
 func TestRunner_subSwitchToPreviousSubscription(t *testing.T) {
 	_, stateRoot := setupContextDirs(t)
 	t.Setenv("AZKIT_CONTEXT", "prod")
@@ -313,6 +353,9 @@ func TestRunner_subSwitchToPreviousSubscription(t *testing.T) {
 	out := stdout.String()
 	if !strings.Contains(out, "export AZURE_SUBSCRIPTION_ID='sub-previous'") {
 		t.Fatalf("want previous subscription, got: %s", out)
+	}
+	if !strings.Contains(out, "export AZKIT_PREVIOUS_SUBSCRIPTION_ID='sub-current'") {
+		t.Fatalf("want previous rotation to remember current subscription, got: %s", out)
 	}
 }
 
@@ -446,5 +489,23 @@ func TestRunner_subAliasRejectsSubscriptionNameCollision(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "matches the existing subscription") {
 		t.Fatalf("want collision error, got: %s", stderr.String())
+	}
+}
+
+func TestRunner_subAliasRejectsReservedName(t *testing.T) {
+	_, stateRoot := setupContextDirs(t)
+	t.Setenv("AZKIT_CONTEXT", "prod")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-1", Name: "Production"}}}
+	runner := subscriptionRunner(&stdout, &stderr, source, time.Now())
+	addReadyContext(t, runner, &stdout, &stderr, stateRoot, "prod", "tenant-prod")
+
+	code := runner.Run(t.Context(), []string{"sub", "alias", "current", "sub-1"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "Invalid alias name") {
+		t.Fatalf("want invalid alias error, got: %s", stderr.String())
 	}
 }

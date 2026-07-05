@@ -44,9 +44,6 @@ func NewSubscriptionService(
 	if now == nil {
 		now = time.Now
 	}
-	if aliasStore == nil {
-		aliasStore = noopAliasStore{}
-	}
 	return &SubscriptionService{
 		cache:      cache,
 		aliasStore: aliasStore,
@@ -104,7 +101,7 @@ func (s *SubscriptionService) Resolve(
 	if err != nil {
 		return domain.Subscription{}, err
 	}
-	if sub, ok := aliases[selector]; ok {
+	if sub, ok := aliases[aliasKey(selector)]; ok {
 		return sub, nil
 	}
 	subs, err := s.List(ctx, active, false)
@@ -133,13 +130,6 @@ func (s *SubscriptionService) Resolve(
 	return domain.Subscription{}, UnknownSubscription(selector)
 }
 
-func (s *SubscriptionService) Aliases(
-	ctx context.Context,
-	active domain.TenantContext,
-) (map[string]domain.Subscription, error) {
-	return s.aliasStore.Load(ctx, active)
-}
-
 func (s *SubscriptionService) CreateAlias(
 	ctx context.Context,
 	active domain.TenantContext,
@@ -163,7 +153,7 @@ func (s *SubscriptionService) CreateAlias(
 		return err
 	}
 	for _, existing := range subs {
-		if strings.EqualFold(existing.Name, alias) {
+		if strings.EqualFold(existing.Name, alias) || strings.EqualFold(existing.ID, alias) {
 			return AliasNameCollision(alias, existing)
 		}
 	}
@@ -171,10 +161,11 @@ func (s *SubscriptionService) CreateAlias(
 	if err != nil {
 		return err
 	}
-	if _, exists := aliases[alias]; exists {
+	key := aliasKey(alias)
+	if _, exists := aliases[key]; exists {
 		return AliasAlreadyExists(alias)
 	}
-	aliases[alias] = sub
+	aliases[key] = sub
 	return s.aliasStore.Save(ctx, active, aliases)
 }
 
@@ -191,10 +182,11 @@ func (s *SubscriptionService) RemoveAlias(
 	if err != nil {
 		return err
 	}
-	if _, ok := aliases[alias]; !ok {
+	key := aliasKey(alias)
+	if _, ok := aliases[key]; !ok {
 		return AliasNotFound(alias)
 	}
-	delete(aliases, alias)
+	delete(aliases, key)
 	return s.aliasStore.Save(ctx, active, aliases)
 }
 
@@ -221,18 +213,12 @@ func validateAliasName(alias string) error {
 	if !aliasNameRE.MatchString(alias) {
 		return InvalidAliasName(alias)
 	}
-	if _, ok := reservedAliasNames[strings.ToLower(alias)]; ok {
+	if _, ok := reservedAliasNames[aliasKey(alias)]; ok {
 		return InvalidAliasName(alias)
 	}
 	return nil
 }
 
-type noopAliasStore struct{}
-
-func (noopAliasStore) Load(context.Context, domain.TenantContext) (map[string]domain.Subscription, error) {
-	return map[string]domain.Subscription{}, nil
-}
-
-func (noopAliasStore) Save(context.Context, domain.TenantContext, map[string]domain.Subscription) error {
-	return nil
+func aliasKey(alias string) string {
+	return strings.ToLower(strings.TrimSpace(alias))
 }

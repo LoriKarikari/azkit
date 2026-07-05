@@ -119,3 +119,10 @@ func PreviousSubscriptionNotFound() *Error {
 		Message: "Previous subscription is not set in this shell.",
 	}
 }
+
+func ConflictingSubscriptionSelectors() *Error {
+	return &Error{
+		Code:    domain.CodeConflictingSelectors,
+		Message: "Use either a subscription target or --list/--refresh, not both.",
+	}
+}
