@@ -2,7 +2,7 @@
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/LoriKarikari/pimctl)](https://go.dev/dl)
 [![CI](https://github.com/LoriKarikari/pimctl/actions/workflows/ci.yml/badge.svg)](https://github.com/LoriKarikari/pimctl/actions/workflows/ci.yml)
-[![golangci-lint](https://img.shields.io/github/actions/workflow/status/LoriKarikari/pimctl/ci.yml?branch=main&label=golangci-lint)](https://github.com/LoriKarikari/pimctl/actions/workflows/ci.yml)
+[![golangci-lint](https://github.com/LoriKarikari/pimctl/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/LoriKarikari/pimctl/actions/workflows/lint.yml)
 [![License](https://img.shields.io/github/license/LoriKarikari/pimctl)](./LICENSE)
 
 `azkit` is an umbrella CLI for Azure operator workflows. It keeps Azure resource-role PIM, tenant contexts, and subscription switching in one small tool.
