@@ -1,15 +1,13 @@
-# pimctl
+# azkit
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/LoriKarikari/pimctl)](https://go.dev/dl)
 [![CI](https://github.com/LoriKarikari/pimctl/actions/workflows/ci.yml/badge.svg)](https://github.com/LoriKarikari/pimctl/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/LoriKarikari/pimctl)](https://goreportcard.com/report/github.com/LoriKarikari/pimctl)
+[![Go Report Card](https://goreportcard.com/badge/github.com/LoriKarikari/azkit)](https://goreportcard.com/report/github.com/LoriKarikari/azkit)
 [![License](https://img.shields.io/github/license/LoriKarikari/pimctl)](./LICENSE)
 
-`pimctl` manages Azure PIM resource roles. It lists eligible assignments, activates roles, deactivates active assignments, and shows what is active now.
+`azkit` is an umbrella CLI for Azure operator workflows. It keeps Azure resource-role PIM, tenant contexts, and subscription switching in one small tool.
 
-## Scope
-
-`pimctl` supports Azure resource role PIM. It does not manage Entra roles or PIM for Groups.
+PIM support is focused on Azure resource roles. `azkit` does not manage Entra roles or PIM for Groups.
 
 ## Install
 
@@ -22,22 +20,108 @@ curl -fsSL https://raw.githubusercontent.com/LoriKarikari/pimctl/main/install.sh
 Install a specific version or directory:
 
 ```bash
-PIMCTL_INSTALL_VERSION=v0.3.0 PIMCTL_INSTALL_DIR=/usr/local/bin \
-  curl -fsSL https://raw.githubusercontent.com/LoriKarikari/pimctl/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/LoriKarikari/pimctl/main/install.sh \
+  | AZKIT_INSTALL_VERSION=v0.3.0 AZKIT_INSTALL_DIR=/usr/local/bin sh
 ```
 
-## Quickstart
+The installer downloads the matching release archive, verifies `checksums.txt`, and installs the `azkit` binary.
 
-List roles you can activate:
+## Shell integration
+
+Context and subscription switching change environment variables in your current shell, so enable shell integration first:
 
 ```bash
-pimctl list
+eval "$(azkit shell-init bash)"
+```
+
+Use `zsh`, `powershell`, or `pwsh` instead of `bash` if that is your shell.
+
+To make it permanent, add the same line to your shell startup file.
+
+## Bootstrap a tenant context
+
+Create a named tenant context:
+
+```bash
+azkit ctx add prod --tenant 00000000-0000-0000-0000-000000000000
+```
+
+Switch to it:
+
+```bash
+azkit ctx prod
+```
+
+If the context has not been logged in yet, `azkit` prints the Azure login command to run. The switch sets `AZURE_TENANT_ID`, `ARM_TENANT_ID`, and an isolated `AZURE_CONFIG_DIR` for that context.
+
+```bash
+az login --tenant 00000000-0000-0000-0000-000000000000
+```
+
+Useful context commands:
+
+```bash
+azkit ctx -l
+azkit ctx -l --json
+azkit ctx current
+azkit ctx current --json
+azkit ctx -        # switch to the previous context
+azkit ctx rm prod --force
+```
+
+## Select a subscription
+
+List subscriptions for the active context:
+
+```bash
+azkit sub -l
+```
+
+Refresh the subscription cache:
+
+```bash
+azkit sub --refresh
+```
+
+Switch by alias, exact subscription ID, or exact subscription name:
+
+```bash
+azkit sub prod
+azkit sub 11111111-1111-1111-1111-111111111111
+azkit sub "Production"
+```
+
+Create and remove aliases:
+
+```bash
+azkit sub alias prod "Production"
+azkit sub unalias prod
+```
+
+Check or switch back:
+
+```bash
+azkit sub current
+azkit sub current --json
+azkit sub -
+```
+
+Subscription switching sets `AZKIT_SUBSCRIPTION_ID`, `AZURE_SUBSCRIPTION_ID`, `ARM_SUBSCRIPTION_ID`, and `ARM_SUBSCRIPTION_NAME` in the current shell.
+
+## PIM workflows
+
+PIM commands live under `azkit pim`.
+
+List eligible role assignments:
+
+```bash
+azkit pim list
 ```
 
 Activate a role:
 
 ```bash
-pimctl activate \
+azkit pim activate \
   --subscription "Production" \
   --resource-group rg-app \
   --role Contributor \
@@ -47,14 +131,14 @@ pimctl activate \
 Check active assignments:
 
 ```bash
-pimctl status
+azkit pim status
 ```
 
 Find the `assignment_id` for an active assignment:
 
 ```bash
-pimctl status --extended
-pimctl status --json
+azkit pim status --extended
+azkit pim status --json
 ```
 
 Default status output stays short. Use `--extended` or `--json` when you need the ID for a script or deactivation.
@@ -62,25 +146,25 @@ Default status output stays short. Use `--extended` or `--json` when you need th
 Deactivate an active assignment:
 
 ```bash
-pimctl deactivate <assignment-id>
+azkit pim deactivate <assignment-id>
 ```
 
 Add a reason if you want one recorded with the request:
 
 ```bash
-pimctl deactivate <assignment-id> --reason "Incident resolved"
+azkit pim deactivate <assignment-id> --reason "Incident resolved"
 ```
 
-In a terminal, `pimctl deactivate` opens a picker.
-
-Success means Azure accepted the deactivation request. The assignment may still appear in `pimctl status` for a short time.
+In a terminal, `azkit pim activate`, `azkit pim deactivate`, `azkit ctx`, and `azkit sub` can open pickers when required inputs are missing.
 
 For scripts:
 
 ```bash
-pimctl list --json
-pimctl status --json
-pimctl deactivate <assignment-id> --json
+azkit pim list --json
+azkit pim status --json
+azkit pim deactivate <assignment-id> --json
+azkit ctx -l --json
+azkit sub -l --json
 ```
 
 ## Shell completion
@@ -88,21 +172,21 @@ pimctl deactivate <assignment-id> --json
 Generate completion for your login shell:
 
 ```bash
-pimctl completion
+azkit completion
 ```
 
 For bash or zsh, load it in the current shell with:
 
 ```bash
-eval "$(pimctl completion)"
+eval "$(azkit completion)"
 ```
 
-Completion is registered for the command name `pimctl`. If you are testing a local build with `./pimctl`, add an alias first:
+If you are testing a local build:
 
 ```bash
-go build -o pimctl ./cmd/pimctl
-alias pimctl="$PWD/pimctl"
-eval "$(pimctl completion)"
+go build -o azkit ./cmd/azkit
+alias azkit="$PWD/azkit"
+eval "$(azkit completion)"
 ```
 
 ## Configuration

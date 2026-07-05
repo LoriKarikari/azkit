@@ -1,6 +1,6 @@
 # Go Engineering Standards
 
-`pimctl` should feel like a small, sharp, high-quality infrastructure tool: explicit, testable, boring where possible, and polished at the edges.
+`azkit` should feel like a small, sharp, high-quality infrastructure tool: explicit, testable, boring where possible, and polished at the edges.
 
 ## Architecture rules
 
