@@ -28,6 +28,11 @@ jobs:
       - name: Download modules
         run: go mod download
 
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
       - name: Check go.mod and installer
         run: |
           task tidy:check

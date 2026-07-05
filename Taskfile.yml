@@ -97,12 +97,19 @@ tasks:
       - task: security:vuln
 
   install:check:
-    desc: Check installer syntax and help output.
+    desc: Check installer and shell script syntax/help output.
     cmds:
       - sh -n install.sh
+      - for script in scripts/*.sh; do sh -n "$script"; done
       - sh install.sh --help > /tmp/azkit-install-help.txt
       - grep -q 'Install azkit' /tmp/azkit-install-help.txt
       - grep -q 'AZKIT_INSTALL_VERSION  Version to install, for example v0.4.0' /tmp/azkit-install-help.txt
+      - >-
+        if command -v shellcheck >/dev/null 2>&1; then
+          shellcheck install.sh scripts/*.sh;
+        else
+          echo "shellcheck not installed; skipping shellcheck";
+        fi
 
   release:check:
     desc: Validate the GoReleaser config.
