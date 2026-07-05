@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.4.0](https://github.com/LoriKarikari/azkit/compare/azkit-v0.3.0...azkit-v0.4.0) (2026-07-05)
+## [0.4.0](https://github.com/LoriKarikari/azkit/compare/v0.3.0...v0.4.0) (2026-07-05)
 
 
 ### Features
