@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-repo="LoriKarikari/pimctl"
+repo="LoriKarikari/azkit"
 bin_name="azkit"
 version="${AZKIT_INSTALL_VERSION:-latest}"
 bin_dir="${AZKIT_INSTALL_DIR:-${HOME}/.local/bin}"
