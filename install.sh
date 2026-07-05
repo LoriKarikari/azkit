@@ -15,7 +15,7 @@ Usage:
   curl -fsSL https://raw.githubusercontent.com/${repo}/main/install.sh | sh
 
 Environment:
-  AZKIT_INSTALL_VERSION  Version to install, for example v0.3.0. Defaults to latest.
+  AZKIT_INSTALL_VERSION  Version to install, for example v0.4.0. Defaults to latest.
   AZKIT_INSTALL_DIR      Install directory. Defaults to ~/.local/bin.
   GITHUB_TOKEN           Optional token for GitHub API rate limits.
 EOF

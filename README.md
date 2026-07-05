@@ -21,7 +21,7 @@ Install a specific version or directory:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/LoriKarikari/azkit/main/install.sh \
-  | AZKIT_INSTALL_VERSION=v0.3.0 AZKIT_INSTALL_DIR=/usr/local/bin sh
+  | AZKIT_INSTALL_VERSION=v0.4.0 AZKIT_INSTALL_DIR=/usr/local/bin sh
 ```
 
 The installer downloads the matching release archive, verifies `checksums.txt`, and installs the `azkit` binary.
