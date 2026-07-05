@@ -17,7 +17,7 @@ Usage:
 Environment:
   AZKIT_INSTALL_VERSION  Version to install, for example v0.3.0. Defaults to latest.
   AZKIT_INSTALL_DIR      Install directory. Defaults to ~/.local/bin.
-  GITHUB_TOKEN            Optional token for GitHub API rate limits.
+  GITHUB_TOKEN           Optional token for GitHub API rate limits.
 EOF
 }
 
