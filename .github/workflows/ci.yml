@@ -5,12 +5,36 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
+  hygiene:
+    name: Hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go and Task
+        uses: ./.github/actions/setup-task
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Check go.mod and installer
+        run: |
+          task tidy:check
+          task install:check
+
   test:
-    name: Test, vet, lint
+    name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -18,31 +42,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
+      - name: Setup Go and Task
+        uses: ./.github/actions/setup-task
 
       - name: Download modules
         run: go mod download
 
-      - name: Check go.mod is tidy
-        run: |
-          go mod tidy
-          git diff --exit-code -- go.mod go.sum
-
-      - name: Check install script
-        run: sh -n install.sh
-
-      - name: Test
-        run: go test -race -shuffle=on -coverprofile=coverage.out ./...
+      - name: Test with race detector
+        run: task test:race
 
       - name: Binary integration test
-        run: go test -tags=integration -count=1 ./test/integration
+        run: task test:integration
 
       - name: Show coverage summary
-        run: go tool cover -func=coverage.out
+        run: task coverage:summary
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
@@ -50,24 +63,115 @@ jobs:
           name: coverage
           path: coverage.out
 
-      - name: Vet
-        run: go vet ./...
+  vet:
+    name: Vet
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
 
-      - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go and Task
+        uses: ./.github/actions/setup-task
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Vet
+        run: task vet
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go and Task
+        uses: ./.github/actions/setup-task
+
+      - name: Download modules
+        run: go mod download
 
       - name: Lint
-        run: golangci-lint run
+        run: task lint
 
-      - name: Security scan
-        run: go run github.com/securego/gosec/v2/cmd/gosec@v2.26.1 ./...
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-      - name: Vulnerability scan
-        run: go run golang.org/x/vuln/cmd/govulncheck@v1.3.0 ./...
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      - name: Check GoReleaser config
+      - name: Setup Go and Task
+        uses: ./.github/actions/setup-task
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Security checks
+        run: task security
+
+  release-check:
+    name: Release check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go and Task
+        uses: ./.github/actions/setup-task
+
+      - name: Setup GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: check
+          install-only: true
+
+      - name: Check GoReleaser config
+        run: task release:check
+
+  smoke:
+    name: CLI smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go and Task
+        uses: ./.github/actions/setup-task
+
+      - name: Smoke test CLI
+        run: task smoke
+
+  required:
+    name: Test, vet, lint
+    runs-on: ubuntu-latest
+    needs:
+      - hygiene
+      - test
+      - vet
+      - lint
+      - security
+      - release-check
+      - smoke
+    if: ${{ always() }}
+    steps:
+      - name: Check split CI result
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            exit 1
+          fi
+          echo "CI split jobs passed."

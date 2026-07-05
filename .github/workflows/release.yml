@@ -11,6 +11,10 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -22,14 +26,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.inputs.tag || github.ref }}
 
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
+      - name: Setup Go and Task
+        uses: ./.github/actions/setup-task
 
       - run: go mod download
-      - run: go test ./...
-      - run: go vet ./...
+      - run: task test
+      - run: task vet
 
       - uses: goreleaser/goreleaser-action@v6
         with:

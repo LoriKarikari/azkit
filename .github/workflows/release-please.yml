@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: release-please-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
   pull-requests: write
@@ -22,19 +26,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v6
+      - name: Setup Go and Task
         if: ${{ steps.release.outputs.release_created == 'true' }}
-        with:
-          go-version-file: go.mod
-          cache: true
+        uses: ./.github/actions/setup-task
 
       - run: go mod download
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
-      - run: go test ./...
+      - run: task test
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
-      - run: go vet ./...
+      - run: task vet
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
       - uses: goreleaser/goreleaser-action@v6
