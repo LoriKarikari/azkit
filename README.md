@@ -1,9 +1,9 @@
 # azkit
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/LoriKarikari/pimctl)](https://go.dev/dl)
-[![CI](https://github.com/LoriKarikari/pimctl/actions/workflows/ci.yml/badge.svg)](https://github.com/LoriKarikari/pimctl/actions/workflows/ci.yml)
-[![golangci-lint](https://github.com/LoriKarikari/pimctl/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/LoriKarikari/pimctl/actions/workflows/lint.yml)
-[![License](https://img.shields.io/github/license/LoriKarikari/pimctl)](./LICENSE)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/LoriKarikari/azkit)](https://go.dev/dl)
+[![CI](https://github.com/LoriKarikari/azkit/actions/workflows/ci.yml/badge.svg)](https://github.com/LoriKarikari/azkit/actions/workflows/ci.yml)
+[![golangci-lint](https://github.com/LoriKarikari/azkit/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/LoriKarikari/azkit/actions/workflows/lint.yml)
+[![License](https://img.shields.io/github/license/LoriKarikari/azkit)](./LICENSE)
 
 `azkit` is an umbrella CLI for Azure operator workflows. It keeps Azure resource-role PIM, tenant contexts, and subscription switching in one small tool.
 
@@ -14,13 +14,13 @@ PIM support is focused on Azure resource roles. `azkit` does not manage Entra ro
 Install the latest release on macOS or Linux:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/LoriKarikari/pimctl/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/LoriKarikari/azkit/main/install.sh | sh
 ```
 
 Install a specific version or directory:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/LoriKarikari/pimctl/main/install.sh \
+curl -fsSL https://raw.githubusercontent.com/LoriKarikari/azkit/main/install.sh \
   | AZKIT_INSTALL_VERSION=v0.3.0 AZKIT_INSTALL_DIR=/usr/local/bin sh
 ```
 
