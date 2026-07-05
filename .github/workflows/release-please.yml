@@ -6,7 +6,7 @@ on:
 
 concurrency:
   group: release-please-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -43,7 +43,7 @@ jobs:
         if: ${{ steps.release.outputs.release_created == 'true' }}
         with:
           distribution: goreleaser
-          version: '~> v2'
+          version: v2.17.0
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

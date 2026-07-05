@@ -18,6 +18,6 @@ runs:
         cache: true
 
     - name: Setup Task
-      uses: go-task/setup-task@v1
+      uses: go-task/setup-task@v2
       with:
         version: ${{ inputs.task-version }}
