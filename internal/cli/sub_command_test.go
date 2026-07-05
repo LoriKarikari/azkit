@@ -3,6 +3,7 @@ package cli_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"os"
@@ -626,5 +627,132 @@ func TestRunner_subNoArgsRequiresShellIntegrationBeforePicker(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "shell integration") {
 		t.Fatalf("want shell integration guidance, got: %s", stderr.String())
+	}
+}
+
+func TestRunner_subListJSONContract(t *testing.T) {
+	_, stateRoot := setupContextDirs(t)
+	t.Setenv("AZKIT_CONTEXT", "prod")
+	t.Setenv("AZKIT_SUBSCRIPTION_ID", "sub-prod")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{
+		{ID: "sub-dev", Name: "Development"},
+		{ID: "sub-prod", Name: "Production"},
+	}}
+	runner := subscriptionRunner(&stdout, &stderr, source, time.Now())
+	addReadyContext(t, runner, &stdout, &stderr, stateRoot, "prod", "tenant-prod")
+
+	code := runner.Run(t.Context(), []string{"sub", "-l", "--json"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	var decoded struct {
+		Context  string `json:"context"`
+		TenantID string `json:"tenant_id"`
+		Current  struct {
+			SubscriptionID   string `json:"subscription_id"`
+			SubscriptionName string `json:"subscription_name"`
+		} `json:"current"`
+		Subscriptions []struct {
+			SubscriptionID   string `json:"subscription_id"`
+			SubscriptionName string `json:"subscription_name"`
+		} `json:"subscriptions"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &decoded); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if decoded.Context != "prod" || decoded.TenantID != "tenant-prod" {
+		t.Fatalf("unexpected context fields: %+v", decoded)
+	}
+	if decoded.Current.SubscriptionID != "sub-prod" || decoded.Current.SubscriptionName != "Production" {
+		t.Fatalf("unexpected current subscription: %+v", decoded.Current)
+	}
+	if len(decoded.Subscriptions) != 2 || decoded.Subscriptions[0].SubscriptionID != "sub-dev" {
+		t.Fatalf("unexpected subscriptions: %+v", decoded.Subscriptions)
+	}
+}
+
+func TestRunner_subCurrentJSONContract(t *testing.T) {
+	_, stateRoot := setupContextDirs(t)
+	t.Setenv("AZKIT_CONTEXT", "prod")
+	t.Setenv("AZKIT_SUBSCRIPTION_ID", "sub-prod")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-prod", Name: "Production"}}}
+	runner := subscriptionRunner(&stdout, &stderr, source, time.Now())
+	addReadyContext(t, runner, &stdout, &stderr, stateRoot, "prod", "tenant-prod")
+
+	code := runner.Run(t.Context(), []string{"sub", "current", "--json"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	var decoded struct {
+		Context          string `json:"context"`
+		TenantID         string `json:"tenant_id"`
+		SubscriptionID   string `json:"subscription_id"`
+		SubscriptionName string `json:"subscription_name"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &decoded); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if decoded.Context != "prod" || decoded.TenantID != "tenant-prod" || decoded.SubscriptionID != "sub-prod" || decoded.SubscriptionName != "Production" {
+		t.Fatalf("unexpected current JSON: %+v", decoded)
+	}
+}
+
+func TestRunner_subJSONNeverEmitsShellCode(t *testing.T) {
+	setupContextDirs(t)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := subscriptionRunner(&stdout, &stderr, &cliSubscriptionSource{}, time.Now())
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "sub", "sub-prod", "--json"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if strings.Contains(stdout.String(), "export ") || strings.Contains(stdout.String(), "unset ") {
+		t.Fatalf("--json must not emit shell code, got %q", stdout.String())
+	}
+}
+
+func TestRunner_subListJSONRejectedThroughShellEnv(t *testing.T) {
+	setupContextDirs(t)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-1", Name: "$(echo owned)"}}}
+	runner := subscriptionRunner(&stdout, &stderr, source, time.Now())
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "sub", "--json", "-l"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("shell-env JSON list must not emit eval-able stdout, got %q", stdout.String())
+	}
+	if source.calls != 0 {
+		t.Fatalf("shell-env JSON list should fail before fetching, got %d calls", source.calls)
+	}
+	if !strings.Contains(stderr.String(), "shell integration") {
+		t.Fatalf("want shell integration output guidance, got: %s", stderr.String())
+	}
+}
+
+func TestRunner_subRefreshJSONRejectedThroughShellEnv(t *testing.T) {
+	setupContextDirs(t)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-1", Name: "$(echo owned)"}}}
+	runner := subscriptionRunner(&stdout, &stderr, source, time.Now())
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "sub", "--json", "--refresh"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("shell-env JSON refresh must not emit eval-able stdout, got %q", stdout.String())
+	}
+	if source.calls != 0 {
+		t.Fatalf("shell-env JSON refresh should fail before fetching, got %d calls", source.calls)
 	}
 }

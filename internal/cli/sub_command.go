@@ -3,7 +3,6 @@ package cli
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -24,6 +23,7 @@ type SubCmd struct {
 type SubSwitchCmd struct {
 	List    bool   `short:"l" name:"list" help:"List subscriptions for the active context"`
 	Refresh bool   `help:"Refresh the active context subscription cache"`
+	JSON    bool   `help:"Output as JSON"`
 	Target  string `arg:"" optional:"" help:"Alias, subscription ID, or exact subscription name; '-' for the previous subscription"`
 }
 
@@ -44,15 +44,25 @@ func (c *SubCurrentCmd) jsonOutput() bool {
 	return c.JSON
 }
 
+func (c *SubSwitchCmd) jsonOutput() bool {
+	return c.JSON
+}
+
 func (c *SubSwitchCmd) Run(ctx context.Context, services Services, streams *Streams) error {
-	if c.Target == "" && !c.List && !c.Refresh && !interactive.IsTerminalFn() {
-		return app.MissingSubscriptionCommand()
-	}
 	if c.Target != "" && (c.List || c.Refresh) {
 		return app.ConflictingSubscriptionSelectors()
 	}
+	if c.JSON && !c.List && !c.Refresh {
+		return app.JSONOutputNotSupported("azkit sub")
+	}
+	if c.Target == "" && !c.List && !c.Refresh && !interactive.IsTerminalFn() {
+		return app.MissingSubscriptionCommand()
+	}
+	if streams.ShellEnv && (c.List || c.Refresh || c.JSON) {
+		return app.ShellEnvOutputNotSupported("azkit sub")
+	}
 	if c.List || c.Refresh {
-		return runSubscriptionList(ctx, services, streams, c.Refresh)
+		return runSubscriptionList(ctx, services, streams, c.Refresh, c.JSON)
 	}
 	active, err := activeTenantContext(ctx, streams)
 	if err != nil {
@@ -155,7 +165,7 @@ func (c *SubCurrentCmd) Run(ctx context.Context, services Services, streams *Str
 		}
 	}
 	if c.JSON {
-		_, err = io.WriteString(streams.Stdout, renderCurrentSubscriptionJSON(id, name))
+		_, err = io.WriteString(streams.Stdout, renderCurrentSubscriptionJSON(active, id, name))
 		return err
 	}
 	_, err = io.WriteString(streams.Stdout, renderCurrentSubscriptionHuman(id, name))
@@ -167,6 +177,7 @@ func runSubscriptionList(
 	services Services,
 	streams *Streams,
 	refresh bool,
+	asJSON bool,
 ) error {
 	active, err := activeTenantContext(ctx, streams)
 	if err != nil {
@@ -178,6 +189,10 @@ func runSubscriptionList(
 	}
 	subscriptions, err := svc.List(ctx, active, refresh)
 	if err != nil {
+		return err
+	}
+	if asJSON {
+		_, err = io.WriteString(streams.Stdout, renderSubscriptionsJSON(active, subscriptions, os.Getenv(activeSubscriptionEnv)))
 		return err
 	}
 	_, err = io.WriteString(streams.Stdout, renderSubscriptionsHuman(subscriptions))
@@ -220,9 +235,23 @@ func renderSubscriptionsHuman(subscriptions []domain.Subscription) string {
 	return buf.String()
 }
 
-type currentSubscriptionJSON struct {
+type subscriptionJSON struct {
 	SubscriptionID   string `json:"subscription_id"`
-	SubscriptionName string `json:"subscription_name,omitempty"`
+	SubscriptionName string `json:"subscription_name"`
+}
+
+type subscriptionListJSON struct {
+	Context       string             `json:"context"`
+	TenantID      string             `json:"tenant_id"`
+	Current       subscriptionJSON   `json:"current"`
+	Subscriptions []subscriptionJSON `json:"subscriptions"`
+}
+
+type currentSubscriptionJSON struct {
+	Context          string `json:"context"`
+	TenantID         string `json:"tenant_id"`
+	SubscriptionID   string `json:"subscription_id"`
+	SubscriptionName string `json:"subscription_name"`
 }
 
 func renderCurrentSubscriptionHuman(id string, name string) string {
@@ -239,16 +268,31 @@ func renderCurrentSubscriptionHuman(id string, name string) string {
 	return buf.String()
 }
 
-func renderCurrentSubscriptionJSON(id string, name string) string {
-	out := currentSubscriptionJSON{}
-	if id != "" {
-		out = currentSubscriptionJSON{
-			SubscriptionID:   id,
-			SubscriptionName: name,
+func renderSubscriptionsJSON(active domain.TenantContext, subscriptions []domain.Subscription, currentID string) string {
+	entries := make([]subscriptionJSON, 0, len(subscriptions))
+	current := subscriptionJSON{SubscriptionID: currentID}
+	for _, sub := range subscriptions {
+		entry := subscriptionJSON{SubscriptionID: sub.ID, SubscriptionName: sub.Name}
+		entries = append(entries, entry)
+		if sub.ID == currentID {
+			current = entry
 		}
 	}
-	b, _ := json.MarshalIndent(out, "", "  ")
-	return string(b) + "\n"
+	return marshalJSON(subscriptionListJSON{
+		Context:       active.Name,
+		TenantID:      active.TenantID,
+		Current:       current,
+		Subscriptions: entries,
+	})
+}
+
+func renderCurrentSubscriptionJSON(active domain.TenantContext, id string, name string) string {
+	return marshalJSON(currentSubscriptionJSON{
+		Context:          active.Name,
+		TenantID:         active.TenantID,
+		SubscriptionID:   id,
+		SubscriptionName: name,
+	})
 }
 
 func activeTenantContext(ctx context.Context, streams *Streams) (domain.TenantContext, error) {

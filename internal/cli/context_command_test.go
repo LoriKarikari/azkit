@@ -512,3 +512,90 @@ func TestRunner_ctxTargetWithListFailsWithoutEvalStdout(t *testing.T) {
 		t.Fatalf("want conflicting selector guidance, got: %s", stderr.String())
 	}
 }
+
+func TestRunner_ctxListJSONContract(t *testing.T) {
+	_, stateRoot := setupContextDirs(t)
+	t.Setenv("AZKIT_CONTEXT", "prod")
+	t.Setenv("AZKIT_PREVIOUS_CONTEXT", "dev")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+	if code := runner.Run(t.Context(), []string{"ctx", "add", "dev", "--tenant", "tenant-dev"}); code != 0 {
+		t.Fatalf("add dev: exit %d: %s", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	if code := runner.Run(t.Context(), []string{"ctx", "add", "prod", "--tenant", "tenant-prod"}); code != 0 {
+		t.Fatalf("add prod: exit %d: %s", code, stderr.String())
+	}
+	prodDir := filepath.Join(stateRoot, "azkit", "contexts", "prod")
+	if err := os.WriteFile(filepath.Join(prodDir, "azureProfile.json"), []byte("{}"), 0600); err != nil {
+		t.Fatalf("write profile: %v", err)
+	}
+	stdout.Reset()
+	stderr.Reset()
+
+	code := runner.Run(t.Context(), []string{"ctx", "-l", "--json"})
+	if code != 0 {
+		t.Fatalf("want exit 0, got %d: %s", code, stderr.String())
+	}
+	var decoded struct {
+		Current  string `json:"current"`
+		Previous string `json:"previous"`
+		Contexts []struct {
+			Context   string `json:"context"`
+			TenantID  string `json:"tenant_id"`
+			ConfigDir string `json:"config_dir"`
+			Status    string `json:"status"`
+			Current   bool   `json:"current"`
+		} `json:"contexts"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &decoded); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if decoded.Current != "prod" || decoded.Previous != "dev" {
+		t.Fatalf("unexpected current/previous: %+v", decoded)
+	}
+	if len(decoded.Contexts) != 2 {
+		t.Fatalf("want 2 contexts, got %+v", decoded.Contexts)
+	}
+	if decoded.Contexts[1].Context != "prod" || decoded.Contexts[1].TenantID != "tenant-prod" || !decoded.Contexts[1].Current {
+		t.Fatalf("unexpected prod context entry: %+v", decoded.Contexts[1])
+	}
+	if decoded.Contexts[1].ConfigDir != prodDir || decoded.Contexts[1].Status != "ready" {
+		t.Fatalf("unexpected prod status/config: %+v", decoded.Contexts[1])
+	}
+}
+
+func TestRunner_ctxJSONNeverEmitsShellCode(t *testing.T) {
+	setupContextDirs(t)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "ctx", "prod", "--json"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if strings.Contains(stdout.String(), "export ") || strings.Contains(stdout.String(), "unset ") {
+		t.Fatalf("--json must not emit shell code, got %q", stdout.String())
+	}
+}
+
+func TestRunner_ctxListJSONRejectedThroughShellEnv(t *testing.T) {
+	setupContextDirs(t)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "ctx", "--json", "-l"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("shell-env JSON list must not emit eval-able stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "shell integration") {
+		t.Fatalf("want shell integration output guidance, got: %s", stderr.String())
+	}
+}
