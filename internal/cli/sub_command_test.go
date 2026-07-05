@@ -595,3 +595,36 @@ func TestRunner_subSwitchDoesNotFuzzyMatchOutsidePicker(t *testing.T) {
 		t.Fatalf("want exact lookup miss, got: %s", stderr.String())
 	}
 }
+
+func TestRunner_subNoArgsRequiresShellIntegrationBeforePicker(t *testing.T) {
+	_, stateRoot := setupContextDirs(t)
+	t.Setenv("AZKIT_CONTEXT", "prod")
+	interactive.IsTerminalFn = func() bool { return true }
+	t.Cleanup(func() { interactive.IsTerminalFn = interactive.IsTerminal })
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	source := &cliSubscriptionSource{subscriptions: []domain.Subscription{{ID: "sub-1", Name: "Production"}}}
+	pickCalled := false
+	runner := subscriptionRunnerWithPicker(&stdout, &stderr, source, time.Now(), func(context.Context, []domain.Subscription) (domain.Subscription, error) {
+		pickCalled = true
+		return domain.Subscription{}, nil
+	})
+	addReadyContext(t, runner, &stdout, &stderr, stateRoot, "prod", "tenant-prod")
+
+	code := runner.Run(t.Context(), []string{"sub"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if pickCalled {
+		t.Fatal("picker should not run before shell integration is available")
+	}
+	if source.calls != 0 {
+		t.Fatalf("source should not be fetched before shell integration is available, got %d calls", source.calls)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("failed picker setup must not emit stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "shell integration") {
+		t.Fatalf("want shell integration guidance, got: %s", stderr.String())
+	}
+}

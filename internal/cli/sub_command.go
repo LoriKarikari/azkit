@@ -63,6 +63,9 @@ func (c *SubSwitchCmd) Run(ctx context.Context, services Services, streams *Stre
 		return err
 	}
 	if c.Target == "" {
+		if err := streams.RequireShellIntegration("azkit sub"); err != nil {
+			return err
+		}
 		subscriptions, err := svc.List(ctx, active, false)
 		if err != nil {
 			return err

@@ -66,7 +66,7 @@ func UnknownSubscription(selector string) *Error {
 
 func NoSubscriptions() *Error {
 	return &Error{
-		Code:    domain.CodeUnknownSubscription,
+		Code:    domain.CodeNoSubscriptions,
 		Message: "No subscriptions found for the active context.",
 	}
 }
@@ -131,5 +131,12 @@ func ConflictingSubscriptionSelectors() *Error {
 	return &Error{
 		Code:    domain.CodeConflictingSelectors,
 		Message: "Use either a subscription target or --list/--refresh, not both.",
+	}
+}
+
+func ConflictingContextSelectors() *Error {
+	return &Error{
+		Code:    domain.CodeConflictingSelectors,
+		Message: "Use either a context name or --list, not both.",
 	}
 }

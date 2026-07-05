@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/charmbracelet/huh"
 	"github.com/samber/lo"
@@ -25,7 +26,7 @@ func PickContext(ctx context.Context, contexts []domain.TenantContext) (domain.T
 			Title("Select a context").
 			Options(options...).
 			Value(&selected),
-	))
+	)).WithOutput(os.Stderr)
 	if err := form.RunWithContext(ctx); err != nil {
 		if errors.Is(err, huh.ErrUserAborted) {
 			return domain.TenantContext{}, ErrCanceled
@@ -48,7 +49,7 @@ func PickSubscription(ctx context.Context, subscriptions []domain.Subscription) 
 			Title("Select a subscription").
 			Options(options...).
 			Value(&selected),
-	))
+	)).WithOutput(os.Stderr)
 	if err := form.RunWithContext(ctx); err != nil {
 		if errors.Is(err, huh.ErrUserAborted) {
 			return domain.Subscription{}, ErrCanceled

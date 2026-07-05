@@ -494,3 +494,21 @@ func TestRunner_ctxSwitchDoesNotFuzzyMatchOutsidePicker(t *testing.T) {
 		t.Fatalf("want exact lookup miss, got: %s", stderr.String())
 	}
 }
+
+func TestRunner_ctxTargetWithListFailsWithoutEvalStdout(t *testing.T) {
+	setupContextDirs(t)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	runner := newRunner(&stdout, &stderr, nil)
+
+	code := runner.Run(t.Context(), []string{"--shell-env", "ctx", "prod", "-l"})
+	if code != 1 {
+		t.Fatalf("want exit 1, got %d", code)
+	}
+	if stdout.String() != "" {
+		t.Fatalf("ctx target+list must not print eval-able stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "not both") {
+		t.Fatalf("want conflicting selector guidance, got: %s", stderr.String())
+	}
+}
