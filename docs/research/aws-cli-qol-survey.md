@@ -119,7 +119,7 @@ Two facts frame everything below:
 - **`credential_process`**: a documented extension point where any external program can
   supply credentials to the CLI/SDKs — the reason aws-vault, Granted, and aws-sso-util
   compose with everything. Azure's rough equivalents are `az account get-access-token`
-  as a producer and Workload Identity/`AZURE_TOKEN_FILE`-style plumbing as consumers.
+  as a producer and Workload Identity/`AZURE_FEDERATED_TOKEN_FILE`-style plumbing as consumers.
   azkit analog: `azkit token` — emit an access token for the active context/subscription
   in formats tools expect, so azkit can sit behind Terraform, kubelogin-style flows, and
   scripts the way `credential_process` helpers sit behind the AWS SDK.

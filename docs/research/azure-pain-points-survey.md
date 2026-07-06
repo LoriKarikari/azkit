@@ -17,15 +17,13 @@ Each pain is classified as:
 The single most structural complaint. Azure CLI persists the "current" subscription in a shared
 config directory (`~/.azure`), so `az account set` in one terminal silently changes context for
 every other terminal, script, and CI job on the machine. Each `az` invocation is a separate
-process reading persisted state, so there is no per-shell context
-([azure-cli #19707](https://github.com/Azure/azure-cli/issues/19707)). The community-standard
+process reading persisted state, so there is no per-shell context. The community-standard
 workaround is exactly what azkit productizes: point each shell at its own `AZURE_CONFIG_DIR`
 ([Stack Overflow](https://stackoverflow.com/questions/33137145/can-i-access-multiple-azure-accounts-with-azure-cli-from-the-same-machine-at-sam),
 [PowerShell parallel isolation Q&A](https://stackoverflow.com/questions/71923820/powershell-foreach-object-parallel-with-az-cli-profile-isolation)).
 The same shared state causes race conditions in parallel CI pipelines, where Microsoft's own
 guidance is to set a per-job `AZURE_CONFIG_DIR` and pass `--subscription` on every command
-([config docs](https://learn.microsoft.com/en-us/cli/azure/azure-cli-configuration),
-[azure-pipelines-tasks #19985](https://github.com/microsoft/azure-pipelines-tasks/issues/19985)).
+([config docs](https://learn.microsoft.com/en-us/cli/azure/azure-cli-configuration)).
 
 Demand is also visible in the ecosystem of kubectx-inspired switchers people built because `az`
 lacks one: [whiteducksoftware/azctx](https://github.com/whiteducksoftware/azctx),

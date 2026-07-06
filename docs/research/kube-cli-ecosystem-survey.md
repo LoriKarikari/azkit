@@ -30,7 +30,7 @@ stars — the pattern azkit already borrows. The tools below show what came next
 - **Pain:** `kubectl logs` targets one pod; workloads are many ephemeral pods. stern tails logs
   across pods/containers matched by regex, colored by source, surviving pod churn — "`tail -f`
   for dynamic multi-pod workloads."
-- **Adoption:** ~8k stars ([stern/stern](https://github.com/stern/stern)); standard issue in
+- **Adoption:** ~4.8k stars ([stern/stern](https://github.com/stern/stern)); standard issue in
   debugging-tools roundups ([example](https://kubezilla.io/top-10-kubernetes-debugging-tools-every-devops-engineer-needs-in-2026/)).
 - **Azure analog:** tailing *your own audit trail* — a follow-mode view of Azure Activity Log /
   PIM audit events / sign-in logs scoped to you or your subscriptions ("what did my session just
