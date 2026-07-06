@@ -99,7 +99,7 @@ _Avoid_: Comment, message
 
 ## Example dialogue
 
-> **Dev:** "Should `az-pim activate` support Global Administrator?"
+> **Dev:** "Should `azkit pim activate` support Global Administrator?"
 > **Domain expert:** "No — this CLI initially supports **PIM** for **Azure resource roles**, not Entra directory roles."
 
 ## Flagged ambiguities
