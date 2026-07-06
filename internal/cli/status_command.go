@@ -6,7 +6,7 @@ import (
 )
 
 type StatusCmd struct {
-	JSON     bool `help:"Output as JSON"`
+	JSON     bool `help:"Output as JSON (alias for --output json)"`
 	Extended bool `help:"Show more details"`
 }
 

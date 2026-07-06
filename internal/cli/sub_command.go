@@ -23,7 +23,7 @@ type SubCmd struct {
 type SubSwitchCmd struct {
 	List    bool   `short:"l" name:"list" help:"List subscriptions for the active context"`
 	Refresh bool   `help:"Refresh the active context subscription cache"`
-	JSON    bool   `help:"Output as JSON"`
+	JSON    bool   `help:"Output as JSON (alias for --output json)"`
 	Target  string `arg:"" optional:"" help:"Alias, subscription ID, or exact subscription name; '-' for the previous subscription"`
 }
 
@@ -37,7 +37,7 @@ type SubUnaliasCmd struct {
 }
 
 type SubCurrentCmd struct {
-	JSON bool `help:"Output as JSON"`
+	JSON bool `help:"Output as JSON (alias for --output json)"`
 }
 
 func (c *SubCurrentCmd) jsonOutput() bool {

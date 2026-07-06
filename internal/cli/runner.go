@@ -76,6 +76,7 @@ func NewRunner(services Services, stdout io.Writer, stderr io.Writer) *Runner {
 
 type CLI struct {
 	Verbose     bool             `short:"v" help:"Enable debug logging to stderr"`
+	Output      string           `short:"o" enum:"table,json" default:"table" help:"Output format: table or json"`
 	VersionFlag kong.VersionFlag `name:"version" help:"Show version information and exit"`
 	ShellEnv    bool             `name:"shell-env" hidden:"" help:"Emit shell environment changes for shell integration"`
 	ConfigPath  string           `name:"config" help:"Path to config file"`
@@ -141,6 +142,9 @@ func (r *Runner) Run(ctx context.Context, args []string) (code int) {
 	r.streams.ConfigPath = model.ConfigPath
 	r.streams.ShellEnv = model.ShellEnv
 	r.streams.Shell = os.Getenv("AZKIT_SHELL")
+	if model.Output == "json" {
+		forceJSONOutput(&model)
+	}
 
 	if commandNeedsConfig(parsed) {
 		cfg, err := config.Load(model.ConfigPath)
@@ -192,6 +196,17 @@ func commandNeedsConfig(parsed *kong.Context) bool {
 		return true
 	}
 	return command[0] == "pim"
+}
+
+func forceJSONOutput(model *CLI) {
+	model.Pim.List.JSON = true
+	model.Pim.Status.JSON = true
+	model.Pim.Activate.JSON = true
+	model.Pim.Deactivate.JSON = true
+	model.Ctx.Switch.JSON = true
+	model.Ctx.Current.JSON = true
+	model.Sub.Switch.JSON = true
+	model.Sub.Current.JSON = true
 }
 
 func wantsJSON(parsed *kong.Context) bool {

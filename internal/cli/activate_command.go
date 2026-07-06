@@ -22,7 +22,7 @@ type ActivateCmd struct {
 	Reason        string        `help:"Justification for the activation"`
 	Duration      time.Duration `help:"How long the role stays active (default from config)"`
 	Wait          time.Duration `help:"Wait for Azure to report the role active"`
-	JSON          bool          `help:"Output as JSON"`
+	JSON          bool          `help:"Output as JSON (alias for --output json)"`
 }
 
 type interactiveActivation struct {

@@ -144,7 +144,7 @@ func ConflictingContextSelectors() *Error {
 func JSONOutputNotSupported(command string) *Error {
 	return &Error{
 		Code:    domain.CodeConflictingSelectors,
-		Message: fmt.Sprintf("%s changes your shell and does not support --json.", command),
+		Message: fmt.Sprintf("%s changes your shell and does not support JSON output. Try %s current -o json.", command, command),
 	}
 }
 

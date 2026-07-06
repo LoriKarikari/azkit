@@ -157,9 +157,10 @@ azkit pim deactivate <assignment-id> --reason "Incident resolved"
 
 In a terminal, `azkit pim activate`, `azkit pim deactivate`, `azkit ctx`, and `azkit sub` can open pickers when required inputs are missing.
 
-For scripts:
+For scripts, every command accepts `-o/--output table|json` (`--json` is an alias for `--output json`):
 
 ```bash
+azkit pim list -o json
 azkit pim list --json
 azkit pim status --json
 azkit pim deactivate <assignment-id> --json

@@ -42,7 +42,7 @@ type CtxCmd struct {
 
 type CtxSwitchCmd struct {
 	List bool   `short:"l" name:"list" help:"List saved contexts"`
-	JSON bool   `help:"Output as JSON"`
+	JSON bool   `help:"Output as JSON (alias for --output json)"`
 	Name string `arg:"" optional:"" help:"Context name, or '-' for the previous context"`
 }
 
@@ -57,7 +57,7 @@ type CtxRmCmd struct {
 }
 
 type CtxCurrentCmd struct {
-	JSON bool `help:"Output as JSON"`
+	JSON bool `help:"Output as JSON (alias for --output json)"`
 }
 
 func (c *CtxCurrentCmd) jsonOutput() bool {
