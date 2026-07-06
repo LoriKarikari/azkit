@@ -1,0 +1,5 @@
+# Credential broker is a v-next epic, not v1
+
+azkit currently borrows az's credentials via `DefaultAzureCredential`, holds tokens only in memory, and persists nothing — so keychain-backed token storage protects an empty set until azkit owns a login path. Encrypting az's own cache in place is infeasible: az cannot read a foreign format, the experimental macOS knob breaks per-context isolation with hardcoded keychain item names, and Windows Credential Manager item-size limits rule out whole-cache designs (see docs/research/keychain-token-cache-feasibility.md).
+
+We commit to the credential-broker direction as a v-next epic after the v1 core ships: `azkit login` per context (device-code/browser via azidentity) with tokens persisted encrypted through Microsoft's `azidentity/cache` (Keychain/DPAPI/libsecret, per-context named caches), plus an `azkit token` emitter so other tools can sit on azkit as their credential source. Headless/CI degrades to env-based auth with no persistence, never blocking on a keychain prompt. azkit does not touch az's own cache or config; v1 only documents az's plaintext-cache status.
