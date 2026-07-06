@@ -7,7 +7,7 @@ import (
 )
 
 type ListCmd struct {
-	JSON     bool `help:"Output as JSON"`
+	JSON     bool `help:"Output as JSON (alias for --output json)"`
 	Extended bool `help:"Show resource IDs and assignment IDs"`
 }
 
