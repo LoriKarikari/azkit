@@ -181,6 +181,12 @@ For bash or zsh, load it in the current shell with:
 eval "$(azkit completion)"
 ```
 
+Completion generation is not supported on Windows yet. For PowerShell shell integration, use:
+
+```powershell
+azkit shell-init pwsh
+```
+
 If you are testing a local build:
 
 ```bash
