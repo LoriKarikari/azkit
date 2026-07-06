@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/LoriKarikari/azkit/compare/v0.4.0...v0.4.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* clarify completion on Windows ([#134](https://github.com/LoriKarikari/azkit/issues/134)) ([fce0af8](https://github.com/LoriKarikari/azkit/commit/fce0af8cf8729508ade13d8d0b1bf3b5fc09c9ba))
+
 ## [0.4.0](https://github.com/LoriKarikari/azkit/compare/v0.3.0...v0.4.0) (2026-07-05)
 
 
