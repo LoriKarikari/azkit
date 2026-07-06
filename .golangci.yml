@@ -5,12 +5,31 @@ run:
 
 linters:
   enable:
+    - bidichk
+    - bodyclose
+    - containedctx
+    - copyloopvar
+    - durationcheck
     - errcheck
+    - errorlint
+    - fatcontext
+    - forcetypeassert
     - govet
     - ineffassign
     - modernize
+    - nilerr
+    - noctx
+    - nolintlint
     - staticcheck
+    - testifylint
+    - thelper
     - unused
+    - usetesting
+
+  settings:
+    nolintlint:
+      require-explanation: true
+      require-specific: true
 
 issues:
   max-issues-per-linter: 0

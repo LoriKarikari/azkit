@@ -50,7 +50,7 @@ func (c *Cache) Load(
 	}
 	var data cacheFile
 	if err := json.Unmarshal(contents, &data); err != nil {
-		return domain.SubscriptionCache{}, false, nil
+		return domain.SubscriptionCache{}, false, nil //nolint:nilerr // Corrupt cache content is treated as a cache miss.
 	}
 	return domain.SubscriptionCache{
 		FetchedAt:     data.FetchedAt,
