@@ -6,6 +6,7 @@ inputs:
   task-version:
     description: Task version to install.
     required: false
+    # renovate: datasource=github-releases depName=go-task/task
     default: 3.52.0
 
 runs:

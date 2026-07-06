@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["custom.regex"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update pinned tool versions in Taskfile and release workflows.",
+      "managerFilePatterns": [
+        "/(^|/)Taskfile\\.yml$/",
+        "/(^|/)\\.github/actions/setup-task/action\\.yml$/",
+        "/(^|/)\\.github/workflows/release(-please)?\\.yml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s*\\n\\s+[A-Z_]+: ['\\\"]?(?<currentValue>[^'\\\"\\s]+)['\\\"]?",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s*\\n\\s+default: ['\\\"]?(?<currentValue>[^'\\\"\\s]+)['\\\"]?",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s*\\n\\s+version: ['\\\"]?(?<currentValue>[^'\\\"\\s]+)['\\\"]?",
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s*\\n\\s+syft-version: ['\\\"]?(?<currentValue>[^'\\\"\\s]+)['\\\"]?"
+      ],
+      "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Group repository tool-pin updates.",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": [
+        "Taskfile.yml",
+        ".github/actions/setup-task/action.yml",
+        ".github/workflows/release.yml",
+        ".github/workflows/release-please.yml"
+      ],
+      "groupName": "tool version pins"
+    }
+  ]
+}
