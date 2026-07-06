@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/LoriKarikari/azkit/compare/v0.4.1...v0.5.0) (2026-07-06)
+
+
+### Features
+
+* add global -o/--output flag with table and json formats ([#164](https://github.com/LoriKarikari/azkit/issues/164)) ([d8825bb](https://github.com/LoriKarikari/azkit/commit/d8825bbd3366077ac5822c3e0a30c220b95e3a0d)), closes [#154](https://github.com/LoriKarikari/azkit/issues/154)
+
 ## [0.4.1](https://github.com/LoriKarikari/azkit/compare/v0.4.0...v0.4.1) (2026-07-06)
 
 
