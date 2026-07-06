@@ -11,6 +11,7 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   azure-pim:
@@ -26,11 +27,15 @@ jobs:
       - name: Setup Go and Task
         uses: ./.github/actions/setup-task
 
+      - name: Azure login
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZKIT_LIVE_SUBSCRIPTION }}
+
       - name: Run live tests
         env:
           AZKIT_LIVE_TESTS: ${{ vars.AZKIT_LIVE_TESTS }}
           AZKIT_LIVE_SUBSCRIPTION: ${{ secrets.AZKIT_LIVE_SUBSCRIPTION }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: task test:live
